@@ -11,7 +11,7 @@ void init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0xFD;
+    cpu->SP = 0x01FF;
     cpu->PC = 0;
     cpu->STATUS = 0;
     //initialize memory
@@ -25,7 +25,7 @@ void print_cpu_state(CPU *cpu) {
     printf("A: %02X\n", cpu->A);
     printf("X: %02X\n", cpu->X);
     printf("Y: %02X\n", cpu->Y);
-    printf("SP: %02X\n", cpu->SP);
+    printf("SP: %04X\n", cpu->SP);
     printf("PC: %04X\n", cpu->PC);
     printf("STATUS: %02X\n", cpu->STATUS);
     return;
@@ -37,7 +37,7 @@ void reset(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0xFD;
+    cpu->SP = 0x01FF;
     cpu->PC = 0;
     cpu->STATUS = 0;
     //reset memory
