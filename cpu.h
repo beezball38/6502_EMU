@@ -58,5 +58,5 @@ void reset(CPU *cpu);
 void setFlag(CPU *cpu, STATUS flag, int value);
 Byte peek(CPU *cpu);
 Byte read(CPU *cpu);
-
+Byte read_from_addr(CPU *cpu, Word address);
 #endif

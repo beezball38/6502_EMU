@@ -14,22 +14,21 @@ typedef uint16_t Word;
     * opcode: opcode of instruction
     * length: length of instruction in bytes
     * cycles: number of cycles instruction takes
-    * operate: function pointer to operation function
-    * addrmode: function pointer to addressing mode function
-    *
+    * execute: function pointer to execute instruction
+    * fetch: function pointer to function to fetch operand
 */
 typedef struct Instruction {
     char *name;
     Byte opcode;
     Byte length;
     Byte cycles;
-    Byte (*operate)(CPU *cpu, struct Instruction *instruction);
-    Byte (*addrmode)(CPU *cpu, struct Instruction *instruction);
+    Byte (*execute)(CPU *cpu, struct Instruction *instruction);
+    Byte (*fetch)(CPU *cpu, struct Instruction *instruction);
 } Instruction;
 
 //prototypes
 
-//addressing modes
+//addressing modes (fetch)
 Byte IMP(CPU *cpu, Instruction *instruction);
 Byte IMM(CPU *cpu, Instruction *instruction);
 Byte ZP0(CPU *cpu, Instruction *instruction);

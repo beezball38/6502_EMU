@@ -1,13 +1,9 @@
-//implementations
 #include "cpu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MEM_SIZE 1024 * 1024 * 64
-
-//function definitions
-
 //function to initialize the CPU
 
 void init(CPU *cpu) {
@@ -59,3 +55,19 @@ void setFlag(CPU *cpu, STATUS flag, int value) {
     return;
 }
 
+//function to peek at the next byte in memory
+Byte peek(CPU *cpu) {
+    return cpu->memory[cpu->PC + 1];
+}
+
+//function to read the next byte in memory
+Byte read(CPU *cpu) {
+    Byte value = cpu->memory[cpu->PC + 1];
+    cpu->PC++;
+    return value;
+}
+
+//function to read a byte from a specific address in memory
+Byte read_from_addr(CPU *cpu, Word address) {
+    return cpu->memory[address];
+}
