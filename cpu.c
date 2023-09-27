@@ -17,7 +17,7 @@ void init(CPU *cpu) {
     cpu->Y = 0;
     cpu->SP = 0xFD;
     cpu->PC = 0;
-    cpu->P = 0;
+    cpu->STATUS = 0;
     //initialize memory
     cpu->memory = (unsigned char*)malloc(MEM_SIZE);
     memset(cpu->memory, 0, MEM_SIZE);
@@ -31,6 +31,6 @@ void print_cpu_state(CPU *cpu) {
     printf("Y: %02X\n", cpu->Y);
     printf("SP: %02X\n", cpu->SP);
     printf("PC: %04X\n", cpu->PC);
-    printf("P: %02X\n", cpu->P);
+    printf("STATUS: %02X\n", cpu->STATUS);
     return;
 }

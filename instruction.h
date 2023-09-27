@@ -8,10 +8,20 @@
 typedef uint8_t Byte;
 typedef uint16_t Word;
 
+/*
+    * Instruction struct
+    * name: name of instruction
+    * opcode: opcode of instruction
+    * length: length of instruction in bytes
+    * cycles: number of cycles instruction takes
+    * operate: function pointer to operation function
+    * addrmode: function pointer to addressing mode function
+    *
+*/
 typedef struct Instruction {
     char *name;
     Byte opcode;
-    Byte bytes;
+    Byte length;
     Byte cycles;
     Byte (*operate)(CPU *cpu, struct Instruction *instruction);
     Byte (*addrmode)(CPU *cpu, struct Instruction *instruction);

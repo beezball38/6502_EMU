@@ -7,32 +7,54 @@
 typedef uint8_t Byte;
 typedef uint16_t Word;
 
-//enum for STATUS flags
+/*
+    * Status register flags
+    * C: Carry
+    * Z: Zero
+    * I: Interrupt disable
+    * D: Decimal mode
+    * B: Break
+    * U: Unused
+    * V: Overflow
+    * N: Negative
+*/
 typedef enum {
-    C = (1 << 0), //Carry
-    Z = (1 << 1), //Zero
-    I = (1 << 2), //Interrupt disable
-    D = (1 << 3), //Decimal mode
-    B = (1 << 4), //Break
-    U = (1 << 5), //Unused
-    V = (1 << 6), //Overflow
-    N = (1 << 7), //Negative
+    C = (1 << 0), 
+    Z = (1 << 1), 
+    I = (1 << 2), 
+    D = (1 << 3), 
+    B = (1 << 4),
+    U = (1 << 5), 
+    V = (1 << 6), 
+    N = (1 << 7), 
 } STATUS;
 
+
+/*
+    * CPU struct
+    * A: Accumulator
+    * X: X register
+    * Y: Y register
+    * SP: Stack pointer
+    * PC: Program counter
+    * STATUS: Processor status
+    * memory: pointer to memory
+*/
+//Meant to be used as a singleton
 typedef struct CPU {
-    Byte A; //Accumulator
-    Byte X; //X register
-    Byte Y; //Y register
-    Byte SP; //Stack pointer
-    Word PC; //Program counter
-    Byte P; //Processor status
-    unsigned char* memory; //pointer to memory
+    Byte A;
+    Byte X;
+    Byte Y;
+    Byte SP;
+    Word PC;
+    Byte STATUS;
+    unsigned char* memory;
 } CPU;
 
 //prototypes
 void init(CPU *cpu);
 void print_cpu_state(CPU *cpu);
 void reset(CPU *cpu);
-void setFlag(CPU *cpu, STATUS flag);
+void setFlag(CPU *cpu, STATUS flag, int value);
 
 #endif
