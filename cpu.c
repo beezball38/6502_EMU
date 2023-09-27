@@ -34,3 +34,28 @@ void print_cpu_state(CPU *cpu) {
     printf("STATUS: %02X\n", cpu->STATUS);
     return;
 }
+
+//function to reset the CPU
+void reset(CPU *cpu) {
+    //reset registers
+    cpu->A = 0;
+    cpu->X = 0;
+    cpu->Y = 0;
+    cpu->SP = 0xFD;
+    cpu->PC = 0;
+    cpu->STATUS = 0;
+    //reset memory
+    memset(cpu->memory, 0, MEM_SIZE);
+    return;
+}
+
+//function to set a flag in the status register
+void setFlag(CPU *cpu, STATUS flag, int value) {
+    if (value) {
+        cpu->STATUS |= flag;
+    } else {
+        cpu->STATUS &= ~flag;
+    }
+    return;
+}
+
