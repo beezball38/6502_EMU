@@ -59,4 +59,7 @@ void set_flag(CPU *cpu, STATUS flag, int value);
 Byte peek(CPU *cpu);
 Byte read(CPU *cpu);
 Byte read_from_addr(CPU *cpu, Word address);
+void write_to_addr(CPU *cpu, Word address, Byte value);
+void push(CPU *cpu, Byte value);
+Byte pop(CPU *cpu);
 #endif

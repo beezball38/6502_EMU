@@ -203,7 +203,7 @@ Byte IZX (CPU *cpu) {
     * Adds the Y register to the address
     * Stores the result in the address variable
 */
-
+//todo not so sure about this one
 Byte IZY (CPU *cpu) {
     Word ptr = read(cpu);
     ptr &= 0x00FF;
@@ -224,5 +224,22 @@ Byte ORA(CPU *cpu) {
     cpu->A |= value;
     set_flag(cpu, Z, cpu->A == 0x00);
     set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+Byte ASL(CPU *cpu) {
+    set_flag(cpu, C, value & 0x80);
+    value <<= 1;
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    return 0;
+}
+/*
+    Push Processor Status on Stack
+    Pushes the status register onto the stack
+    Decrements the stack pointer?
+*/
+Byte PHP(CPU *cpu) {
+    push(cpu, cpu->STATUS);
     return 0;
 }

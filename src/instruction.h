@@ -43,7 +43,9 @@ Byte IND(CPU *cpu);
 Byte IZX(CPU *cpu);
 Byte IZY(CPU *cpu);
 
-//instructions (execute)
+//instructions (execute) in order of opcode
 Byte BRK(CPU *cpu);
 Byte ORA(CPU *cpu);
+Byte ASL(CPU *cpu);
+Byte PHP(CPU *cpu);
 #endif
