@@ -52,7 +52,7 @@ typedef struct CPU {
 } CPU;
 
 //prototypes
-void init(CPU *cpu);
+void init(CPU *cpu, Instruction *table, Byte* memory);
 void print_cpu_state(CPU *cpu);
 void reset(CPU *cpu);
 void set_flag(CPU *cpu, STATUS flag, int value);

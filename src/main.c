@@ -8,9 +8,10 @@
 
 
 int main() {
-    init_instruction_table();
+    //instructon table on the stack
+    Instruction instruction_table[256] = {0};
+    init_instruction_table(instruction_table);
     CPU cpu;
-    init(&cpu);
-    print_cpu_state(&cpu);
+    init(&cpu, instruction_table);
     return 0;
 }

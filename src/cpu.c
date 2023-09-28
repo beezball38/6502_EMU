@@ -20,18 +20,13 @@ void register_init(CPU *cpu) {
     return;
 }
 
-void memory_init(CPU *cpu) {
-    cpu->memory = malloc(MEM_SIZE);
+void memory_init(CPU *cpu, Byte *memory) {
+    cpu->memory = memory;
     return;
 }
 
-void memory_free(CPU *cpu) {
-    free(cpu->memory);
-    return;
-}
-
-void init(CPU *cpu) {
-    memory_init(cpu);
+void init(CPU *cpu, Instruction *instruction_table, Byte *memory) {
+    memory_init(cpu, memory);
     register_init(cpu);
     return;
 }
@@ -47,8 +42,6 @@ void print_cpu_state(CPU *cpu) {
 }
 
 void reset(CPU *cpu) {
-    memory_free(cpu);
-    memory_init(cpu);   
     register_init(cpu);
     return;
 }
@@ -70,11 +63,13 @@ Byte peek(CPU *cpu) {
 
 Byte read(CPU *cpu) {
     assert(cpu != NULL);
+    assert(cpu->memory != NULL);
     return cpu->memory[cpu->PC++];
 }
 
 Byte read_from_addr(CPU *cpu, Word address) {
     assert(cpu != NULL);
+    assert(cpu->memory != NULL);
     return cpu->memory[address];
 }
 
@@ -95,6 +90,7 @@ void push(CPU *cpu, Byte byte) {
 
 Byte pop(CPU *cpu) {
     assert(cpu != NULL);
+    assert(cpu->memory != NULL);
     Byte byte = read_from_addr(cpu, cpu->SP);
     cpu->SP++;
     return byte;

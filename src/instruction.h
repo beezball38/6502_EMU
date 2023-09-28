@@ -26,7 +26,7 @@ typedef struct Instruction {
     Byte (*execute)(CPU *cpu);
 } Instruction;
 
-void init_instruction_table();
+void init_instruction_table(Instruction *table);
 //prototypes
 
 //addressing modes (fetch)
@@ -48,4 +48,5 @@ Byte BRK(CPU *cpu);
 Byte ORA(CPU *cpu);
 Byte ASL(CPU *cpu);
 Byte PHP(CPU *cpu);
+Byte BPL(CPU *cpu);
 #endif
