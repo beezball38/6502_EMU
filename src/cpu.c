@@ -36,7 +36,6 @@ void init(CPU *cpu) {
     return;
 }
 
-//debug function to print CPU state
 void print_cpu_state(CPU *cpu) {
     printf("A: 0x%02X\n", cpu->A);
     printf("X: 0x%02X\n", cpu->X);
@@ -47,7 +46,6 @@ void print_cpu_state(CPU *cpu) {
     return;
 }
 
-//function to reset the CPU
 void reset(CPU *cpu) {
     memory_free(cpu);
     memory_init(cpu);   
@@ -55,7 +53,6 @@ void reset(CPU *cpu) {
     return;
 }
 
-//function to set a flag in the status register
 void set_flag(CPU *cpu, STATUS flag, int value) {
     if (value) {
         cpu->STATUS |= flag;
@@ -65,26 +62,22 @@ void set_flag(CPU *cpu, STATUS flag, int value) {
     return;
 }
 
-//function to peek at the current byte in memory
 Byte peek(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     return cpu->memory[cpu->PC];
 }
 
-//function to read the current byte in memory
 Byte read(CPU *cpu) {
     assert(cpu != NULL);
     return cpu->memory[cpu->PC++];
 }
 
-//function to read a byte from a specific address in memory
 Byte read_from_addr(CPU *cpu, Word address) {
     assert(cpu != NULL);
     return cpu->memory[address];
 }
 
-//function to write a byte to a specific address in memory
 void write_to_addr(CPU *cpu, Word address, Byte value) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
@@ -92,7 +85,6 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
     return;
 }
 
-//function to push byte onto stack
 void push(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
@@ -101,9 +93,9 @@ void push(CPU *cpu, Byte byte) {
     return;
 }
 
-//function to pop byte from stack
 Byte pop(CPU *cpu) {
     assert(cpu != NULL);
+    Byte byte = read_from_addr(cpu, cpu->SP);
     cpu->SP++;
-    return read_from_addr(cpu, cpu->SP);
+    return byte;
 }
