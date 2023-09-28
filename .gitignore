@@ -1,0 +1,4 @@
+#ignore files from the bin directory
+#ignore files from the obj directory
+
+bin/*

@@ -1,19 +1,23 @@
 CC = gcc
 CFLAGS = -Wall -g
-TARGET = main
+#c files and headers will be in directory /src
+#object files will be in directory /bin/obj
+#executable will be in directory /bin
+SRCS = $(wildcard src/*.c)
+OBJS = $(patsubst src/%.c, bin/obj/%.o, $(SRCS))
+DEPS = $(wildcard src/*.h)
 LIBS = -lm
-DEPS = cpu.h
-OBJS = main.o cpu.o
-SRC = main.c cpu.c
+TARGET = bin/cpu_emulator
+
 
 all: $(TARGET)
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+bin/obj/%.o: src/%.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-main: $(OBJS)
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 .PHONY : clean
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(OBJS) $(TARGET)
