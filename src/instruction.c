@@ -18,14 +18,14 @@ void init_instruction_table(){
     instruction_table[0x00] = malloc (sizeof(Instruction));
     instruction_table[0x00]->name = "BRK";
     instruction_table[0x00]->fetch = IMP;
-//    instruction_table[0x00]->execute = BRK;
+    instruction_table[0x00]->execute = BRK;
     instruction_table[0x00]->cycles = 7;
     instruction_table[0x00]->length = 1;
 
     instruction_table[0x01] = malloc (sizeof(Instruction));
     instruction_table[0x01]->name = "ORA";
     instruction_table[0x01]->fetch = IZX;
-//    instruction_table[0x01]->execute = ORA;
+    instruction_table[0x01]->execute = ORA;
     instruction_table[0x01]->cycles = 6;
     instruction_table[0x01]->length = 2;
 }
@@ -210,5 +210,19 @@ Byte IZY (CPU *cpu) {
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
+    return 0;
+}
+
+//instruction implementations
+
+Byte BRK(CPU *cpu) {
+    (void)cpu;
+    return 0;
+}
+
+Byte ORA(CPU *cpu) {
+    cpu->A |= value;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
     return 0;
 }

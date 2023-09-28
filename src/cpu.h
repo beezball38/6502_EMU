@@ -55,7 +55,7 @@ typedef struct CPU {
 void init(CPU *cpu);
 void print_cpu_state(CPU *cpu);
 void reset(CPU *cpu);
-void setFlag(CPU *cpu, STATUS flag, int value);
+void set_flag(CPU *cpu, STATUS flag, int value);
 Byte peek(CPU *cpu);
 Byte read(CPU *cpu);
 Byte read_from_addr(CPU *cpu, Word address);

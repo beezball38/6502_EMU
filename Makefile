@@ -1,11 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra
-#c files and headers will be in directory /src
-#object files will be in directory /bin/obj
-#executable will be in directory /bin
+DEPS = $(wildcard src/*.h)
 SRCS = $(wildcard src/*.c)
 OBJS = $(patsubst src/%.c, bin/obj/%.o, $(SRCS))
-DEPS = $(wildcard src/*.h)
 LIBS = -lm
 TARGET = bin/cpu_emulator
 

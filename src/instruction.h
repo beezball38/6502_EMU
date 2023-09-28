@@ -23,7 +23,7 @@ typedef struct Instruction {
     Byte length;
     Byte cycles;
     Byte (*fetch)(CPU *cpu);
-    Byte (*execute)(CPU *cpu, struct Instruction *instruction);
+    Byte (*execute)(CPU *cpu);
 } Instruction;
 
 void init_instruction_table();
@@ -43,4 +43,7 @@ Byte IND(CPU *cpu);
 Byte IZX(CPU *cpu);
 Byte IZY(CPU *cpu);
 
+//instructions (execute)
+Byte BRK(CPU *cpu);
+Byte ORA(CPU *cpu);
 #endif

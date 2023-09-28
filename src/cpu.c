@@ -55,7 +55,7 @@ void reset(CPU *cpu) {
 }
 
 //function to set a flag in the status register
-void setFlag(CPU *cpu, STATUS flag, int value) {
+void set_flag(CPU *cpu, STATUS flag, int value) {
     if (value) {
         cpu->STATUS |= flag;
     } else {
