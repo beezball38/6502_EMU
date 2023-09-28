@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -Wextra
 #c files and headers will be in directory /src
 #object files will be in directory /bin/obj
 #executable will be in directory /bin

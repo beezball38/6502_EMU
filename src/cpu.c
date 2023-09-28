@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define UNIMPLEMENTED() \
+    fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
+    abort();
 #define MEM_SIZE 1024 * 1024 * 64
 //function to initialize the CPU
 

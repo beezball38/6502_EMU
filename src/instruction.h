@@ -22,24 +22,25 @@ typedef struct Instruction {
     Byte opcode;
     Byte length;
     Byte cycles;
+    Byte (*fetch)(CPU *cpu);
     Byte (*execute)(CPU *cpu, struct Instruction *instruction);
-    Byte (*fetch)(CPU *cpu, struct Instruction *instruction);
 } Instruction;
 
+void init_instruction_table();
 //prototypes
 
 //addressing modes (fetch)
-Byte IMP(CPU *cpu, Instruction *instruction);
-Byte IMM(CPU *cpu, Instruction *instruction);
-Byte ZP0(CPU *cpu, Instruction *instruction);
-Byte ZPX(CPU *cpu, Instruction *instruction);
-Byte ZPY(CPU *cpu, Instruction *instruction);
-Byte REL(CPU *cpu, Instruction *instruction);
-Byte ABS(CPU *cpu, Instruction *instruction);
-Byte ABX(CPU *cpu, Instruction *instruction);
-Byte ABY(CPU *cpu, Instruction *instruction);
-Byte IND(CPU *cpu, Instruction *instruction);
-Byte IZX(CPU *cpu, Instruction *instruction);
-Byte IZY(CPU *cpu, Instruction *instruction);
+Byte IMP(CPU *cpu);
+Byte IMM(CPU *cpu);
+Byte ZP0(CPU *cpu);
+Byte ZPX(CPU *cpu);
+Byte ZPY(CPU *cpu);
+Byte REL(CPU *cpu);
+Byte ABS(CPU *cpu);
+Byte ABX(CPU *cpu);
+Byte ABY(CPU *cpu);
+Byte IND(CPU *cpu);
+Byte IZX(CPU *cpu);
+Byte IZY(CPU *cpu);
 
 #endif

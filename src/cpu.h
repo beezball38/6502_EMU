@@ -45,7 +45,7 @@ typedef struct CPU {
     Byte A;
     Byte X;
     Byte Y;
-    Byte SP;
+    Word SP;
     Word PC;
     Byte STATUS;
     unsigned char* memory;
