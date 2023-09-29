@@ -1,2 +1,3 @@
 #!/bin/bash
-make && ./bin/cpu_emulator
+make clean;
+make && ./bin/cpu_emulator;
