@@ -6,5 +6,5 @@ Emulator for the 6502 microprocessor written in C
 make && ./bin/cpu_emulator
 ## TODO
 - [ ] Add support for more opcodes
-- [ ] Add tests
+- [ ] Add testing files
 ```

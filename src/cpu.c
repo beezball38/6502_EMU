@@ -103,6 +103,22 @@ Byte pop(CPU *cpu) {
     return byte;
 }
 
+/*
+    Debugging function to print the contents of an instructions
+    Assumes instruction is in the table
+*/
+
+void print_instruction(Byte opcode) {
+    Instruction instruction = table[opcode];
+    printf("Instruction: %s\n", instruction.name);
+    printf("Opcode: 0x%02X\n", instruction.opcode);
+    printf("Fetch: %p\n", instruction.fetch);
+    printf("Execute: %p\n", instruction.execute);
+    printf("Cycles: %d\n", instruction.cycles);
+    printf("Length: %d\n", instruction.length);
+    return;
+}
+
 void init_instruction_table(){
     //initialize the table
     table[0x00] = (Instruction){
@@ -123,21 +139,6 @@ void init_instruction_table(){
     };
 }
 
-/*
-    Debugging function to print the contents of an instructions
-    Assumes instruction is in the table
-*/
-
-void print_instruction(Byte opcode) {
-    Instruction instruction = table[opcode];
-    printf("Instruction: %s\n", instruction.name);
-    printf("Opcode: 0x%02X\n", instruction.opcode);
-    printf("Fetch: %p\n", instruction.fetch);
-    printf("Execute: %p\n", instruction.execute);
-    printf("Cycles: %d\n", instruction.cycles);
-    printf("Length: %d\n", instruction.length);
-    return;
-}
 
 
 /*
