@@ -37,6 +37,7 @@ typedef enum {
 */
 
 
+
 /*
     * CPU struct
     * A: Accumulator
@@ -67,10 +68,11 @@ typedef struct Instruction {
     Byte (*execute)(CPU *cpu);
 } Instruction;
 
-void init_instruction_table(Instruction *table);
+void init_instruction_table();
+void print_instruction(Byte opcode);
 
 //prototypes
-void init(CPU *cpu, Instruction *table, Byte* memory);
+void init(CPU *cpu, Byte* memory);
 void print_cpu_state(CPU *cpu);
 void reset(CPU *cpu);
 void set_flag(CPU *cpu, STATUS flag, int value);
@@ -101,4 +103,8 @@ Byte ORA(CPU *cpu);
 Byte ASL(CPU *cpu);
 Byte PHP(CPU *cpu);
 Byte BPL(CPU *cpu);
+
+
+//cpu singleton
+extern CPU cpu;
 #endif

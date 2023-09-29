@@ -9,6 +9,9 @@
     abort();
 #define MEM_SIZE 1024 * 1024 * 64
 
+
+//instruction table
+static Instruction table[256] = {0};
 Word address;
 Byte address_rel;
 Byte value;
@@ -29,7 +32,7 @@ void memory_init(CPU *cpu, Byte *memory) {
     return;
 }
 
-void init(CPU *cpu, Instruction *instruction_table, Byte *memory) {
+void init(CPU *cpu, Byte *memory) {
     memory_init(cpu, memory);
     register_init(cpu);
     return;
@@ -100,8 +103,8 @@ Byte pop(CPU *cpu) {
     return byte;
 }
 
-void init_instruction_table(Instruction *table){
-    //initialize instruction table
+void init_instruction_table(){
+    //initialize the table
     table[0x00] = (Instruction){
         .name = "BRK",
         .opcode = 0x00,
@@ -118,6 +121,22 @@ void init_instruction_table(Instruction *table){
         .cycles = 6,
         .length = 2
     };
+}
+
+/*
+    Debugging function to print the contents of an instructions
+    Assumes instruction is in the table
+*/
+
+void print_instruction(Byte opcode) {
+    Instruction instruction = table[opcode];
+    printf("Instruction: %s\n", instruction.name);
+    printf("Opcode: 0x%02X\n", instruction.opcode);
+    printf("Fetch: %p\n", instruction.fetch);
+    printf("Execute: %p\n", instruction.execute);
+    printf("Cycles: %d\n", instruction.cycles);
+    printf("Length: %d\n", instruction.length);
+    return;
 }
 
 
