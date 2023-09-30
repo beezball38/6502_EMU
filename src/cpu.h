@@ -68,7 +68,7 @@ typedef struct Instruction {
     Byte (*execute)(CPU *cpu);
 } Instruction;
 
-void init_instruction_table();
+void init_instruction_table(void);
 void print_instruction(Byte opcode);
 
 //prototypes

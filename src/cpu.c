@@ -119,7 +119,7 @@ void print_instruction(Byte opcode) {
     return;
 }
 
-void init_instruction_table(){
+void init_instruction_table(void){
     //initialize the table
     table[0x00] = (Instruction){
         .name = "BRK",
@@ -136,6 +136,62 @@ void init_instruction_table(){
         .execute = ORA,
         .cycles = 6,
         .length = 2
+    };
+    table[0x02] = (Instruction) {
+        .name = "???",
+        .opcode = 0x02,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x03] = (Instruction) {
+        .name = "???",
+        .opcode = 0x03,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x04] = (Instruction) {
+        .name = "???",
+        .opcode = 0x04,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x05] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x05,
+        .fetch = ZP0,
+        .execute = ORA,
+        .cycles = 3,
+        .length = 2
+    };
+    table[0x06] = (Instruction) {
+        .name = "ASL",
+        .opcode = 0x06,
+        .fetch = ZP0,
+        .execute = ASL,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x07] = (Instruction) {
+        .name = "???",
+        .opcode = 0x07,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x08] = (Instruction) {
+        .name = "PHP",
+        .opcode = 0x08,
+        .fetch = IMP,
+        .execute = PHP,
+        .cycles = 3,
+        .length = 1
     };
 }
 

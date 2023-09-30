@@ -6,12 +6,14 @@
 
 //64 kb macro
 #define MEM_SIZE 1024 * 64
-CPU* get_cpu_instance() {
+
+CPU* get_cpu_instance(void);
+CPU* get_cpu_instance(void) {
     static CPU cpu;
     return &cpu;
 }
 
-int main() {
+int main(void) {
     CPU* cpu = get_cpu_instance();
     init_instruction_table();
     Byte opcode = 0x01;
