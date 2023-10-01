@@ -218,6 +218,190 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 1
     };
+    table[0x0B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x0B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x0C] = (Instruction) {
+        .name = "???",
+        .opcode = 0x0C,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x0D] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x0D,
+        .fetch = ABS,
+        .execute = ORA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0x0E] = (Instruction) {
+        .name = "ASL",
+        .opcode = 0x0E,
+        .fetch = ABS,
+        .execute = ASL,
+        .cycles = 6,
+        .length = 3
+    };
+    table[0x0F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x0F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x10] = (Instruction) {
+        .name = "BPL",
+        .opcode = 0x10,
+        .fetch = REL,
+        .execute = BPL,
+        .cycles = 2,
+        .length = 2
+    };
+    table[0x11] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x11,
+        .fetch = IZY,
+        .execute = ORA,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x12] = (Instruction) {
+        .name = "???",
+        .opcode = 0x12,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x13] = (Instruction) {
+        .name = "???",
+        .opcode = 0x13,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x14] = (Instruction) {
+        .name = "???",
+        .opcode = 0x14,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x15] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x15,
+        .fetch = ZPX,
+        .execute = ORA,
+        .cycles = 4,
+        .length = 2
+    };
+    table[0x16] = (Instruction) {
+        .name = "ASL",
+        .opcode = 0x16,
+        .fetch = ZPX,
+        .execute = ASL,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x17] = (Instruction) {
+        .name = "???",
+        .opcode = 0x17,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x18] = (Instruction) {
+        .name = "CLC",
+        .opcode = 0x18,
+        .fetch = IMP,
+        .execute = CLC,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0x19] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x19,
+        .fetch = ABY,
+        .execute = ORA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0x1A] = (Instruction) {
+        .name = "???",
+        .opcode = 0x1A,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x1B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x1B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x1C] = (Instruction) {
+        .name = "???",
+        .opcode = 0x1C,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x1D] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x1D,
+        .fetch = ABX,
+        .execute = ORA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0x1E] = (Instruction) {
+        .name = "ASL",
+        .opcode = 0x1E,
+        .fetch = ABX,
+        .execute = ASL,
+        .cycles = 7,
+        .length = 3
+    };
+    table[0x1F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x1F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x20] = (Instruction) {
+        .name = "JSR",
+        .opcode = 0x20,
+        .fetch = ABS,
+        .execute = JSR,
+        .cycles = 6,
+        .length = 3
+    };
+    table[0x21] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x21,
+        .fetch = IZX,
+        .execute = AND,
+        .cycles = 6,
+        .length = 2
+    };
 }
 
 
@@ -447,16 +631,29 @@ Byte PHP(CPU *cpu) {
     return 0;
 }
 
+//branch helper function that takes a flag as a parameter
+//returns 1 if page boundary is crossed and branch taken, 0 otherwise
+Byte branch_on_flag(CPU *cpu, STATUS flag) {
+    assert(cpu != NULL);
+    int cycles = 0;
+    if (cpu->STATUS & flag) {
+        if ((cpu->PC & 0xFF00) != ((cpu->PC + address_rel) & 0xFF00)) {
+            cycles++;
+        }
+        cpu->PC += address_rel;
+    }
+    return cycles;
+}
+
 /*
- * Branch on Result Plus
- * If the negative flag is clear then add the relative displacement to the program counter to cause a branch to a new location.
+    Branch on Result Plus (N = 0)
+    If the negative flag is not set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
 */
 Byte BPL(CPU *cpu) {
     assert(cpu != NULL);
-    if (!(cpu->STATUS & N)) {
-        cpu->PC = address_rel;
-    }
-    return 0;
+    int cycles = branch_on_flag(cpu, N);
+    return cycles;
 }
 
 /*
@@ -466,5 +663,33 @@ Byte BPL(CPU *cpu) {
 Byte CLC(CPU *cpu) {
     assert(cpu != NULL);
     set_flag(cpu, C, 0);
+    return 0;
+}
+
+/*
+    Jump to Subroutine
+    Pushes the program counter onto the stack
+    Sets the program counter to the address
+*/
+Byte JSR(CPU *cpu) {
+    assert(cpu != NULL);
+    //todo check this
+    push(cpu, (cpu->PC - 1) >> 8);
+    push(cpu, (cpu->PC - 1) & 0x00FF);
+    cpu->PC = address;
+    return 0;
+}
+
+/*
+    AND Memory with Accumulator
+    ANDs the value with the accumulator
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte AND(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->A &= value;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
     return 0;
 }

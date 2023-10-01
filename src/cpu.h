@@ -108,6 +108,9 @@ Byte ORA(CPU *cpu);
 Byte ASL(CPU *cpu);
 Byte PHP(CPU *cpu);
 Byte BPL(CPU *cpu);
+Byte CLC(CPU *cpu);
+Byte JSR(CPU *cpu);
+Byte AND(CPU *cpu);
 
 
 //cpu singleton
