@@ -92,7 +92,6 @@ void push(CPU *cpu, Byte byte) {
     assert(cpu->memory != NULL);
     if(cpu->SP == 0x0100){
         cpu->SP = 0x01FF; //stack is full, wrap around
-        //todo verify this is correct
     }
     write_to_addr(cpu, cpu->SP, byte);
     cpu->SP--;
@@ -102,7 +101,9 @@ void push(CPU *cpu, Byte byte) {
 Byte pop(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
-    assert(cpu->SP < 0x01FF);
+    if(cpu->SP == 0x01FF){
+        cpu->SP = 0x0100; //stack is empty, wrap around
+    }
     Byte byte = read_from_addr(cpu, cpu->SP);
     cpu->SP++;
     return byte;
