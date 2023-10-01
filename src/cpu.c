@@ -21,7 +21,7 @@ void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0x01FF;
+    cpu->SP = 0xFF;
     cpu->PC = read_from_addr(cpu, 0xFFFC) | (read_from_addr(cpu, 0xFFFD) << 8); 
     cpu->STATUS = 0x34;
     return;
@@ -42,7 +42,7 @@ void print_cpu_state(CPU *cpu) {
     printf("A: 0x%02X\n", cpu->A);
     printf("X: 0x%02X\n", cpu->X);
     printf("Y: 0x%02X\n", cpu->Y);
-    printf("SP: 0x%04X\n", cpu->SP);
+    printf("SP: 0x%02X\n", cpu->SP);
     printf("PC: 0x%04X\n", cpu->PC);
     printf("STATUS: 0x%02X\n", cpu->STATUS);
     return;
@@ -90,10 +90,11 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
 void push(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
-    if(cpu->SP == 0x0100){
-        cpu->SP = 0x01FF; //stack is full, wrap around
+    if(cpu->SP == 0x00){
+        cpu->SP = 0xFF; //stack is full, wrap around
     }
-    write_to_addr(cpu, cpu->SP, byte);
+    Word stack_addr = 0x0100 + cpu->SP;
+    write_to_addr(cpu, stack_addr, byte);
     cpu->SP--;
     return;
 }
@@ -101,10 +102,11 @@ void push(CPU *cpu, Byte byte) {
 Byte pop(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
-    if(cpu->SP == 0x01FF){
-        cpu->SP = 0x0100; //stack is empty, wrap around
+    if(cpu->SP == 0xFF){
+        cpu->SP = 0x00; //stack is empty, wrap around
     }
-    Byte byte = read_from_addr(cpu, cpu->SP);
+    Word stack_addr = 0x0100 + cpu->SP;
+    Byte byte = read_from_addr(cpu, stack_addr);
     cpu->SP++;
     return byte;
 }
@@ -120,8 +122,8 @@ void print_instruction(Byte opcode) {
     if (!(instruction.name == NULL|| instruction.fetch == NULL || instruction.execute == NULL)) {
         printf("Instruction: %s\n", instruction.name);
         printf("Opcode: 0x%02X\n", instruction.opcode);
-        printf("Fetch: %p\n", instruction.fetch);
-        printf("Execute: %p\n", instruction.execute);
+        printf("Fetch: %p\n", (void*) instruction.fetch);
+        printf("Execute: %p\n", (void*) instruction.execute);
         printf("Cycles: %d\n", instruction.cycles);
         printf("Length: %d\n", instruction.length);
     } 
@@ -130,6 +132,7 @@ void print_instruction(Byte opcode) {
 
 void init_instruction_table(void){
     //initialize the table
+    //reference https://www.masswerk.at/6502/6502_instruction_set.html
     table[0x00] = (Instruction){
         .name = "BRK",
         .opcode = 0x00,
@@ -402,6 +405,62 @@ void init_instruction_table(void){
         .cycles = 6,
         .length = 2
     };
+    table[0x22] = (Instruction) {
+        .name = "???",
+        .opcode = 0x22,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x23] = (Instruction) {
+        .name = "???",
+        .opcode = 0x23,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x24] = (Instruction) {
+        .name = "BIT",
+        .opcode = 0x24,
+        .fetch = ZP0,
+        .execute = BIT,
+        .cycles = 3,
+        .length = 2
+    };
+    table[0x25] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x25,
+        .fetch = ZP0,
+        .execute = AND,
+        .cycles = 3,
+        .length = 2
+    };
+    table[0x26] = (Instruction) {
+        .name = "ROL",
+        .opcode = 0x26,
+        .fetch = ZP0,
+        .execute = ROL,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x27] = (Instruction) {
+        .name = "???",
+        .opcode = 0x27,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x28] = (Instruction) {
+        .name = "PLP",
+        .opcode = 0x28,
+        .fetch = IMP,
+        .execute = PLP,
+        .cycles = 4,
+        .length = 1
+    };
 }
 
 
@@ -673,7 +732,6 @@ Byte CLC(CPU *cpu) {
 */
 Byte JSR(CPU *cpu) {
     assert(cpu != NULL);
-    //todo check this
     push(cpu, (cpu->PC - 1) >> 8);
     push(cpu, (cpu->PC - 1) & 0x00FF);
     cpu->PC = address;
@@ -691,5 +749,71 @@ Byte AND(CPU *cpu) {
     cpu->A &= value;
     set_flag(cpu, Z, cpu->A == 0x00);
     set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    BIT Test Bits in Memory with Accumulator
+    ANDs the value with the accumulator
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Sets the overflow flag to the sixth bit of the value
+*/
+Byte BIT(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte result = cpu->A & value;
+    //this flag is set based on the result of the AND
+    set_flag(cpu, Z, result == 0x00);
+    //these 2 flags are set to the 6th and 7th bits of the value
+    set_flag(cpu, N, value & 0x80);
+    set_flag(cpu, V, value & 0x40);
+    return 0;
+}
+
+/*
+    Rotate Left (Memory)
+    Gets value from address and rotates it left by 1 bit
+    Sets the carry flag to the 7th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in memory
+*/
+Byte ROL(CPU *cpu) {
+    //assume address is set
+    assert(cpu != NULL);
+    set_flag(cpu, C, value & 0x80);
+    value <<= 1;
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    write_to_addr(cpu, address, value);
+    return 0;
+}
+
+/*
+    Rotate Left (Accumulator)
+    Rotates the accumulator left by 1 bit
+    Sets the carry flag to the 7th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte ROL_ACC(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, C, cpu->A & 0x80);
+    cpu->A <<= 1;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    Pull Processor Status from Stack
+    The status register will be pulled with the break
+    flag and bit 5 ignored.
+*/
+Byte PLP(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->STATUS = pop(cpu);
+    set_flag(cpu, U, 1);
+    set_flag(cpu, B, 0);
     return 0;
 }

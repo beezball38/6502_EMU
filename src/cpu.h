@@ -43,7 +43,7 @@ typedef enum {
     * A: Accumulator
     * X: X register
     * Y: Y register
-    * SP: Stack pointer
+    * SP: Stack pointer (address of stack which is on the first page of memory)
     * PC: Program counter
     * STATUS: Processor status
     * memory: pointer to memory
@@ -53,7 +53,7 @@ typedef struct CPU {
     Byte A;
     Byte X;
     Byte Y;
-    Word SP;
+    Byte SP;
     Word PC;
     Byte STATUS;
     unsigned char* memory;
@@ -73,7 +73,7 @@ void print_cpu_state(CPU *cpu);
 void print_instruction(Byte opcode);
 
 //prototypes
-void init_instruction_table();
+void init_instruction_table(void);
 void init(CPU *cpu, Byte* memory);
 void reset(CPU *cpu);
 //todo add interrupt functions
@@ -111,8 +111,10 @@ Byte BPL(CPU *cpu);
 Byte CLC(CPU *cpu);
 Byte JSR(CPU *cpu);
 Byte AND(CPU *cpu);
+Byte BIT(CPU *cpu);
+Byte ROL(CPU *cpu);
+Byte ROL_ACC(CPU *cpu);
+Byte PLP(CPU *cpu);
 
 
-//cpu singleton
-extern CPU cpu;
 #endif
