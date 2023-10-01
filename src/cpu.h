@@ -68,18 +68,23 @@ typedef struct Instruction {
     Byte (*execute)(CPU *cpu);
 } Instruction;
 
-void init_instruction_table(void);
+//helper functions, not for prime time
+void print_cpu_state(CPU *cpu);
 void print_instruction(Byte opcode);
 
 //prototypes
+void init_instruction_table();
 void init(CPU *cpu, Byte* memory);
-void print_cpu_state(CPU *cpu);
 void reset(CPU *cpu);
+//todo add interrupt functions
 void set_flag(CPU *cpu, STATUS flag, int value);
+
 Byte peek(CPU *cpu);
-Byte read(CPU *cpu);
+Byte read(CPU *cpu); //will consume a byte
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
+
+//For use with cpu->SP
 void push(CPU *cpu, Byte value);
 Byte pop(CPU *cpu);
 

@@ -16,8 +16,9 @@ CPU* get_cpu_instance(void) {
 int main(void) {
     CPU* cpu = get_cpu_instance();
     init_instruction_table();
-    Byte opcode = 0x01;
-    print_instruction(opcode);
+    for(int i = 0; i < 256; i++) {
+        print_instruction(i);
+    }
     Byte memory[MEM_SIZE] = {0};
     init(cpu, memory);
     return 0;

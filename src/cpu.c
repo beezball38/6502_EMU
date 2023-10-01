@@ -90,6 +90,10 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
 void push(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
+    if(cpu->SP == 0x0100){
+        cpu->SP = 0x01FF; //stack is full, wrap around
+        //todo verify this is correct
+    }
     write_to_addr(cpu, cpu->SP, byte);
     cpu->SP--;
     return;
@@ -98,6 +102,7 @@ void push(CPU *cpu, Byte byte) {
 Byte pop(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
+    assert(cpu->SP < 0x01FF);
     Byte byte = read_from_addr(cpu, cpu->SP);
     cpu->SP++;
     return byte;
@@ -110,12 +115,15 @@ Byte pop(CPU *cpu) {
 
 void print_instruction(Byte opcode) {
     Instruction instruction = table[opcode];
-    printf("Instruction: %s\n", instruction.name);
-    printf("Opcode: 0x%02X\n", instruction.opcode);
-    printf("Fetch: %p\n", instruction.fetch);
-    printf("Execute: %p\n", instruction.execute);
-    printf("Cycles: %d\n", instruction.cycles);
-    printf("Length: %d\n", instruction.length);
+    //if any pointers are null, print "not implemented"
+    if (!(instruction.name == NULL|| instruction.fetch == NULL || instruction.execute == NULL)) {
+        printf("Instruction: %s\n", instruction.name);
+        printf("Opcode: 0x%02X\n", instruction.opcode);
+        printf("Fetch: %p\n", instruction.fetch);
+        printf("Execute: %p\n", instruction.execute);
+        printf("Cycles: %d\n", instruction.cycles);
+        printf("Length: %d\n", instruction.length);
+    } 
     return;
 }
 
@@ -191,6 +199,22 @@ void init_instruction_table(void){
         .fetch = IMP,
         .execute = PHP,
         .cycles = 3,
+        .length = 1
+    };
+    table[0x09] = (Instruction) {
+        .name = "ORA",
+        .opcode = 0x09,
+        .fetch = IMM,
+        .execute = ORA,
+        .cycles = 2,
+        .length = 2
+    };
+    table[0x0A] = (Instruction) {
+        .name = "ASL",
+        .opcode = 0x0A,
+        .fetch = IMP,
+        .execute = ASL,
+        .cycles = 2,
         .length = 1
     };
 }
