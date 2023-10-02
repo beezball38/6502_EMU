@@ -8,7 +8,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 # Compiler settings
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -pedantic -I$(SRC_DIR)
+CFLAGS = -Wall -Wextra -Werror -std=c99 -pedantic -I$(SRC_DIR)
 
 # Libraries
 LIBS = -lm

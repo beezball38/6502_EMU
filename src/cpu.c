@@ -17,29 +17,6 @@ Byte address_rel;
 Byte value;
 //function to initialize the CPU
 
-//constants for the instructions in order of opcode
-#define INSTRUCTION_BRK_IMP 0x00
-#define INSTRUCTION_ORA_IZX 0x01
-#define INSTRUCTION_ORA_ZP0 0x05
-#define INSTRUCTION_ASL_ZP0 0x06
-#define INSTRUCTION_PHP_IMP 0x08
-#define INSTRUCTION_ORA_IMM 0x09
-#define INSTRUCTION_ASL_ACC 0x0A
-#define INSTRUCTION_ASL_ABS 0x0E
-#define INSTRUCTION_ORA_ABS 0x0D
-#define INSTRUCTION_BPL_REL 0x10
-#define INSTRUCTION_ORA_IZY 0x11
-#define INSTRUCTION_ORA_ZPX 0x15
-#define INSTRUCTION_ASL_ZPX 0x16
-#define INSTRUCTION_CLC_IMP 0x18
-#define INSTRUCTION_ORA_ABY 0x19
-#define INSTRUCTION_ORA_ABX 0x1D
-#define INSTRUCTION_ASL_ABX 0x1E
-#define INSTRUCTION_JSR_ABS 0x20
-#define INSTRUCTION_AND_IZX 0x21
-#define INSTRUCTION_AND_ZP0 0x25
-#define INSTRUCTION_ROL_ZP0 0x26
-#define INSTRUCTION_PLP_IMP 0x28
 
 void register_init(CPU *cpu) {
     cpu->A = 0;
@@ -84,6 +61,16 @@ void set_flag(CPU *cpu, STATUS flag, int value) {
         cpu->STATUS &= ~flag;
     }
     return;
+}
+
+Byte branch_pc(CPU *cpu){
+    int cycles = 0;
+    Word old_pc = cpu->PC;
+    cpu->PC += address_rel;
+    if ((old_pc & 0xFF00) != (cpu->PC & 0xFF00)) {
+        cycles++;
+    }
+    return cycles;
 }
 
 Byte peek(CPU *cpu) {
@@ -421,7 +408,7 @@ void init_instruction_table(void){
         .cycles = 6,
         .length = 3
     };
-    table[0x21] = (Instruction) {
+    table[INSTRUCTION_AND_IZX] = (Instruction) {
         .name = "AND",
         .opcode = 0x21,
         .fetch = IZX,
@@ -445,7 +432,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x24] = (Instruction) {
+    table[INSTRUCTION_BRK_ZP0] = (Instruction) {
         .name = "BIT",
         .opcode = 0x24,
         .fetch = ZP0,
@@ -453,7 +440,7 @@ void init_instruction_table(void){
         .cycles = 3,
         .length = 2
     };
-    table[0x25] = (Instruction) {
+    table[INSTRUCTION_AND_ZP0] = (Instruction) {
         .name = "AND",
         .opcode = 0x25,
         .fetch = ZP0,
@@ -461,7 +448,7 @@ void init_instruction_table(void){
         .cycles = 3,
         .length = 2
     };
-    table[0x26] = (Instruction) {
+    table[INSTRUCTION_ROL_ZP0] = (Instruction) {
         .name = "ROL",
         .opcode = 0x26,
         .fetch = ZP0,
@@ -477,12 +464,132 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x28] = (Instruction) {
+    table[INSTRUCTION_PLP_IMP] = (Instruction) {
         .name = "PLP",
         .opcode = 0x28,
         .fetch = IMP,
         .execute = PLP,
         .cycles = 4,
+        .length = 1
+    };
+    table[INSTRUCTION_AND_IMM] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x29,
+        .fetch = IMM,
+        .execute = AND,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_ROL_ACC] = (Instruction) {
+        .name = "ROL",
+        .opcode = 0x2A,
+        .fetch = IMP,
+        .execute = ROL_ACC,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0x2B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x2B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BIT_ABS] = (Instruction) {
+        .name = "BIT",
+        .opcode = 0x2C,
+        .fetch = ABS,
+        .execute = BIT,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_AND_ABS] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x2D,
+        .fetch = ABS,
+        .execute = AND,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_ROL_ABS] = (Instruction) {
+        .name = "ROL",
+        .opcode = 0x2E,
+        .fetch = ABS,
+        .execute = ROL,
+        .cycles = 6,
+        .length = 3
+    };
+    table[0x2F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x2F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BMI_REL] = (Instruction) {
+        .name = "BMI",
+        .opcode = 0x30,
+        .fetch = REL,
+        .execute = BMI,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_AND_IZY] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x31,
+        .fetch = IZY,
+        .execute = AND,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x32] = (Instruction) {
+        .name = "???",
+        .opcode = 0x32,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x33] = (Instruction) {
+        .name = "???",
+        .opcode = 0x33,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_AND_ZPX] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x35,
+        .fetch = ZPX,
+        .execute = AND,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_ROL_ZPX] = (Instruction) {
+        .name = "ROL",
+        .opcode = 0x36,
+        .fetch = ZPX,
+        .execute = ROL,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x37] = (Instruction) {
+        .name = "???",
+        .opcode = 0x37,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_SEC_IMP] = (Instruction) {
+        .name = "SEC",
+        .opcode = 0x38,
+        .fetch = IMP,
+        .execute = SEC,
+        .cycles = 2,
         .length = 1
     };
 }
@@ -715,17 +822,16 @@ Byte PHP(CPU *cpu) {
 }
 
 //branch helper function that takes a flag as a parameter
+//if flag value is 1, we check if the flag is set
+//otherwise we check if the flag is not set
 //returns 1 if page boundary is crossed and branch taken, 0 otherwise
-Byte branch_on_flag(CPU *cpu, STATUS flag) {
+Byte branch_on_flag(CPU *cpu, STATUS flag, int flag_value) {
     assert(cpu != NULL);
-    int cycles = 0;
-    if (cpu->STATUS & flag) {
-        if ((cpu->PC & 0xFF00) != ((cpu->PC + address_rel) & 0xFF00)) {
-            cycles++;
-        }
-        cpu->PC += address_rel;
+    //checks if the flag is set to the flag value
+    if ((cpu->STATUS & flag) == (flag_value & flag)) {
+        return branch_pc(cpu);
     }
-    return cycles;
+    return 0;
 }
 
 /*
@@ -735,7 +841,7 @@ Byte branch_on_flag(CPU *cpu, STATUS flag) {
 */
 Byte BPL(CPU *cpu) {
     assert(cpu != NULL);
-    int cycles = branch_on_flag(cpu, N);
+    int cycles = branch_on_flag(cpu, N, 0);
     return cycles;
 }
 
@@ -839,5 +945,26 @@ Byte PLP(CPU *cpu) {
     cpu->STATUS = pop_stack(cpu);
     set_flag(cpu, U, 1);
     set_flag(cpu, B, 0);
+    return 0;
+}
+
+/*
+    Branch on Result Minus (N = 1)
+    If the negative flag is set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
+*/
+Byte BMI(CPU *cpu) {
+    assert(cpu != NULL);
+    int cycles = branch_on_flag(cpu, N, 1);
+    return cycles;
+}
+
+/*
+    SEC Set Carry Flag
+    Sets the carry flag to 1
+*/
+Byte SEC(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, C, 1);
     return 0;
 }

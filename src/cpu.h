@@ -4,6 +4,40 @@
 #include <stdint.h>
 typedef uint8_t Byte;
 typedef uint16_t Word;
+//constants for the instructions in order of opcode (except illegal instructions)
+#define INSTRUCTION_BRK_IMP 0x00
+#define INSTRUCTION_ORA_IZX 0x01
+#define INSTRUCTION_ORA_ZP0 0x05
+#define INSTRUCTION_ASL_ZP0 0x06
+#define INSTRUCTION_PHP_IMP 0x08
+#define INSTRUCTION_ORA_IMM 0x09
+#define INSTRUCTION_ASL_ACC 0x0A
+#define INSTRUCTION_ASL_ABS 0x0E
+#define INSTRUCTION_ORA_ABS 0x0D
+#define INSTRUCTION_BPL_REL 0x10
+#define INSTRUCTION_ORA_IZY 0x11
+#define INSTRUCTION_ORA_ZPX 0x15
+#define INSTRUCTION_ASL_ZPX 0x16
+#define INSTRUCTION_CLC_IMP 0x18
+#define INSTRUCTION_ORA_ABY 0x19
+#define INSTRUCTION_ORA_ABX 0x1D
+#define INSTRUCTION_ASL_ABX 0x1E
+#define INSTRUCTION_JSR_ABS 0x20
+#define INSTRUCTION_AND_IZX 0x21
+#define INSTRUCTION_BRK_ZP0 0x24
+#define INSTRUCTION_AND_ZP0 0x25
+#define INSTRUCTION_ROL_ZP0 0x26
+#define INSTRUCTION_PLP_IMP 0x28
+#define INSTRUCTION_AND_IMM 0x29
+#define INSTRUCTION_ROL_ACC 0x2A
+#define INSTRUCTION_BIT_ABS 0x2C
+#define INSTRUCTION_AND_ABS 0x2D
+#define INSTRUCTION_ROL_ABS 0x2E
+#define INSTRUCTION_BMI_REL 0x30
+#define INSTRUCTION_AND_IZY 0x31
+#define INSTRUCTION_AND_ZPX 0x35
+#define INSTRUCTION_ROL_ZPX 0x36
+#define INSTRUCTION_SEC_IMP 0x38
 
 /*
     * Status register flags
@@ -26,6 +60,7 @@ typedef enum {
     V = (1 << 6), 
     N = (1 << 7), 
 } STATUS;
+
 /*
     * Instruction struct
     * name: name of instruction
@@ -115,6 +150,8 @@ Byte BIT(CPU *cpu);
 Byte ROL(CPU *cpu);
 Byte ROL_ACC(CPU *cpu);
 Byte PLP(CPU *cpu);
+Byte BMI(CPU *cpu);
+Byte SEC(CPU *cpu);
 
 
 #endif
