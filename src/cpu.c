@@ -17,6 +17,30 @@ Byte address_rel;
 Byte value;
 //function to initialize the CPU
 
+//constants for the instructions in order of opcode
+#define INSTRUCTION_BRK_IMP 0x00
+#define INSTRUCTION_ORA_IZX 0x01
+#define INSTRUCTION_ORA_ZP0 0x05
+#define INSTRUCTION_ASL_ZP0 0x06
+#define INSTRUCTION_PHP_IMP 0x08
+#define INSTRUCTION_ORA_IMM 0x09
+#define INSTRUCTION_ASL_ACC 0x0A
+#define INSTRUCTION_ASL_ABS 0x0E
+#define INSTRUCTION_ORA_ABS 0x0D
+#define INSTRUCTION_BPL_REL 0x10
+#define INSTRUCTION_ORA_IZY 0x11
+#define INSTRUCTION_ORA_ZPX 0x15
+#define INSTRUCTION_ASL_ZPX 0x16
+#define INSTRUCTION_CLC_IMP 0x18
+#define INSTRUCTION_ORA_ABY 0x19
+#define INSTRUCTION_ORA_ABX 0x1D
+#define INSTRUCTION_ASL_ABX 0x1E
+#define INSTRUCTION_JSR_ABS 0x20
+#define INSTRUCTION_AND_IZX 0x21
+#define INSTRUCTION_AND_ZP0 0x25
+#define INSTRUCTION_ROL_ZP0 0x26
+#define INSTRUCTION_PLP_IMP 0x28
+
 void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
@@ -87,7 +111,7 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
     return;
 }
 
-void push(CPU *cpu, Byte byte) {
+void push_stack(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0x00){
@@ -99,7 +123,7 @@ void push(CPU *cpu, Byte byte) {
     return;
 }
 
-Byte pop(CPU *cpu) {
+Byte pop_stack(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0xFF){
@@ -133,7 +157,7 @@ void print_instruction(Byte opcode) {
 void init_instruction_table(void){
     //initialize the table
     //reference https://www.masswerk.at/6502/6502_instruction_set.html
-    table[0x00] = (Instruction){
+    table[INSTRUCTION_BRK_IMP] = (Instruction){
         .name = "BRK",
         .opcode = 0x00,
         .fetch = IMP,
@@ -141,7 +165,7 @@ void init_instruction_table(void){
         .cycles = 7,
         .length = 1
     };
-    table[0x01] = (Instruction) {
+    table[INSTRUCTION_ORA_IZX] = (Instruction) {
         .name = "ORA",
         .opcode = 0x01,
         .fetch = IZX,
@@ -173,7 +197,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x05] = (Instruction) {
+    table[INSTRUCTION_ORA_ZP0] = (Instruction) {
         .name = "ORA",
         .opcode = 0x05,
         .fetch = ZP0,
@@ -181,7 +205,7 @@ void init_instruction_table(void){
         .cycles = 3,
         .length = 2
     };
-    table[0x06] = (Instruction) {
+    table[INSTRUCTION_ASL_ZP0] = (Instruction) {
         .name = "ASL",
         .opcode = 0x06,
         .fetch = ZP0,
@@ -197,7 +221,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x08] = (Instruction) {
+    table[INSTRUCTION_PHP_IMP] = (Instruction) {
         .name = "PHP",
         .opcode = 0x08,
         .fetch = IMP,
@@ -205,7 +229,7 @@ void init_instruction_table(void){
         .cycles = 3,
         .length = 1
     };
-    table[0x09] = (Instruction) {
+    table[INSTRUCTION_ORA_IMM] = (Instruction) {
         .name = "ORA",
         .opcode = 0x09,
         .fetch = IMM,
@@ -213,7 +237,7 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 2
     };
-    table[0x0A] = (Instruction) {
+    table[INSTRUCTION_ASL_ACC] = (Instruction) {
         .name = "ASL",
         .opcode = 0x0A,
         .fetch = IMP,
@@ -237,7 +261,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x0D] = (Instruction) {
+    table[INSTRUCTION_ORA_ABS] = (Instruction) {
         .name = "ORA",
         .opcode = 0x0D,
         .fetch = ABS,
@@ -245,7 +269,7 @@ void init_instruction_table(void){
         .cycles = 4,
         .length = 3
     };
-    table[0x0E] = (Instruction) {
+    table[INSTRUCTION_ASL_ABS] = (Instruction) {
         .name = "ASL",
         .opcode = 0x0E,
         .fetch = ABS,
@@ -261,7 +285,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x10] = (Instruction) {
+    table[INSTRUCTION_BPL_REL] = (Instruction) {
         .name = "BPL",
         .opcode = 0x10,
         .fetch = REL,
@@ -269,7 +293,7 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 2
     };
-    table[0x11] = (Instruction) {
+    table[INSTRUCTION_ORA_IZY] = (Instruction) {
         .name = "ORA",
         .opcode = 0x11,
         .fetch = IZY,
@@ -301,7 +325,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x15] = (Instruction) {
+    table[INSTRUCTION_ORA_ZPX] = (Instruction) {
         .name = "ORA",
         .opcode = 0x15,
         .fetch = ZPX,
@@ -309,7 +333,7 @@ void init_instruction_table(void){
         .cycles = 4,
         .length = 2
     };
-    table[0x16] = (Instruction) {
+    table[INSTRUCTION_ASL_ZPX] = (Instruction) {
         .name = "ASL",
         .opcode = 0x16,
         .fetch = ZPX,
@@ -325,7 +349,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x18] = (Instruction) {
+    table[INSTRUCTION_CLC_IMP] = (Instruction) {
         .name = "CLC",
         .opcode = 0x18,
         .fetch = IMP,
@@ -333,7 +357,7 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 1
     };
-    table[0x19] = (Instruction) {
+    table[INSTRUCTION_ORA_ABY] = (Instruction) {
         .name = "ORA",
         .opcode = 0x19,
         .fetch = ABY,
@@ -365,7 +389,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x1D] = (Instruction) {
+    table[INSTRUCTION_ORA_ABX] = (Instruction) {
         .name = "ORA",
         .opcode = 0x1D,
         .fetch = ABX,
@@ -373,7 +397,7 @@ void init_instruction_table(void){
         .cycles = 4,
         .length = 3
     };
-    table[0x1E] = (Instruction) {
+    table[INSTRUCTION_ASL_ABX] = (Instruction) {
         .name = "ASL",
         .opcode = 0x1E,
         .fetch = ABX,
@@ -389,7 +413,7 @@ void init_instruction_table(void){
         .cycles = 0,
         .length = 0
     };
-    table[0x20] = (Instruction) {
+    table[INSTRUCTION_JSR_ABS] = (Instruction) {
         .name = "JSR",
         .opcode = 0x20,
         .fetch = ABS,
@@ -686,7 +710,7 @@ Byte ASL(CPU *cpu) {
     Decrements the stack pointer?
 */
 Byte PHP(CPU *cpu) {
-    push(cpu, cpu->STATUS);
+    push_stack(cpu, cpu->STATUS);
     return 0;
 }
 
@@ -732,8 +756,8 @@ Byte CLC(CPU *cpu) {
 */
 Byte JSR(CPU *cpu) {
     assert(cpu != NULL);
-    push(cpu, (cpu->PC - 1) >> 8);
-    push(cpu, (cpu->PC - 1) & 0x00FF);
+    push_stack(cpu, (cpu->PC - 1) >> 8);
+    push_stack(cpu, (cpu->PC - 1) & 0x00FF);
     cpu->PC = address;
     return 0;
 }
@@ -812,7 +836,7 @@ Byte ROL_ACC(CPU *cpu) {
 */
 Byte PLP(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->STATUS = pop(cpu);
+    cpu->STATUS = pop_stack(cpu);
     set_flag(cpu, U, 1);
     set_flag(cpu, B, 0);
     return 0;
