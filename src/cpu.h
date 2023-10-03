@@ -107,13 +107,14 @@ typedef struct CPU {
     unsigned char* memory;
 } CPU;
 
+typedef Byte (*Ins_Func)(CPU *cpu);
 typedef struct Instruction {
     char *name;
     Byte opcode;
     Byte length;
     Byte cycles;
-    Byte (*fetch)(CPU *cpu);
-    Byte (*execute)(CPU *cpu);
+    Ins_Func fetch;
+    Ins_Func execute;
 } Instruction;
 
 //helper functions, not for prime time

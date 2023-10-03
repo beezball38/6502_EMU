@@ -130,7 +130,7 @@ Byte pop_stack(CPU *cpu) {
 void print_instruction(Byte opcode) {
     Instruction instruction = table[opcode];
     //if any pointers are null, print "not implemented"
-    if (!(instruction.name == NULL|| instruction.fetch == NULL || instruction.execute == NULL)) {
+    if (!(instruction.name == NULL || instruction.fetch == NULL || instruction.execute == NULL)) {
         printf("Instruction: %s\n", instruction.name);
         printf("Opcode: 0x%02X\n", instruction.opcode);
         printf("Fetch: %p\n", (void*) instruction.fetch);
@@ -1213,7 +1213,6 @@ Byte JMP(CPU *cpu) {
     Byte low = read(cpu);
     Byte high = read(cpu);
     cpu->PC = (high << 8) | low;
-    cpu->PC--; //todo not sure if this is correct
     return 0;
 }
 
