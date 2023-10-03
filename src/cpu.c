@@ -592,6 +592,166 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 1
     };
+    table[INSTRUCTION_AND_ABY] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x39,
+        .fetch = ABY,
+        .execute = AND,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0x3A] = (Instruction) {
+        .name = "???",
+        .opcode = 0x3A,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x3B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x3B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_AND_ABX] = (Instruction) {
+        .name = "AND",
+        .opcode = 0x3D,
+        .fetch = ABX,
+        .execute = AND,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_ROL_ABX] = (Instruction) {
+        .name = "ROL",
+        .opcode = 0x3E,
+        .fetch = ABX,
+        .execute = ROL,
+        .cycles = 7,
+        .length = 3
+    };
+    table[0x3F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x3F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_RTI_IMP] = (Instruction) {
+        .name = "RTI",
+        .opcode = 0x40,
+        .fetch = IMP,
+        .execute = RTI,
+        .cycles = 6,
+        .length = 1
+    };
+    table[INSTRUCTION_EOR_IZX] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x41,
+        .fetch = IZX,
+        .execute = EOR,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x42] = (Instruction) {
+        .name = "???",
+        .opcode = 0x42,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x43] = (Instruction) {
+        .name = "???",
+        .opcode = 0x43,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_EOR_ZP0] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x45,
+        .fetch = ZP0,
+        .execute = EOR,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_LSR_ZP0] = (Instruction) {
+        .name = "LSR",
+        .opcode = 0x46,
+        .fetch = ZP0,
+        .execute = LSR,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x47] = (Instruction) {
+        .name = "???",
+        .opcode = 0x47,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_PHA_IMP] = (Instruction) {
+        .name = "PHA",
+        .opcode = 0x48,
+        .fetch = IMP,
+        .execute = PHA,
+        .cycles = 3,
+        .length = 1
+    };
+    table[INSTRUCTION_EOR_IMM] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x49,
+        .fetch = IMM,
+        .execute = EOR,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_LSR_ACC] = (Instruction) {
+        .name = "LSR",
+        .opcode = 0x4A,
+        .fetch = IMP,
+        .execute = LSR_ACC,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0x4B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x4B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_JMP_ABS] = (Instruction) {
+        .name = "JMP",
+        .opcode = 0x4C,
+        .fetch = ABS,
+        .execute = JMP,
+        .cycles = 3,
+        .length = 3
+    };
+    table[INSTRUCTION_EOR_ABS] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x4D,
+        .fetch = ABS,
+        .execute = EOR,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LSR_ABS] = (Instruction) {
+        .name = "LSR",
+        .opcode = 0x4E,
+        .fetch = ABS,
+        .execute = LSR,
+        .cycles = 6,
+        .length = 3
+    };
 }
 
 
@@ -968,3 +1128,93 @@ Byte SEC(CPU *cpu) {
     set_flag(cpu, C, 1);
     return 0;
 }
+
+/*
+    Return from Interrupt
+    Pulls the program counter from the stack
+    Pulls the status register from the stack
+    Bit 5 and the break flag are ignoreds
+*/
+Byte RTI(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->STATUS = pop_stack(cpu);
+    cpu->PC = pop_stack(cpu);
+    cpu->PC |= (pop_stack(cpu) << 8);
+    return 0;
+}
+
+/*
+    EOR Exclusive-OR Memory with Accumulator
+    XORs the value with the accumulator
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+
+Byte EOR(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->A ^= value;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    LSR Logical Shift Right (Memory)
+    Shifts the value right by 1 bit
+    Sets the carry flag to the 0th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in memory
+*/
+Byte LSR(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, C, value & 0x01);
+    value >>= 1;
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    write_to_addr(cpu, address, value);
+    return 0;
+}
+
+/*
+    LSR Logical Shift Right (Accumulator)
+    Shifts the accumulator right by 1 bit
+    Sets the carry flag to the 0th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte LSR_ACC(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, C, cpu->A & 0x01);
+    cpu->A >>= 1;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    PHA Push Accumulator on Stack
+    Pushes the accumulator onto the stack
+*/
+Byte PHA(CPU *cpu) {
+    assert(cpu != NULL);
+    push_stack(cpu, cpu->A);
+    return 0;
+}
+
+/*
+    Jump to New Location
+    Sets the program counter to the address
+    (PC+1) -> PCL
+    (PC+2) -> PCH
+*/
+Byte JMP(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte low = read(cpu);
+    Byte high = read(cpu);
+    cpu->PC = (high << 8) | low;
+    cpu->PC--; //todo not sure if this is correct
+    return 0;
+}
+
+

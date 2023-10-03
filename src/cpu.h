@@ -38,6 +38,19 @@ typedef uint16_t Word;
 #define INSTRUCTION_AND_ZPX 0x35
 #define INSTRUCTION_ROL_ZPX 0x36
 #define INSTRUCTION_SEC_IMP 0x38
+#define INSTRUCTION_AND_ABY 0x39
+#define INSTRUCTION_AND_ABX 0x3D
+#define INSTRUCTION_ROL_ABX 0x3E
+#define INSTRUCTION_RTI_IMP 0x40
+#define INSTRUCTION_EOR_IZX 0x41
+#define INSTRUCTION_EOR_ZP0 0x45
+#define INSTRUCTION_LSR_ZP0 0x46
+#define INSTRUCTION_PHA_IMP 0x48
+#define INSTRUCTION_EOR_IMM 0x49
+#define INSTRUCTION_LSR_ACC 0x4A
+#define INSTRUCTION_JMP_ABS 0x4C
+#define INSTRUCTION_EOR_ABS 0x4D
+#define INSTRUCTION_LSR_ABS 0x4E
 
 /*
     * Status register flags
@@ -149,9 +162,16 @@ Byte AND(CPU *cpu);
 Byte BIT(CPU *cpu);
 Byte ROL(CPU *cpu);
 Byte ROL_ACC(CPU *cpu);
+Byte LSR_ACC(CPU *cpu);
 Byte PLP(CPU *cpu);
 Byte BMI(CPU *cpu);
 Byte SEC(CPU *cpu);
+Byte RTI(CPU *cpu);
+Byte EOR(CPU *cpu);
+Byte LSR(CPU *cpu);
+Byte PHA(CPU *cpu);
+Byte JMP(CPU *cpu);
+
 
 
 #endif
