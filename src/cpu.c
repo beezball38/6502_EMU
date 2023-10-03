@@ -824,6 +824,126 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 1
     };
+    table[INSTRUCTION_EOR_ABY] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x59,
+        .fetch = ABY,
+        .execute = EOR,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0x5A] = (Instruction) {
+        .name = "???",
+        .opcode = 0x5A,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x5B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x5B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_EOR_ABX] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x5D,
+        .fetch = ABX,
+        .execute = EOR,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LSR_ABX] = (Instruction) {
+        .name = "LSR",
+        .opcode = 0x5E,
+        .fetch = ABX,
+        .execute = LSR,
+        .cycles = 7,
+        .length = 3
+    };
+    table[0x5F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x5F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_RTS_IMP] = (Instruction) {
+        .name = "RTS",
+        .opcode = 0x60,
+        .fetch = IMP,
+        .execute = RTS,
+        .cycles = 6,
+        .length = 1
+    };
+    table[INSTRUCTION_ADC_IZX] = (Instruction) {
+        .name = "ADC",
+        .opcode = 0x61,
+        .fetch = IZX,
+        .execute = ADC,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x62] = (Instruction) {
+        .name = "???",
+        .opcode = 0x62,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x63] = (Instruction) {
+        .name = "???",
+        .opcode = 0x63,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x64] = (Instruction) {
+        .name = "???",
+        .opcode = 0x64,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_ADC_ZP0] = (Instruction) {
+        .name = "ADC",
+        .opcode = 0x65,
+        .fetch = ZP0,
+        .execute = ADC,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_ROR_ZP0] = (Instruction) {
+        .name = "ROR",
+        .opcode = 0x66,
+        .fetch = ZP0,
+        .execute = ROR,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x67] = (Instruction) {
+        .name = "???",
+        .opcode = 0x67,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_PLA_IMP] = (Instruction) {
+        .name = "PLA",
+        .opcode = 0x68,
+        .fetch = IMP,
+        .execute = PLA,
+        .cycles = 4,
+        .length = 1
+    };
 }
 
 
@@ -1212,6 +1332,8 @@ Byte RTI(CPU *cpu) {
     cpu->STATUS = pop_stack(cpu);
     cpu->PC = pop_stack(cpu);
     cpu->PC |= (pop_stack(cpu) << 8);
+    set_flag(cpu, U, 1); //this is always logical 1
+    set_flag(cpu, B, 0); //B flag is only 1 when BRK is executed
     return 0;
 }
 
@@ -1309,3 +1431,79 @@ Byte CLI(CPU *cpu) {
     return 0;
 }
 
+/*
+    RTS Return from Subroutine
+    Pulls the program counter from the stack
+    Increments the program counter
+*/
+Byte RTS(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->PC = pop_stack(cpu);
+    cpu->PC |= (pop_stack(cpu) << 8);
+    cpu->PC++; //increment so we don't return to the same instruction
+    return 0;
+}
+
+/*
+    ADC Add Memory to Accumulator with Carry
+    Adds the value to the accumulator
+    Adds the carry flag to the result
+    Sets the carry flag if the result is greater than 255
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Sets the overflow flag if the result is greater than 127 or less than -128
+*/
+
+Byte ADC(CPU *cpu) {
+    assert(cpu != NULL);
+
+    Word result = cpu->A + value + cpu->STATUS & C;
+    set_flag(cpu, C, result > 0xFF);
+    set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
+    set_flag(cpu, N, result & 0x0080);
+    //overflow flag is set if the sign of the result is different from the sign of the accumulator
+    Byte accumulator_msb = cpu->A & 0x80;
+    Byte value_msb = value & 0x80;
+    Byte result_msb = result & 0x80;
+    Byte overflow = ((accumulator_msb ^ value_msb) == 0) && ((accumulator_msb ^ result_msb) != 0);
+    set_flag(cpu, V, overflow);
+    cpu->A = (Byte)(result & 0x00FF);
+    return 0;
+}
+
+/*
+    ROR Rotate Right (Memory)
+    Gets value from address and rotates it right by 1 bit
+    Sets the carry flag to the 0th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in memory
+*/
+Byte ROR(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte carry = cpu->STATUS & C;
+    //set the carry flag to the 0th bit of the value
+    set_flag(cpu, C, value & 0x01);
+    //shift the value right by 1 bit
+    value >>= 1;
+    //set the 7th bit to the carry flag
+    value |= (carry << 7);
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    write_to_addr(cpu, address, value);
+    return 0;
+}
+
+/*
+    PLA Pull Accumulator from Stack
+    Pulls the accumulator from the stack
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte PLA(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->A = pop_stack(cpu);
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}

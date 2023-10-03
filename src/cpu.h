@@ -56,6 +56,14 @@ typedef uint16_t Word;
 #define INSTRUCTION_EOR_ZPX 0x55
 #define INSTRUCTION_LSR_ZPX 0x56
 #define INSTRUCTION_CLI_IMP 0x58
+#define INSTRUCTION_EOR_ABY 0x59
+#define INSTRUCTION_EOR_ABX 0x5D
+#define INSTRUCTION_LSR_ABX 0x5E
+#define INSTRUCTION_RTS_IMP 0x60
+#define INSTRUCTION_ADC_IZX 0x61
+#define INSTRUCTION_ADC_ZP0 0x65
+#define INSTRUCTION_ROR_ZP0 0x66
+#define INSTRUCTION_PLA_IMP 0x68
 
 /*
     * Status register flags
@@ -179,4 +187,8 @@ Byte PHA(CPU *cpu);
 Byte JMP(CPU *cpu);
 Byte BVC(CPU *cpu);
 Byte CLI(CPU *cpu);
+Byte RTS(CPU *cpu);
+Byte ADC(CPU *cpu);
+Byte ROR(CPU *cpu);
+Byte PLA(CPU *cpu);
 #endif
