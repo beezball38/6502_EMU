@@ -51,6 +51,11 @@ typedef uint16_t Word;
 #define INSTRUCTION_JMP_ABS 0x4C
 #define INSTRUCTION_EOR_ABS 0x4D
 #define INSTRUCTION_LSR_ABS 0x4E
+#define INSTRUCTION_BVC_REL 0x50
+#define INSTRUCTION_EOR_IZY 0x51
+#define INSTRUCTION_EOR_ZPX 0x55
+#define INSTRUCTION_LSR_ZPX 0x56
+#define INSTRUCTION_CLI_IMP 0x58
 
 /*
     * Status register flags
@@ -126,7 +131,7 @@ void init_instruction_table(void);
 void init(CPU *cpu, Byte* memory);
 void reset(CPU *cpu);
 //todo add interrupt functions
-void set_flag(CPU *cpu, STATUS flag, int value);
+void set_flag(CPU *cpu, STATUS flag, Byte value);
 
 Byte peek(CPU *cpu);
 Byte read(CPU *cpu); //will consume a byte
@@ -172,7 +177,6 @@ Byte EOR(CPU *cpu);
 Byte LSR(CPU *cpu);
 Byte PHA(CPU *cpu);
 Byte JMP(CPU *cpu);
-
-
-
+Byte BVC(CPU *cpu);
+Byte CLI(CPU *cpu);
 #endif

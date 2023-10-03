@@ -54,7 +54,7 @@ void reset(CPU *cpu) {
     return;
 }
 
-void set_flag(CPU *cpu, STATUS flag, int value) {
+void set_flag(CPU *cpu, STATUS flag, Byte value) {
     if (value) {
         cpu->STATUS |= flag;
     } else {
@@ -64,7 +64,7 @@ void set_flag(CPU *cpu, STATUS flag, int value) {
 }
 
 Byte branch_pc(CPU *cpu){
-    int cycles = 0;
+    Byte cycles = 0;
     Word old_pc = cpu->PC;
     cpu->PC += address_rel;
     if ((old_pc & 0xFF00) != (cpu->PC & 0xFF00)) {
@@ -752,6 +752,78 @@ void init_instruction_table(void){
         .cycles = 6,
         .length = 3
     };
+    table[0x4F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x4F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BVC_REL] = (Instruction) {
+        .name = "BVC",
+        .opcode = 0x50,
+        .fetch = REL,
+        .execute = BVC,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_EOR_IZY] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x51,
+        .fetch = IZY,
+        .execute = EOR,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0x52] = (Instruction) {
+        .name = "???",
+        .opcode = 0x52,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x53] = (Instruction) {
+        .name = "???",
+        .opcode = 0x53,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_EOR_ZPX] = (Instruction) {
+        .name = "EOR",
+        .opcode = 0x55,
+        .fetch = ZPX,
+        .execute = EOR,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_LSR_ZPX] = (Instruction) {
+        .name = "LSR",
+        .opcode = 0x56,
+        .fetch = ZPX,
+        .execute = LSR,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x57] = (Instruction) {
+        .name = "???",
+        .opcode = 0x57,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CLI_IMP] = (Instruction) {
+        .name = "CLI",
+        .opcode = 0x58,
+        .fetch = IMP,
+        .execute = CLI,
+        .cycles = 2,
+        .length = 1
+    };
 }
 
 
@@ -985,7 +1057,7 @@ Byte PHP(CPU *cpu) {
 //if flag value is 1, we check if the flag is set
 //otherwise we check if the flag is not set
 //returns 1 if page boundary is crossed and branch taken, 0 otherwise
-Byte branch_on_flag(CPU *cpu, STATUS flag, int flag_value) {
+Byte branch_on_flag(CPU *cpu, STATUS flag, Byte flag_value) {
     assert(cpu != NULL);
     //checks if the flag is set to the flag value
     if ((cpu->STATUS & flag) == (flag_value & flag)) {
@@ -1001,7 +1073,7 @@ Byte branch_on_flag(CPU *cpu, STATUS flag, int flag_value) {
 */
 Byte BPL(CPU *cpu) {
     assert(cpu != NULL);
-    int cycles = branch_on_flag(cpu, N, 0);
+    Byte cycles = branch_on_flag(cpu, N, 0);
     return cycles;
 }
 
@@ -1069,7 +1141,7 @@ Byte BIT(CPU *cpu) {
     Stores the result in memory
 */
 Byte ROL(CPU *cpu) {
-    //assume address is set
+    //assume address and value are set
     assert(cpu != NULL);
     set_flag(cpu, C, value & 0x80);
     value <<= 1;
@@ -1115,7 +1187,7 @@ Byte PLP(CPU *cpu) {
 */
 Byte BMI(CPU *cpu) {
     assert(cpu != NULL);
-    int cycles = branch_on_flag(cpu, N, 1);
+    Byte cycles = branch_on_flag(cpu, N, 1);
     return cycles;
 }
 
@@ -1216,4 +1288,24 @@ Byte JMP(CPU *cpu) {
     return 0;
 }
 
+/*
+    BVC Branch on Overflow Clear
+    If the overflow flag is not set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
+*/
+Byte BVC(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte cycles = branch_on_flag(cpu, V, 0);
+    return cycles;
+}
+
+/*
+    CLI Clear Interrupt Disable Bit
+    Sets the interrupt disable flag to 0
+*/
+Byte CLI(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, I, 0);
+    return 0;
+}
 
