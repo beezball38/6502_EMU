@@ -944,6 +944,22 @@ void init_instruction_table(void){
         .cycles = 4,
         .length = 1
     };
+    table[INSTRUCTION_ADC_IMM] = (Instruction) {
+        .name = "ADC",
+        .opcode = 0x69,
+        .fetch = IMM,
+        .execute = ADC,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_ROR_ACC] = (Instruction) {
+        .name = "ROR",
+        .opcode = 0x6A,
+        .fetch = IMP,
+        .execute = ROR_ACC,
+        .cycles = 2,
+        .length = 1
+    };
 }
 
 
@@ -1503,6 +1519,24 @@ Byte ROR(CPU *cpu) {
 Byte PLA(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A = pop_stack(cpu);
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    ROR Rotate Right (Accumulator)
+    Rotates the accumulator right by 1 bit
+    Sets the carry flag to the 0th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte ROR_ACC(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte carry = cpu->STATUS & C;
+    set_flag(cpu, C, cpu->A & 0x01);
+    cpu->A >>= 1;
+    cpu->A |= (carry << 7);
     set_flag(cpu, Z, cpu->A == 0x00);
     set_flag(cpu, N, cpu->A & 0x80);
     return 0;

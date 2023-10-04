@@ -64,6 +64,8 @@ typedef uint16_t Word;
 #define INSTRUCTION_ADC_ZP0 0x65
 #define INSTRUCTION_ROR_ZP0 0x66
 #define INSTRUCTION_PLA_IMP 0x68
+#define INSTRUCTION_ADC_IMM 0x69
+#define INSTRUCTION_ROR_ACC 0x6A
 
 /*
     * Status register flags
@@ -191,4 +193,5 @@ Byte RTS(CPU *cpu);
 Byte ADC(CPU *cpu);
 Byte ROR(CPU *cpu);
 Byte PLA(CPU *cpu);
+Byte ROR_ACC(CPU *cpu);
 #endif
