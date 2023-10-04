@@ -17,6 +17,8 @@ Byte value;
 //function to initialize the CPU
 
 
+static Instruction table[256] = {0};
+
 void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;

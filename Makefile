@@ -28,11 +28,11 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c, $(TEST_DIR)/%.o, $(TEST_SRCS))
 TEST_BINS = test/test
 
 # Build rules
-all: test main
 test: $(TEST_BINS)
 	./test/test
 main: $(TARGET)
 	./bin/cpu_emulator
+all: test main
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
