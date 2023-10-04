@@ -11,7 +11,6 @@
 
 
 //instruction table
-static Instruction table[256] = {0};
 Word address;
 Byte address_rel;
 Byte value;

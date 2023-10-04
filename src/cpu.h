@@ -133,6 +133,8 @@ typedef struct Instruction {
     Ins_Func execute;
 } Instruction;
 
+Instruction table[256] = {0};
+
 //helper functions, not for prime time
 void print_cpu_state(CPU *cpu);
 void print_instruction(Byte opcode);
