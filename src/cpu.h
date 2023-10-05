@@ -318,4 +318,5 @@ Byte INC(CPU *cpu);
 Byte INX(CPU *cpu);
 Byte BEQ(CPU *cpu);
 Byte SED(CPU *cpu);
+Byte NOP(CPU *cpu);
 #endif

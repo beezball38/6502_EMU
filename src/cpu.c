@@ -1249,6 +1249,862 @@ void init_instruction_table(void){
         .cycles = 2,
         .length = 2
     };
+    table[INSTRUCTION_STA_IZY] = (Instruction) {
+        .name = "STA",
+        .opcode = 0x91,
+        .fetch = IZY,
+        .execute = STA,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0x92] = (Instruction) {
+        .name = "???",
+        .opcode = 0x92,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x93] = (Instruction) {
+        .name = "???",
+        .opcode = 0x93,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_STY_ZPX] = (Instruction) {
+        .name = "STY",
+        .opcode = 0x94,
+        .fetch = ZPX,
+        .execute = STY,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_STA_ZPX] = (Instruction) {
+        .name = "STA",
+        .opcode = 0x95,
+        .fetch = ZPX,
+        .execute = STA,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_STX_ZPY] = (Instruction) {
+        .name = "STX",
+        .opcode = 0x96,
+        .fetch = ZPY,
+        .execute = STX,
+        .cycles = 4,
+        .length = 2
+    };
+    table[0x97] = (Instruction) {
+        .name = "???",
+        .opcode = 0x97,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_TYA_IMP] = (Instruction) {
+        .name = "TYA",
+        .opcode = 0x98,
+        .fetch = IMP,
+        .execute = TYA,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_STA_ABY] = (Instruction) {
+        .name = "STA",
+        .opcode = 0x99,
+        .fetch = ABY,
+        .execute = STA,
+        .cycles = 5,
+        .length = 3
+    };
+    table[INSTRUCTION_TXS_IMP] = (Instruction) {
+        .name = "TXS",
+        .opcode = 0x9A,
+        .fetch = IMP,
+        .execute = TXS,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0x9B] = (Instruction) {
+        .name = "???",
+        .opcode = 0x9B,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x9C] = (Instruction) {
+        .name = "???",
+        .opcode = 0x9C,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_STA_ABX] = (Instruction) {
+        .name = "STA",
+        .opcode = 0x9D,
+        .fetch = ABX,
+        .execute = STA,
+        .cycles = 5,
+        .length = 3
+    };
+    table[0x9E] = (Instruction) {
+        .name = "???",
+        .opcode = 0x9E,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0x9F] = (Instruction) {
+        .name = "???",
+        .opcode = 0x9F,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_LDY_IMM] = (Instruction) {
+        .name = "LDY",
+        .opcode = 0xA0,
+        .fetch = IMM,
+        .execute = LDY,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_LDA_IZX] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xA1,
+        .fetch = IZX,
+        .execute = LDA,
+        .cycles = 6,
+        .length = 2
+    };
+    table[INSTRUCTION_LDX_IMM] = (Instruction) {
+        .name = "LDX",
+        .opcode = 0xA2,
+        .fetch = IMM,
+        .execute = LDX,
+        .cycles = 2,
+        .length = 2
+    };
+    table[0xA3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xA3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_LDY_ZP0] = (Instruction) {
+        .name = "LDY",
+        .opcode = 0xA4,
+        .fetch = ZP0,
+        .execute = LDY,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_LDA_ZP0] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xA5,
+        .fetch = ZP0,
+        .execute = LDA,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_LDX_ZP0] = (Instruction) {
+        .name = "LDX",
+        .opcode = 0xA6,
+        .fetch = ZP0,
+        .execute = LDX,
+        .cycles = 3,
+        .length = 2
+    };
+    table[0xA7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xA7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_TAY_IMP] = (Instruction) {
+        .name = "TAY",
+        .opcode = 0xA8,
+        .fetch = IMP,
+        .execute = TAY,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_LDA_IMM] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xA9,
+        .fetch = IMM,
+        .execute = LDA,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_TAX_IMP] = (Instruction) {
+        .name = "TAX",
+        .opcode = 0xAA,
+        .fetch = IMP,
+        .execute = TAX,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0xAB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xAB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_LDY_ABS] = (Instruction) {
+        .name = "LDY",
+        .opcode = 0xAC,
+        .fetch = ABS,
+        .execute = LDY,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LDA_ABS] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xAD,
+        .fetch = ABS,
+        .execute = LDA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LDX_ABS] = (Instruction) {
+        .name = "LDX",
+        .opcode = 0xAE,
+        .fetch = ABS,
+        .execute = LDX,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0xAF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xAF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BCS_REL] = (Instruction) {
+        .name = "BCS",
+        .opcode = 0xB0,
+        .fetch = REL,
+        .execute = BCS,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_LDA_IZY] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xB1,
+        .fetch = IZY,
+        .execute = LDA,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0xB2] = (Instruction) {
+        .name = "???",
+        .opcode = 0xB2,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xB3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xB3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_LDY_ZPX] = (Instruction) {
+        .name = "LDY",
+        .opcode = 0xB4,
+        .fetch = ZPX,
+        .execute = LDY,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_LDA_ZPX] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xB5,
+        .fetch = ZPX,
+        .execute = LDA,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_LDX_ZPY] = (Instruction) {
+        .name = "LDX",
+        .opcode = 0xB6,
+        .fetch = ZPY,
+        .execute = LDX,
+        .cycles = 4,
+        .length = 2
+    };
+    table[0xB7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xB7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CLV_IMP] = (Instruction) {
+        .name = "CLV",
+        .opcode = 0xB8,
+        .fetch = IMP,
+        .execute = CLV,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_LDA_ABY] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xB9,
+        .fetch = ABY,
+        .execute = LDA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_TSX_IMP] = (Instruction) {
+        .name = "TSX",
+        .opcode = 0xBA,
+        .fetch = IMP,
+        .execute = TSX,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0xBB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xBB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_LDY_ABX] = (Instruction) {
+        .name = "LDY",
+        .opcode = 0xBC,
+        .fetch = ABX,
+        .execute = LDY,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LDA_ABX] = (Instruction) {
+        .name = "LDA",
+        .opcode = 0xBD,
+        .fetch = ABX,
+        .execute = LDA,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_LDX_ABY] = (Instruction) {
+        .name = "LDX",
+        .opcode = 0xBE,
+        .fetch = ABY,
+        .execute = LDX,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0xBF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xBF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPY_IMM] = (Instruction) {
+        .name = "CPY",
+        .opcode = 0xC0,
+        .fetch = IMM,
+        .execute = CPY,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_CMP_IZX] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xC1,
+        .fetch = IZX,
+        .execute = CMP,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0xC2] = (Instruction) {
+        .name = "???",
+        .opcode = 0xC2,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xC3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xC3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPY_ZP0] = (Instruction) {
+        .name = "CPY",
+        .opcode = 0xC4,
+        .fetch = ZP0,
+        .execute = CPY,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_CMP_ZP0] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xC5,
+        .fetch = ZP0,
+        .execute = CMP,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_DEC_ZP0] = (Instruction) {
+        .name = "DEC",
+        .opcode = 0xC6,
+        .fetch = ZP0,
+        .execute = DEC,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0xC7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xC7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_INY_IMP] = (Instruction) {
+        .name = "INY",
+        .opcode = 0xC8,
+        .fetch = IMP,
+        .execute = INY,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_CMP_IMM] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xC9,
+        .fetch = IMM,
+        .execute = CMP,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_DEX_IMP] = (Instruction) {
+        .name = "DEX",
+        .opcode = 0xCA,
+        .fetch = IMP,
+        .execute = DEX,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0xCB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xCB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPY_ABS] = (Instruction) {
+        .name = "CPY",
+        .opcode = 0xCC,
+        .fetch = ABS,
+        .execute = CPY,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_CMP_ABS] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xCD,
+        .fetch = ABS,
+        .execute = CMP,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_DEC_ABS] = (Instruction) {
+        .name = "DEC",
+        .opcode = 0xCE,
+        .fetch = ABS,
+        .execute = DEC,
+        .cycles = 6,
+        .length = 3
+    };
+    table[0xCF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xCF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BNE_REL] = (Instruction) {
+        .name = "BNE",
+        .opcode = 0xD0,
+        .fetch = REL,
+        .execute = BNE,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_CMP_IZY] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xD1,
+        .fetch = IZY,
+        .execute = CMP,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0xD2] = (Instruction) {
+        .name = "???",
+        .opcode = 0xD2,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xD3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xD3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CMP_ZPX] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xD5,
+        .fetch = ZPX,
+        .execute = CMP,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_DEC_ZPX] = (Instruction) {
+        .name = "DEC",
+        .opcode = 0xD6,
+        .fetch = ZPX,
+        .execute = DEC,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0xD7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xD7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CLD_IMP] = (Instruction) {
+        .name = "CLD",
+        .opcode = 0xD8,
+        .fetch = IMP,
+        .execute = CLD,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_CMP_ABY] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xD9,
+        .fetch = ABY,
+        .execute = CMP,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0xDA] = (Instruction) {
+        .name = "???",
+        .opcode = 0xDA,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xDB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xDB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CMP_ABX] = (Instruction) {
+        .name = "CMP",
+        .opcode = 0xDD,
+        .fetch = ABX,
+        .execute = CMP,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_DEC_ABX] = (Instruction) {
+        .name = "DEC",
+        .opcode = 0xDE,
+        .fetch = ABX,
+        .execute = DEC,
+        .cycles = 7,
+        .length = 3
+    };
+    table[0xDF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xDF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPX_IMM] = (Instruction) {
+        .name = "CPX",
+        .opcode = 0xE0,
+        .fetch = IMM,
+        .execute = CPX,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_SBC_IZX] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xE1,
+        .fetch = IZX,
+        .execute = SBC,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0xE2] = (Instruction) {
+        .name = "???",
+        .opcode = 0xE2,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xE3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xE3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPX_ZP0] = (Instruction) {
+        .name = "CPX",
+        .opcode = 0xE4,
+        .fetch = ZP0,
+        .execute = CPX,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_SBC_ZP0] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xE5,
+        .fetch = ZP0,
+        .execute = SBC,
+        .cycles = 3,
+        .length = 2
+    };
+    table[INSTRUCTION_INC_ZP0] = (Instruction) {
+        .name = "INC",
+        .opcode = 0xE6,
+        .fetch = ZP0,
+        .execute = INC,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0xE7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xE7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_INX_IMP] = (Instruction) {
+        .name = "INX",
+        .opcode = 0xE8,
+        .fetch = IMP,
+        .execute = INX,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_SBC_IMM] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xE9,
+        .fetch = IMM,
+        .execute = SBC,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_NOP_IMP] = (Instruction) {
+        .name = "NOP",
+        .opcode = 0xEA,
+        .fetch = IMP,
+        .execute = NOP,
+        .cycles = 2,
+        .length = 1
+    };
+    table[0xEB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xEB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_CPX_ABS] = (Instruction) {
+        .name = "CPX",
+        .opcode = 0xEC,
+        .fetch = ABS,
+        .execute = CPX,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_SBC_ABS] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xED,
+        .fetch = ABS,
+        .execute = SBC,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_INC_ABS] = (Instruction) {
+        .name = "INC",
+        .opcode = 0xEE,
+        .fetch = ABS,
+        .execute = INC,
+        .cycles = 6,
+        .length = 3
+    };
+    table[0xEF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xEF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_BEQ_REL] = (Instruction) {
+        .name = "BEQ",
+        .opcode = 0xF0,
+        .fetch = REL,
+        .execute = BEQ,
+        .cycles = 2,
+        .length = 2
+    };
+    table[INSTRUCTION_SBC_IZY] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xF1,
+        .fetch = IZY,
+        .execute = SBC,
+        .cycles = 5,
+        .length = 2
+    };
+    table[0xF2] = (Instruction) {
+        .name = "???",
+        .opcode = 0xF2,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xF3] = (Instruction) {
+        .name = "???",
+        .opcode = 0xF3,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_SBC_ZPX] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xF5,
+        .fetch = ZPX,
+        .execute = SBC,
+        .cycles = 4,
+        .length = 2
+    };
+    table[INSTRUCTION_INC_ZPX] = (Instruction) {
+        .name = "INC",
+        .opcode = 0xF6,
+        .fetch = ZPX,
+        .execute = INC,
+        .cycles = 6,
+        .length = 2
+    };
+    table[0xF7] = (Instruction) {
+        .name = "???",
+        .opcode = 0xF7,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_SED_IMP] = (Instruction) {
+        .name = "SED",
+        .opcode = 0xF8,
+        .fetch = IMP,
+        .execute = SED,
+        .cycles = 2,
+        .length = 1
+    };
+    table[INSTRUCTION_SBC_ABY] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xF9,
+        .fetch = ABY,
+        .execute = SBC,
+        .cycles = 4,
+        .length = 3
+    };
+    table[0xFA] = (Instruction) {
+        .name = "???",
+        .opcode = 0xFA,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[0xFB] = (Instruction) {
+        .name = "???",
+        .opcode = 0xFB,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
+    table[INSTRUCTION_SBC_ABX] = (Instruction) {
+        .name = "SBC",
+        .opcode = 0xFD,
+        .fetch = ABX,
+        .execute = SBC,
+        .cycles = 4,
+        .length = 3
+    };
+    table[INSTRUCTION_INC_ABX] = (Instruction) {
+        .name = "INC",
+        .opcode = 0xFE,
+        .fetch = ABX,
+        .execute = INC,
+        .cycles = 7,
+        .length = 3
+    };
+    table[0xFF] = (Instruction) {
+        .name = "???",
+        .opcode = 0xFF,
+        .fetch = NULL,
+        .execute = NULL,
+        .cycles = 0,
+        .length = 0
+    };
 }
 
 
@@ -1920,4 +2776,331 @@ Byte BCC(CPU *cpu) {
     assert(cpu != NULL);
     Byte cycles = branch_on_flag(cpu, C, 0);
     return cycles;
+}
+
+/*
+    TYA Transfer Index Y to Accumulator
+    Transfers the Y register to the accumulator
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte TYA(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->A = cpu->Y;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    TXS Transfer Index X to Stack Register
+    Transfers the X register to the stack pointer
+*/
+Byte TXS(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->SP = cpu->X;
+    return 0;
+}
+
+/*
+    LDY Load Index Y
+    Loads the Y register with the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte LDY(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->Y = value;
+    set_flag(cpu, Z, cpu->Y == 0x00);
+    set_flag(cpu, N, cpu->Y & 0x80);
+    return 0;
+}
+
+/*
+    LDA Load Accumulator
+    Loads the accumulator with the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte LDA(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->A = value;
+    set_flag(cpu, Z, cpu->A == 0x00);
+    set_flag(cpu, N, cpu->A & 0x80);
+    return 0;
+}
+
+/*
+    LDX Load Index X
+    Loads the X register with the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte LDX(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->X = value;
+    set_flag(cpu, Z, cpu->X == 0x00);
+    set_flag(cpu, N, cpu->X & 0x80);
+    return 0;
+}
+
+/*
+    TAY Transfer Accumulator to Index Y
+    Transfers the accumulator to the Y register
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte TAY(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->Y = cpu->A;
+    set_flag(cpu, Z, cpu->Y == 0x00);
+    set_flag(cpu, N, cpu->Y & 0x80);
+    return 0;
+}
+
+/*
+    TAX Transfer Accumulator to Index X
+    Transfers the accumulator to the X register
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte TAX(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->X = cpu->A;
+    set_flag(cpu, Z, cpu->X == 0x00);
+    set_flag(cpu, N, cpu->X & 0x80);
+    return 0;
+}
+
+/*
+    BCS Branch on Carry Set
+    If the carry flag is set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
+*/
+Byte BCS(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte cycles = branch_on_flag(cpu, C, 1);
+    return cycles;
+}
+
+/*
+    CLV Clear Overflow Flag
+    Sets the overflow flag to 0
+*/
+Byte CLV(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, V, 0);
+    return 0;
+}
+
+/*
+    TSX Transfer Stack Pointer to Index X
+    Transfers the stack pointer to the X register
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte TSX(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->X = cpu->SP;
+    set_flag(cpu, Z, cpu->X == 0x00);
+    set_flag(cpu, N, cpu->X & 0x80);
+    return 0;
+}
+
+/*
+    CPY Compare value and Index Y
+    Compares the value with the Y register
+    Sets the carry flag if the Y register is greater than or equal to the value
+    Sets the zero flag if the Y register is equal to the value
+    Sets the negative flag if the Y register is less than the value
+*/
+Byte CPY(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte result = cpu->Y - value;
+    set_flag(cpu, C, cpu->Y >= value);
+    set_flag(cpu, Z, result == 0x00);
+    set_flag(cpu, N, result & 0x80);
+    return 0;
+}
+
+/*
+    CMP Compare value and Accumulator
+    Compares the value with the accumulator
+    Sets the carry flag if the accumulator is greater than or equal to the value
+    Sets the zero flag if the accumulator is equal to the value
+    Sets the negative flag if the accumulator is less than the value
+*/
+Byte CMP(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte result = cpu->A - value;
+    set_flag(cpu, C, cpu->A >= value);
+    set_flag(cpu, Z, result == 0x00);
+    set_flag(cpu, N, result & 0x80);
+    return 0;
+}
+
+/*
+    DEC Decrement Memory by One
+    Decrements the value by 1
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in memory
+*/
+Byte DEC(CPU *cpu) {
+    assert(cpu != NULL);
+    value--;
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    write_to_addr(cpu, address, value);
+    return 0;
+}
+
+/*
+    DEX Decrement Index X by One
+    Decrements the X register by 1
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte DEX(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->X--;
+    set_flag(cpu, Z, cpu->X == 0x00);
+    set_flag(cpu, N, cpu->X & 0x80);
+    return 0;
+}
+
+/*
+    BNE Branch on Result not Zero
+    If the zero flag is not set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
+*/
+Byte BNE(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte cycles = branch_on_flag(cpu, Z, 0);
+    return cycles;
+}
+
+/*
+    CLD Clear Decimal Mode
+    Sets the decimal flag to 0
+*/
+Byte CLD(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, D, 0);
+    return 0;
+}
+
+/*
+    CPX Compare value and Index X
+    Compares the value with the X register
+    Sets the carry flag if the X register is greater than or equal to the value
+    Sets the zero flag if the X register is equal to the value
+    Sets the negative flag if the X register is less than the value
+*/
+Byte CPX(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte result = cpu->X - value;
+    set_flag(cpu, C, cpu->X >= value);
+    set_flag(cpu, Z, result == 0x00);
+    set_flag(cpu, N, result & 0x80);
+    return 0;
+}
+
+/*
+    SBC Subtract Memory from Accumulator with Borrow
+    Subtracts the value from the accumulator
+    Subtracts the carry flag from the result
+    Sets the carry flag if the result is less than 0
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Sets the overflow flag if the result is greater than 127 or less than -128
+*/
+Byte SBC(CPU *cpu) {
+    assert(cpu != NULL);
+    Word result = cpu->A - value - (1 - cpu->STATUS & C);
+    set_flag(cpu, C, result < 0x100);
+    set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
+    set_flag(cpu, N, result & 0x0080);
+    //overflow flag is set if the sign of the result is different from the sign of the accumulator
+    Byte accumulator_msb = cpu->A & 0x80;
+    Byte value_msb = value & 0x80;
+    Byte result_msb = result & 0x80;
+    Byte overflow = ((accumulator_msb ^ value_msb) != 0) && ((accumulator_msb ^ result_msb) != 0);
+    set_flag(cpu, V, overflow);
+    cpu->A = (Byte)(result & 0x00FF);
+    return 0;
+}
+
+/*
+    INC Increment Memory by One
+    Increments the value by 1
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in memory
+*/
+Byte INC(CPU *cpu) {
+    assert(cpu != NULL);
+    value++;
+    set_flag(cpu, Z, value == 0x00);
+    set_flag(cpu, N, value & 0x80);
+    write_to_addr(cpu, address, value);
+    return 0;
+}
+
+/*
+    INX Increment Index X by One
+    Increments the X register by 1
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte INX(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->X++;
+    set_flag(cpu, Z, cpu->X == 0x00);
+    set_flag(cpu, N, cpu->X & 0x80);
+    return 0;
+}
+
+/*
+    INY Increment Index Y by One
+    Increments the Y register by 1
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
+Byte INY(CPU *cpu) {
+    assert(cpu != NULL);
+    cpu->Y++;
+    set_flag(cpu, Z, cpu->Y == 0x00);
+    set_flag(cpu, N, cpu->Y & 0x80);
+    return 0;
+}
+
+/*
+    BEQ Branch on Result Zero
+    If the zero flag is set, add the relative address to the program counter
+    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
+*/
+Byte BEQ(CPU *cpu) {
+    assert(cpu != NULL);
+    Byte cycles = branch_on_flag(cpu, Z, 1);
+    return cycles;
+}
+
+/*
+    SED Set Decimal Flag
+    Sets the decimal flag to 1
+*/
+Byte SED(CPU *cpu) {
+    assert(cpu != NULL);
+    set_flag(cpu, D, 1);
+    return 0;
+}
+
+/*
+    NOP No Operation
+    Does nothing
+*/
+Byte NOP(CPU *cpu) {
+    (void)cpu;
+    return 0;
 }
