@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "cpu.h": "c",
-        "munit.h": "c"
+        "munit.h": "c",
+        "__locale": "c"
     }
 }

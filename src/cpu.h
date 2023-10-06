@@ -225,12 +225,13 @@ typedef struct Instruction {
 } Instruction;
 
 
+
 //helper functions, not for prime time
 void print_cpu_state(CPU *cpu);
-void print_instruction(Byte opcode);
+void print_instruction(Byte opcode, Instruction *table);
 
 //prototypes
-void init_instruction_table(void);
+void init_instruction_table(Instruction* table);
 void init(CPU *cpu, Byte* memory);
 void reset(CPU *cpu);
 //todo add interrupt functions

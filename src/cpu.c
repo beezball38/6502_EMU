@@ -16,9 +16,6 @@ Byte address_rel;
 Byte value;
 //function to initialize the CPU
 
-
-static Instruction table[256] = {0};
-
 void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
@@ -128,7 +125,7 @@ Byte pop_stack(CPU *cpu) {
     Assumes instruction is in the table
 */
 
-void print_instruction(Byte opcode) {
+void print_instruction(Byte opcode,Instruction *table) {
     Instruction instruction = table[opcode];
     //if any pointers are null, print "not implemented"
     if (!(instruction.name == NULL || instruction.fetch == NULL || instruction.execute == NULL)) {
@@ -142,7 +139,7 @@ void print_instruction(Byte opcode) {
     return;
 }
 
-void init_instruction_table(void){
+void init_instruction_table(Instruction* table){
     //initialize the table
     //reference https://www.masswerk.at/6502/6502_instruction_set.html
     table[INSTRUCTION_BRK_IMP] = (Instruction){
