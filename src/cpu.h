@@ -179,7 +179,7 @@ typedef enum {
     U = (1 << 5), 
     V = (1 << 6), 
     N = (1 << 7), 
-} STATUS;
+} STATUS_FLAGS;
 
 /*
     * Instruction struct
@@ -201,9 +201,11 @@ typedef enum {
     * SP: Stack pointer (address of stack which is on the first page of memory)
     * PC: Program counter
     * STATUS: Processor status
+    * CYCLES: Number of cycles left for current instruction 
+    *         or an external event to complete such as an interrupt
+    *         or a DMA transfer
     * memory: pointer to memory
 */
-//Meant to be used as a singleton
 typedef struct CPU {
     Byte A;
     Byte X;
@@ -211,6 +213,7 @@ typedef struct CPU {
     Byte SP;
     Word PC;
     Byte STATUS;
+    Byte CYCLES;
     unsigned char* memory;
 } CPU;
 
@@ -235,7 +238,8 @@ void init_instruction_table(Instruction* table);
 void init(CPU *cpu, Byte* memory);
 void reset(CPU *cpu);
 //todo add interrupt functions
-void set_flag(CPU *cpu, STATUS flag, Byte value);
+void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
+void request_additional_cycles(CPU *cpu, Byte cycles);
 
 Byte peek(CPU *cpu);
 Byte read(CPU *cpu); //will consume a byte

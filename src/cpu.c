@@ -15,14 +15,14 @@ Word address;
 Byte address_rel;
 Byte value;
 //function to initialize the CPU
-
 void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0xFF;
-    cpu->PC = read_from_addr(cpu, 0xFFFC) | (read_from_addr(cpu, 0xFFFD) << 8); 
-    cpu->STATUS = 0x34;
+    cpu->SP = 0xFD;
+    //high byte 0xFFFC
+    cpu->PC = (read_from_addr(cpu, 0xFFFD) << 8) | read_from_addr(cpu, 0xFFFC);
+    cpu->STATUS = 0x00 | U; //set unused bit
     return;
 }
 
@@ -49,15 +49,23 @@ void print_cpu_state(CPU *cpu) {
 
 void reset(CPU *cpu) {
     register_init(cpu);
+    address = 0;    
+    address_rel = 0;
+    value = 0;
     return;
 }
 
-void set_flag(CPU *cpu, STATUS flag, Byte value) {
+void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value) {
     if (value) {
         cpu->STATUS |= flag;
     } else {
         cpu->STATUS &= ~flag;
     }
+    return;
+}
+
+void request_additional_cycles(CPU *cpu, Byte cycles) {
+    cpu->CYCLES += cycles;
     return;
 }
 
@@ -140,7 +148,6 @@ void print_instruction(Byte opcode,Instruction *table) {
 }
 
 void init_instruction_table(Instruction* table){
-    //initialize the table
     //reference https://www.masswerk.at/6502/6502_instruction_set.html
     table[INSTRUCTION_BRK_IMP] = (Instruction){
         .name = "BRK",
@@ -2335,7 +2342,7 @@ Byte PHP(CPU *cpu) {
 //if flag value is 1, we check if the flag is set
 //otherwise we check if the flag is not set
 //returns 1 if page boundary is crossed and branch taken, 0 otherwise
-Byte branch_on_flag(CPU *cpu, STATUS flag, Byte flag_value) {
+Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value) {
     assert(cpu != NULL);
     //checks if the flag is set to the flag value
     if ((cpu->STATUS & flag) == (flag_value & flag)) {
