@@ -247,8 +247,8 @@ Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 
 //For use with cpu->SP
-void push_stack(CPU *cpu, Byte value);
-Byte pop_stack(CPU *cpu);
+void push(CPU *cpu, Byte value);
+Byte pop(CPU *cpu);
 
 //addressing modes (fetch)
 Byte IMP(CPU *cpu);

@@ -11,6 +11,15 @@
 #define MEM_SIZE 1024 * 1024 * 64
 //macro for zeroing out the high byte of a word
 #define ZERO_HIGH_BYTE(word) word &= 0x00FF
+//macro to push an address to the stack
+#define push_addr(cpu, addr) \
+    push(cpu, (addr & 0xFF00) >> 8); \
+    push(cpu, addr & 0x00FF);
+//macro to set Z and N flags
+#define set_zn(cpu, value) \
+    set_flag(cpu, Z, value == 0); \
+    set_flag(cpu, N, value & 0x80);
+
 Word address; //used by absolute, zero page, and indirect addressing modes
 Byte address_rel; //used only by branch instructions
 Byte value; //fetched value from address
@@ -2080,7 +2089,11 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
     return;
 }
 
-void push_stack(CPU *cpu, Byte byte) {
+/*
+    Stack functions
+    Only memory on the first page (0x0100 - 0x01FF) is used for the stack
+*/
+void push(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0x00){
@@ -2092,7 +2105,7 @@ void push_stack(CPU *cpu, Byte byte) {
     return;
 }
 
-Byte pop_stack(CPU *cpu) {
+Byte pop(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0xFF){
@@ -2104,6 +2117,7 @@ Byte pop_stack(CPU *cpu) {
     return byte;
 }
 
+//CPU interface functions
 void init(CPU *cpu, Byte *memory) {
     cpu->memory = memory;
     register_init(cpu);
@@ -2117,8 +2131,33 @@ void reset(CPU *cpu) {
     return;
 }
 
+void irq(CPU *cpu) {
+    if (cpu->STATUS & I) {
+        return;
+    }
+    push_addr(cpu, cpu->PC);
+    push(cpu, cpu->STATUS);
+    set_flag(cpu, I, 1);
+    cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
+    cpu->CYCLES += 7;
+    return;
+}
 
+void nmi(CPU *cpu) {
+    push_addr(cpu, cpu->PC);
+    push(cpu, cpu->STATUS);
+    set_flag(cpu, I, 1);
+    cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
+    cpu->CYCLES += 8;
+    return;
+}
 
+/*
+    Addressing mode functions
+    These functions fetch the address and value of the operand
+    and store them in the address and value variables
+    If an additional cycle is needed, the function returns 1
+*/
 
 
 /*
@@ -2151,7 +2190,7 @@ Byte IMM (CPU *cpu) {
 Byte ZP0 (CPU *cpu) {
     assert(cpu != NULL);
     address = process_byte(cpu);
-    ZERO_HIGH_BYTE(address);
+    address = ZERO_HIGH_BYTE(address);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2167,9 +2206,9 @@ Byte ZP0 (CPU *cpu) {
 Byte ZPX (CPU *cpu) {
     assert(cpu != NULL);
     address = process_byte(cpu);
-    ZERO_HIGH_BYTE(address);
+    address = ZERO_HIGH_BYTE(address);
     address += cpu->X;
-    ZERO_HIGH_BYTE(address); //for page wrap around
+    address = ZERO_HIGH_BYTE(address); //for page wrap around
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2289,7 +2328,7 @@ Byte IND (CPU *cpu) {
 Byte IZX (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = process_byte(cpu);
-    ptr &= 0x00FF;
+    ptr = ZERO_HIGH_BYTE(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->X;
     value = read_from_addr(cpu, address);
@@ -2308,7 +2347,7 @@ Byte IZX (CPU *cpu) {
 Byte IZY (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = process_byte(cpu);
-    ptr &= 0x00FF;
+    ptr = ZERO_HIGH_BYTE(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
@@ -2328,26 +2367,23 @@ Byte BRK(CPU *cpu) {
     set_flag(cpu, I, 1);
     cpu->PC++;
     //pushes the next instruction address onto the stack
-    push_stack(cpu, (cpu->PC >> 8) & 0x00FF);
-    push_stack(cpu, cpu->PC & 0x00FF);
+    push_addr(cpu, cpu->PC);
     set_flag(cpu, B, 1); //sets the break flag because this is a software interrupt
-    push_stack(cpu, cpu->STATUS);
+    push(cpu, cpu->STATUS);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     return 0;
 }
 
 Byte ORA(CPU *cpu) {
     cpu->A |= value;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
 Byte ASL(CPU *cpu) {
     set_flag(cpu, C, value & 0x80);
     value <<= 1;
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_zn(cpu, value);
     return 0;
 }
 /*
@@ -2356,7 +2392,7 @@ Byte ASL(CPU *cpu) {
     Decrements the stack pointer?
 */
 Byte PHP(CPU *cpu) {
-    push_stack(cpu, cpu->STATUS);
+    push(cpu, cpu->STATUS);
     return 0;
 }
 
@@ -2406,8 +2442,8 @@ Byte CLC(CPU *cpu) {
 */
 Byte JSR(CPU *cpu) {
     assert(cpu != NULL);
-    push_stack(cpu, (cpu->PC - 1) >> 8);
-    push_stack(cpu, (cpu->PC - 1) & 0x00FF);
+    Word val = cpu->PC + 1;
+    push_addr(cpu, val); //todo check if this is correct
     cpu->PC = address;
     return 0;
 }
@@ -2421,8 +2457,7 @@ Byte JSR(CPU *cpu) {
 Byte AND(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A &= value;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2457,8 +2492,7 @@ Byte ROL(CPU *cpu) {
     assert(cpu != NULL);
     set_flag(cpu, C, value & 0x80);
     value <<= 1;
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_zn(cpu, value);
     write_to_addr(cpu, address, value);
     return 0;
 }
@@ -2474,8 +2508,7 @@ Byte ROL_ACC(CPU *cpu) {
     assert(cpu != NULL);
     set_flag(cpu, C, cpu->A & 0x80);
     cpu->A <<= 1;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2486,7 +2519,7 @@ Byte ROL_ACC(CPU *cpu) {
 */
 Byte PLP(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->STATUS = pop_stack(cpu);
+    cpu->STATUS = pop(cpu);
     set_flag(cpu, U, 1);
     set_flag(cpu, B, 0);
     return 0;
@@ -2521,9 +2554,9 @@ Byte SEC(CPU *cpu) {
 */
 Byte RTI(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->STATUS = pop_stack(cpu);
-    cpu->PC = pop_stack(cpu);
-    cpu->PC |= (pop_stack(cpu) << 8);
+    cpu->STATUS = pop(cpu);
+    cpu->PC = pop(cpu);
+    cpu->PC |= (pop(cpu) << 8);
     set_flag(cpu, U, 1); //this is always logical 1
     set_flag(cpu, B, 0); //B flag is only 1 when BRK is executed
     return 0;
@@ -2539,8 +2572,7 @@ Byte RTI(CPU *cpu) {
 Byte EOR(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A ^= value;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2584,7 +2616,7 @@ Byte LSR_ACC(CPU *cpu) {
 */
 Byte PHA(CPU *cpu) {
     assert(cpu != NULL);
-    push_stack(cpu, cpu->A);
+    push(cpu, cpu->A);
     return 0;
 }
 
@@ -2630,8 +2662,8 @@ Byte CLI(CPU *cpu) {
 */
 Byte RTS(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->PC = pop_stack(cpu);
-    cpu->PC |= (pop_stack(cpu) << 8);
+    cpu->PC = pop(cpu);
+    cpu->PC |= (pop(cpu) << 8);
     cpu->PC++; //increment so we don't return to the same instruction
     return 0;
 }
@@ -2679,8 +2711,7 @@ Byte ROR(CPU *cpu) {
     value >>= 1;
     //set the 7th bit to the carry flag
     value |= (carry << 7);
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_zn(cpu, value);
     write_to_addr(cpu, address, value);
     return 0;
 }
@@ -2693,9 +2724,8 @@ Byte ROR(CPU *cpu) {
 */
 Byte PLA(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->A = pop_stack(cpu);
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    cpu->A = pop(cpu);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2712,8 +2742,7 @@ Byte ROR_ACC(CPU *cpu) {
     set_flag(cpu, C, cpu->A & 0x01);
     cpu->A >>= 1;
     cpu->A |= (carry << 7);
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2777,8 +2806,7 @@ Byte STX(CPU *cpu) {
 Byte DEY(CPU *cpu) {
     assert(cpu != NULL);
     cpu->Y--;
-    set_flag(cpu, Z, cpu->Y == 0x00);
-    set_flag(cpu, N, cpu->Y & 0x80);
+    set_zn(cpu, cpu->Y);
     return 0;
 }
 
@@ -2791,8 +2819,7 @@ Byte DEY(CPU *cpu) {
 Byte TXA(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A = cpu->X;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2817,8 +2844,7 @@ Byte BCC(CPU *cpu) {
 Byte TYA(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A = cpu->Y;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2841,8 +2867,7 @@ Byte TXS(CPU *cpu) {
 Byte LDY(CPU *cpu) {
     assert(cpu != NULL);
     cpu->Y = value;
-    set_flag(cpu, Z, cpu->Y == 0x00);
-    set_flag(cpu, N, cpu->Y & 0x80);
+    set_zn(cpu, cpu->Y);
     return 0;
 }
 
@@ -2855,8 +2880,7 @@ Byte LDY(CPU *cpu) {
 Byte LDA(CPU *cpu) {
     assert(cpu != NULL);
     cpu->A = value;
-    set_flag(cpu, Z, cpu->A == 0x00);
-    set_flag(cpu, N, cpu->A & 0x80);
+    set_zn(cpu, cpu->A);
     return 0;
 }
 
@@ -2869,8 +2893,7 @@ Byte LDA(CPU *cpu) {
 Byte LDX(CPU *cpu) {
     assert(cpu != NULL);
     cpu->X = value;
-    set_flag(cpu, Z, cpu->X == 0x00);
-    set_flag(cpu, N, cpu->X & 0x80);
+    set_zn(cpu, cpu->X);
     return 0;
 }
 
@@ -2883,8 +2906,7 @@ Byte LDX(CPU *cpu) {
 Byte TAY(CPU *cpu) {
     assert(cpu != NULL);
     cpu->Y = cpu->A;
-    set_flag(cpu, Z, cpu->Y == 0x00);
-    set_flag(cpu, N, cpu->Y & 0x80);
+    set_zn(cpu, cpu->Y);
     return 0;
 }
 
@@ -2897,8 +2919,7 @@ Byte TAY(CPU *cpu) {
 Byte TAX(CPU *cpu) {
     assert(cpu != NULL);
     cpu->X = cpu->A;
-    set_flag(cpu, Z, cpu->X == 0x00);
-    set_flag(cpu, N, cpu->X & 0x80);
+    set_zn(cpu, cpu->X);
     return 0;
 }
 
@@ -2932,8 +2953,7 @@ Byte CLV(CPU *cpu) {
 Byte TSX(CPU *cpu) {
     assert(cpu != NULL);
     cpu->X = cpu->SP;
-    set_flag(cpu, Z, cpu->X == 0x00);
-    set_flag(cpu, N, cpu->X & 0x80);
+    set_zn(cpu, cpu->X);
     return 0;
 }
 
@@ -2948,8 +2968,7 @@ Byte CPY(CPU *cpu) {
     assert(cpu != NULL);
     Byte result = cpu->Y - value;
     set_flag(cpu, C, cpu->Y >= value);
-    set_flag(cpu, Z, result == 0x00);
-    set_flag(cpu, N, result & 0x80);
+    set_zn(cpu, result);
     return 0;
 }
 
@@ -2964,8 +2983,7 @@ Byte CMP(CPU *cpu) {
     assert(cpu != NULL);
     Byte result = cpu->A - value;
     set_flag(cpu, C, cpu->A >= value);
-    set_flag(cpu, Z, result == 0x00);
-    set_flag(cpu, N, result & 0x80);
+    set_zn(cpu, result);
     return 0;
 }
 
@@ -2979,8 +2997,7 @@ Byte CMP(CPU *cpu) {
 Byte DEC(CPU *cpu) {
     assert(cpu != NULL);
     value--;
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_zn(cpu, value);
     write_to_addr(cpu, address, value);
     return 0;
 }
@@ -2994,8 +3011,7 @@ Byte DEC(CPU *cpu) {
 Byte DEX(CPU *cpu) {
     assert(cpu != NULL);
     cpu->X--;
-    set_flag(cpu, Z, cpu->X == 0x00);
-    set_flag(cpu, N, cpu->X & 0x80);
+    set_zn(cpu, cpu->X);
     return 0;
 }
 
@@ -3031,8 +3047,7 @@ Byte CPX(CPU *cpu) {
     assert(cpu != NULL);
     Byte result = cpu->X - value;
     set_flag(cpu, C, cpu->X >= value);
-    set_flag(cpu, Z, result == 0x00);
-    set_flag(cpu, N, result & 0x80);
+    set_zn(cpu, result);
     return 0;
 }
 
@@ -3071,8 +3086,7 @@ Byte SBC(CPU *cpu) {
 Byte INC(CPU *cpu) {
     assert(cpu != NULL);
     value++;
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_zn(cpu, value);
     write_to_addr(cpu, address, value);
     return 0;
 }
@@ -3086,8 +3100,7 @@ Byte INC(CPU *cpu) {
 Byte INX(CPU *cpu) {
     assert(cpu != NULL);
     cpu->X++;
-    set_flag(cpu, Z, cpu->X == 0x00);
-    set_flag(cpu, N, cpu->X & 0x80);
+    set_zn(cpu, cpu->X);
     return 0;
 }
 
@@ -3100,8 +3113,7 @@ Byte INX(CPU *cpu) {
 Byte INY(CPU *cpu) {
     assert(cpu != NULL);
     cpu->Y++;
-    set_flag(cpu, Z, cpu->Y == 0x00);
-    set_flag(cpu, N, cpu->Y & 0x80);
+    set_zn(cpu, cpu->Y);
     return 0;
 }
 
