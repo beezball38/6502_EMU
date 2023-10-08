@@ -248,7 +248,7 @@ void write_to_addr(CPU *cpu, Word address, Byte value);
 
 //For use with cpu->SP
 void push_byte(CPU *cpu, Byte value);
-Byte pop(CPU *cpu);
+Byte pop_byte(CPU *cpu);
 
 //addressing modes (fetch)
 Byte IMP(CPU *cpu);

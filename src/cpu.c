@@ -2105,7 +2105,7 @@ void push_byte(CPU *cpu, Byte byte) {
     return;
 }
 
-Byte pop(CPU *cpu) {
+Byte pop_byte(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0xFF){
@@ -2519,7 +2519,7 @@ Byte ROL_ACC(CPU *cpu) {
 */
 Byte PLP(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->STATUS = pop(cpu);
+    cpu->STATUS = pop_byte(cpu);
     set_flag(cpu, U, 1);
     set_flag(cpu, B, 0);
     return 0;
@@ -2554,9 +2554,9 @@ Byte SEC(CPU *cpu) {
 */
 Byte RTI(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->STATUS = pop(cpu);
-    cpu->PC = pop(cpu);
-    cpu->PC |= (pop(cpu) << 8);
+    cpu->STATUS = pop_byte(cpu);
+    cpu->PC = pop_byte(cpu);
+    cpu->PC |= (pop_byte(cpu) << 8);
     set_flag(cpu, U, 1); //this is always logical 1
     set_flag(cpu, B, 0); //B flag is only 1 when BRK is executed
     return 0;
@@ -2662,8 +2662,8 @@ Byte CLI(CPU *cpu) {
 */
 Byte RTS(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->PC = pop(cpu);
-    cpu->PC |= (pop(cpu) << 8);
+    cpu->PC = pop_byte(cpu);
+    cpu->PC |= (pop_byte(cpu) << 8);
     cpu->PC++; //increment so we don't return to the same instruction
     return 0;
 }
@@ -2724,7 +2724,7 @@ Byte ROR(CPU *cpu) {
 */
 Byte PLA(CPU *cpu) {
     assert(cpu != NULL);
-    cpu->A = pop(cpu);
+    cpu->A = pop_byte(cpu);
     set_zn(cpu, cpu->A);
     return 0;
 }
