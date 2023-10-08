@@ -10,11 +10,11 @@
     abort();
 #define MEM_SIZE 1024 * 1024 * 64
 //macro for zeroing out the high byte of a word
-#define ZERO_HIGH_BYTE(word) word &= 0x00FF
-//macro to push an address to the stack
+#define zero_high_byte(word) word &= 0x00FF 
+//macro to push_byte an address to the stack
 #define push_addr(cpu, addr) \
-    push(cpu, (addr & 0xFF00) >> 8); \
-    push(cpu, addr & 0x00FF);
+    push_byte(cpu, (addr & 0xFF00) >> 8); \
+    push_byte(cpu, addr & 0x00FF);
 //macro to set Z and N flags
 #define set_zn(cpu, value) \
     set_flag(cpu, Z, value == 0); \
@@ -2093,7 +2093,7 @@ void write_to_addr(CPU *cpu, Word address, Byte value) {
     Stack functions
     Only memory on the first page (0x0100 - 0x01FF) is used for the stack
 */
-void push(CPU *cpu, Byte byte) {
+void push_byte(CPU *cpu, Byte byte) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
     if(cpu->SP == 0x00){
@@ -2136,7 +2136,7 @@ void irq(CPU *cpu) {
         return;
     }
     push_addr(cpu, cpu->PC);
-    push(cpu, cpu->STATUS);
+    push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     cpu->CYCLES += 7;
@@ -2145,7 +2145,7 @@ void irq(CPU *cpu) {
 
 void nmi(CPU *cpu) {
     push_addr(cpu, cpu->PC);
-    push(cpu, cpu->STATUS);
+    push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->CYCLES += 8;
@@ -2190,7 +2190,7 @@ Byte IMM (CPU *cpu) {
 Byte ZP0 (CPU *cpu) {
     assert(cpu != NULL);
     address = process_byte(cpu);
-    address = ZERO_HIGH_BYTE(address);
+    zero_high_byte(address);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2206,9 +2206,9 @@ Byte ZP0 (CPU *cpu) {
 Byte ZPX (CPU *cpu) {
     assert(cpu != NULL);
     address = process_byte(cpu);
-    address = ZERO_HIGH_BYTE(address);
+    zero_high_byte(address);
     address += cpu->X;
-    address = ZERO_HIGH_BYTE(address); //for page wrap around
+    zero_high_byte(address); //for page wrap around
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2224,9 +2224,9 @@ Byte ZPX (CPU *cpu) {
 Byte ZPY (CPU *cpu) {
     assert(cpu != NULL);
     address = process_byte(cpu);
-    ZERO_HIGH_BYTE(address);
+    zero_high_byte(address);
     address += cpu->Y;
-    ZERO_HIGH_BYTE(address);
+    zero_high_byte(address);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2328,7 +2328,7 @@ Byte IND (CPU *cpu) {
 Byte IZX (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = process_byte(cpu);
-    ptr = ZERO_HIGH_BYTE(ptr);
+    zero_high_byte(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->X;
     value = read_from_addr(cpu, address);
@@ -2347,7 +2347,7 @@ Byte IZX (CPU *cpu) {
 Byte IZY (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = process_byte(cpu);
-    ptr = ZERO_HIGH_BYTE(ptr);
+    zero_high_byte(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
@@ -2369,7 +2369,7 @@ Byte BRK(CPU *cpu) {
     //pushes the next instruction address onto the stack
     push_addr(cpu, cpu->PC);
     set_flag(cpu, B, 1); //sets the break flag because this is a software interrupt
-    push(cpu, cpu->STATUS);
+    push_byte(cpu, cpu->STATUS);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     return 0;
 }
@@ -2392,7 +2392,7 @@ Byte ASL(CPU *cpu) {
     Decrements the stack pointer?
 */
 Byte PHP(CPU *cpu) {
-    push(cpu, cpu->STATUS);
+    push_byte(cpu, cpu->STATUS);
     return 0;
 }
 
@@ -2616,7 +2616,7 @@ Byte LSR_ACC(CPU *cpu) {
 */
 Byte PHA(CPU *cpu) {
     assert(cpu != NULL);
-    push(cpu, cpu->A);
+    push_byte(cpu, cpu->A);
     return 0;
 }
 
@@ -3113,7 +3113,8 @@ Byte INX(CPU *cpu) {
 Byte INY(CPU *cpu) {
     assert(cpu != NULL);
     cpu->Y++;
-    set_zn(cpu, cpu->Y);
+    set_flag(cpu, Z, cpu->Y == 0x00);
+    set_flag(cpu, N, cpu->Y & 0x80);
     return 0;
 }
 
