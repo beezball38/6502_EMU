@@ -242,7 +242,7 @@ void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
 
 Byte peek(CPU *cpu);
-Byte read(CPU *cpu); //will consume a byte
+Byte process_byte(CPU *cpu); //will consume a byte
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 

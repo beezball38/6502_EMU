@@ -2,40 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #define UNIMPLEMENTED() \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
 #define MEM_SIZE 1024 * 1024 * 64
-
-
-//instruction table
-Word address;
-Byte address_rel;
-Byte value;
-//function to initialize the CPU
-void register_init(CPU *cpu) {
-    cpu->A = 0;
-    cpu->X = 0;
-    cpu->Y = 0;
-    cpu->SP = 0xFD;
-    //high byte 0xFFFC
-    cpu->PC = (read_from_addr(cpu, 0xFFFD) << 8) | read_from_addr(cpu, 0xFFFC);
-    cpu->STATUS = 0x00 | U; //set unused bit
-    return;
-}
-
-void memory_init(CPU *cpu, Byte *memory) {
-    cpu->memory = memory;
-    return;
-}
-
-void init(CPU *cpu, Byte *memory) {
-    memory_init(cpu, memory);
-    register_init(cpu);
-    return;
-}
+//macro for zeroing out the high byte of a word
+#define ZERO_HIGH_BYTE(word) word &= 0x00FF
+Word address; //used by absolute, zero page, and indirect addressing modes
+Byte address_rel; //used only by branch instructions
+Byte value; //fetched value from address
 
 void print_cpu_state(CPU *cpu) {
     printf("A: 0x%02X\n", cpu->A);
@@ -46,92 +24,6 @@ void print_cpu_state(CPU *cpu) {
     printf("STATUS: 0x%02X\n", cpu->STATUS);
     return;
 }
-
-void reset(CPU *cpu) {
-    register_init(cpu);
-    address = 0;    
-    address_rel = 0;
-    value = 0;
-    return;
-}
-
-void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value) {
-    if (value) {
-        cpu->STATUS |= flag;
-    } else {
-        cpu->STATUS &= ~flag;
-    }
-    return;
-}
-
-void request_additional_cycles(CPU *cpu, Byte cycles) {
-    cpu->CYCLES += cycles;
-    return;
-}
-
-Byte branch_pc(CPU *cpu){
-    Byte cycles = 0;
-    Word old_pc = cpu->PC;
-    cpu->PC += address_rel;
-    if ((old_pc & 0xFF00) != (cpu->PC & 0xFF00)) {
-        cycles++;
-    }
-    return cycles;
-}
-
-Byte peek(CPU *cpu) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    return cpu->memory[cpu->PC];
-}
-
-Byte read(CPU *cpu) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    return cpu->memory[cpu->PC++];
-}
-
-Byte read_from_addr(CPU *cpu, Word address) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    return cpu->memory[address];
-}
-
-void write_to_addr(CPU *cpu, Word address, Byte value) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    cpu->memory[address] = value;
-    return;
-}
-
-void push_stack(CPU *cpu, Byte byte) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    if(cpu->SP == 0x00){
-        cpu->SP = 0xFF; //stack is full, wrap around
-    }
-    Word stack_addr = 0x0100 + cpu->SP;
-    write_to_addr(cpu, stack_addr, byte);
-    cpu->SP--;
-    return;
-}
-
-Byte pop_stack(CPU *cpu) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    if(cpu->SP == 0xFF){
-        cpu->SP = 0x00; //stack is empty, wrap around
-    }
-    Word stack_addr = 0x0100 + cpu->SP;
-    Byte byte = read_from_addr(cpu, stack_addr);
-    cpu->SP++;
-    return byte;
-}
-
-/*
-    Debugging function to print the contents of an instructions
-    Assumes instruction is in the table
-*/
 
 void print_instruction(Byte opcode,Instruction *table) {
     Instruction instruction = table[opcode];
@@ -2111,6 +2003,122 @@ void init_instruction_table(Instruction* table){
     };
 }
 
+void reset_globals() {
+    address = 0x0000;
+    address_rel = 0x00;
+    value = 0;
+    return;
+}
+
+void register_init(CPU *cpu) {
+    cpu->A = 0;
+    cpu->X = 0;
+    cpu->Y = 0;
+    cpu->SP = 0xFD;
+    cpu->PC = (read_from_addr(cpu, 0xFFFD) << 8) | read_from_addr(cpu, 0xFFFC);
+    cpu->STATUS = 0x00 | U; //set unused bit
+    return;
+}
+
+void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value) {
+    if (value) {
+        cpu->STATUS |= flag;
+    } else {
+        cpu->STATUS &= ~flag;
+    }
+    return;
+}
+
+
+void request_additional_cycles(CPU *cpu, Byte cycles) {
+    cpu->CYCLES += cycles;
+    return;
+}
+
+bool crosses_page_boundary(Word old_pc, Word new_pc) {
+    return (old_pc & 0xFF00) != (new_pc & 0xFF00);
+}
+
+Byte branch_pc(CPU *cpu){
+    Byte cycles = 0;
+    Word old_pc = cpu->PC;
+    cpu->PC += address_rel;
+    if(crosses_page_boundary(old_pc, cpu->PC)){
+        cycles++;
+    }
+    return cycles;
+}
+
+/*
+    gets the value at current PC without incrementing
+*/
+Byte peek(CPU *cpu) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    return cpu->memory[cpu->PC];
+}
+
+/*
+    gets the value at the current PC and increments the PC
+*/
+Byte process_byte(CPU *cpu) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    return cpu->memory[cpu->PC++];
+}
+
+Byte read_from_addr(CPU *cpu, Word address) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    return cpu->memory[address];
+}
+
+void write_to_addr(CPU *cpu, Word address, Byte value) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    cpu->memory[address] = value;
+    return;
+}
+
+void push_stack(CPU *cpu, Byte byte) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    if(cpu->SP == 0x00){
+        cpu->SP = 0xFF; //stack is full, wrap around
+    }
+    Word stack_addr = 0x0100 + cpu->SP;
+    write_to_addr(cpu, stack_addr, byte);
+    cpu->SP--;
+    return;
+}
+
+Byte pop_stack(CPU *cpu) {
+    assert(cpu != NULL);
+    assert(cpu->memory != NULL);
+    if(cpu->SP == 0xFF){
+        cpu->SP = 0x00; //stack is empty, wrap around
+    }
+    Word stack_addr = 0x0100 + cpu->SP;
+    Byte byte = read_from_addr(cpu, stack_addr);
+    cpu->SP++;
+    return byte;
+}
+
+void init(CPU *cpu, Byte *memory) {
+    cpu->memory = memory;
+    register_init(cpu);
+    reset_globals();
+    return;
+}
+
+void reset(CPU *cpu) {
+    register_init(cpu);
+    reset_globals();
+    return;
+}
+
+
+
 
 
 /*
@@ -2130,7 +2138,7 @@ Byte IMP (CPU *cpu) {
 */
 Byte IMM (CPU *cpu) {
     assert(cpu != NULL);
-    value = read(cpu);
+    value = process_byte(cpu);
     return 0;
 }
 
@@ -2142,8 +2150,8 @@ Byte IMM (CPU *cpu) {
 
 Byte ZP0 (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address &= 0x00FF;
+    address = process_byte(cpu);
+    ZERO_HIGH_BYTE(address);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2158,10 +2166,10 @@ Byte ZP0 (CPU *cpu) {
 */
 Byte ZPX (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address &= 0x00FF;
+    address = process_byte(cpu);
+    ZERO_HIGH_BYTE(address);
     address += cpu->X;
-    address &= 0x00FF;
+    ZERO_HIGH_BYTE(address); //for page wrap around
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2176,10 +2184,10 @@ Byte ZPX (CPU *cpu) {
 */
 Byte ZPY (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address &= 0x00FF;
+    address = process_byte(cpu);
+    ZERO_HIGH_BYTE(address);
     address += cpu->Y;
-    address &= 0x00FF;
+    ZERO_HIGH_BYTE(address);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2191,20 +2199,20 @@ Byte ZPY (CPU *cpu) {
 */
 Byte REL (CPU *cpu) {
     assert(cpu != NULL);
-    address_rel = read(cpu);
+    address_rel = process_byte(cpu);
     return 0;
 }
 
 /*
     * Absolute addressing mode
     * Fetches the next two bytes in memory and stores it in the address variable
-    * Increments the program counter
+    * Increments the program counter by two
     * Fetches the value at the address and stores it in the value variable
 */
 Byte ABS (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address |= (read(cpu) << 8);
+    address = process_byte(cpu);
+    address |= (process_byte(cpu) << 8);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2212,7 +2220,7 @@ Byte ABS (CPU *cpu) {
 /*
     * Absolute X addressing mode
     * Fetches the next two bytes in memory and stores it in the address variable
-    * Increments the program counter
+    * Increments the program counter by two
     * Adds the X register to the address
     * Stores the result in the address variable
     * Fetches the value at the address and stores it in the value variable
@@ -2220,8 +2228,8 @@ Byte ABS (CPU *cpu) {
 
 Byte ABX (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address |= (read(cpu) << 8);
+    address = process_byte(cpu);
+    address |= (process_byte(cpu) << 8);
     address += cpu->X;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2238,8 +2246,8 @@ Byte ABX (CPU *cpu) {
 
 Byte ABY (CPU *cpu) {
     assert(cpu != NULL);
-    address = read(cpu);
-    address |= (read(cpu) << 8);
+    address = process_byte(cpu);
+    address |= (process_byte(cpu) << 8);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2257,8 +2265,8 @@ Byte ABY (CPU *cpu) {
 
 Byte IND (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = read(cpu);
-    ptr |= (read(cpu) << 8);
+    Word ptr = process_byte(cpu);
+    ptr |= (process_byte(cpu) << 8);
     //simulate page boundary hardware bug
     if ((ptr & 0x00FF) == 0x00FF) {
         address = (read_from_addr(cpu, ptr & 0xFF00) << 8) | read_from_addr(cpu, ptr);
@@ -2280,7 +2288,7 @@ Byte IND (CPU *cpu) {
 
 Byte IZX (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = read(cpu);
+    Word ptr = process_byte(cpu);
     ptr &= 0x00FF;
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->X;
@@ -2299,18 +2307,32 @@ Byte IZX (CPU *cpu) {
 //todo not so sure about this one
 Byte IZY (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = read(cpu);
+    Word ptr = process_byte(cpu);
     ptr &= 0x00FF;
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
     return 0;
 }
-
-//instruction implementations
+//6502 instructions LITTLE ENDIAN
+/*
+    BRK - Force Interrupt
+    Pushes the program counter onto the stack
+    Pushes the status register onto the stack
+    Sets the interrupt flag
+    Sets the program counter to the interrupt vector  
+*/
 
 Byte BRK(CPU *cpu) {
-    (void)cpu;
+    assert(cpu != NULL);
+    set_flag(cpu, I, 1);
+    cpu->PC++;
+    //pushes the next instruction address onto the stack
+    push_stack(cpu, (cpu->PC >> 8) & 0x00FF);
+    push_stack(cpu, cpu->PC & 0x00FF);
+    set_flag(cpu, B, 1); //sets the break flag because this is a software interrupt
+    push_stack(cpu, cpu->STATUS);
+    cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     return 0;
 }
 
@@ -2346,7 +2368,12 @@ Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value) {
     assert(cpu != NULL);
     //checks if the flag is set to the flag value
     if ((cpu->STATUS & flag) == (flag_value & flag)) {
-        return branch_pc(cpu);
+        Word old_PC = cpu->PC;
+        cpu->PC += address_rel;
+        //checks if the page boundary is crossed
+        if(crosses_page_boundary(old_PC, cpu->PC)) {
+            return 1;
+        }
     }
     return 0;
 }
@@ -2569,8 +2596,8 @@ Byte PHA(CPU *cpu) {
 */
 Byte JMP(CPU *cpu) {
     assert(cpu != NULL);
-    Byte low = read(cpu);
-    Byte high = read(cpu);
+    Byte low = process_byte(cpu);
+    Byte high = process_byte(cpu);
     cpu->PC = (high << 8) | low;
     return 0;
 }
@@ -2621,7 +2648,6 @@ Byte RTS(CPU *cpu) {
 
 Byte ADC(CPU *cpu) {
     assert(cpu != NULL);
-
     Word result = cpu->A + value + cpu->STATUS & C;
     set_flag(cpu, C, result > 0xFF);
     set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
