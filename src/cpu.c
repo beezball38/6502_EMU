@@ -2023,7 +2023,7 @@ void register_init(CPU *cpu) {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0xFD;
+    cpu->SP = 0xFF; //onelonecoder sets this to 0xFD, but I think it should be 0xFF?
     cpu->PC = (read_from_addr(cpu, 0xFFFD) << 8) | read_from_addr(cpu, 0xFFFC);
     cpu->STATUS = 0x00 | U; //set unused bit
     return;

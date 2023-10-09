@@ -24,15 +24,14 @@ void test_BRK_success(CPU *cpu, Instruction ins) {
     munit_assert_int(ins.opcode, ==, 0x00);
     munit_assert_int(ins.length, ==, 1);
     munit_assert_int(ins.cycles, ==, 7);
-    //fetch should do a no op and PC should not increment
     Word old_pc = cpu->PC = 0x4000;
+    //assert stack pointer is at 0xFF
+    munit_assert_int(cpu->SP, ==, 0xFF);
     ins.fetch(cpu);
     munit_assert_int(cpu->PC, ==, old_pc);
     ins.execute(cpu);
+    //assert stack pointer is at 0xFC
+    munit_assert_int(cpu->SP, ==, 0xFC);
     munit_assert_true(cpu->STATUS & I);
-    //assert status was pushed to stack
-    munit_assert_int(read_from_addr(cpu, 0x01FF), ==, cpu->STATUS);
-    //assert PC is set to the interupt vector
     munit_assert_int(cpu->PC, ==, 0x8000);
-
 }

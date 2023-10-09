@@ -32,4 +32,4 @@ test_instructions: test_instructions.o $(OBJ_DIR)/cpu.o munit.o
 .PHONY: clean
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(TARGET) $(BIN_DIR)/tests/test_instructions
+	rm -f $(OBJ_DIR)/*.o $(TARGET) $(BIN_DIR)/tests/test_instructions ./test_instructions.o ./munit.o
