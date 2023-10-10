@@ -2101,6 +2101,7 @@ void push_byte(CPU *cpu, Byte byte) {
     }
     Word stack_addr = 0x0100 + cpu->SP;
     write_to_addr(cpu, stack_addr, byte);
+    //assert byte was actually written
     cpu->SP--;
     return;
 }
@@ -2108,12 +2109,12 @@ void push_byte(CPU *cpu, Byte byte) {
 Byte pop_byte(CPU *cpu) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
+    cpu->SP++;
     if(cpu->SP == 0xFF){
         cpu->SP = 0x00; //stack is empty, wrap around
     }
     Word stack_addr = 0x0100 + cpu->SP;
     Byte byte = read_from_addr(cpu, stack_addr);
-    cpu->SP++;
     return byte;
 }
 
@@ -2370,6 +2371,7 @@ Byte BRK(CPU *cpu) {
     push_addr(cpu, cpu->PC);
     set_flag(cpu, B, 1); //sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
+    set_flag(cpu, B, 0); //clears the break flag
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     return 0;
 }

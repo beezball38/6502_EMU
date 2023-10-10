@@ -25,6 +25,7 @@ void test_BRK_success(CPU *cpu, Instruction ins) {
     munit_assert_int(ins.length, ==, 1);
     munit_assert_int(ins.cycles, ==, 7);
     Word old_pc = cpu->PC = 0x4000;
+    Byte old_status = cpu->STATUS;
     //assert stack pointer is at 0xFF
     munit_assert_int(cpu->SP, ==, 0xFF);
     ins.fetch(cpu);
@@ -34,4 +35,6 @@ void test_BRK_success(CPU *cpu, Instruction ins) {
     munit_assert_int(cpu->SP, ==, 0xFC);
     munit_assert_true(cpu->STATUS & I);
     munit_assert_int(cpu->PC, ==, 0x8000);
+    //pop args and test them in order
+    //check top of stack for old status
 }
