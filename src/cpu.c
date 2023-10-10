@@ -56,7 +56,7 @@ void init_instruction_table(Instruction* table){
         .fetch = IMP,
         .execute = BRK,
         .cycles = 7,
-        .length = 1
+        .length = 2 //this is actually 1, but we need to account for the dummy byte
     };
     table[INSTRUCTION_ORA_IZX] = (Instruction) {
         .name = "ORA",
