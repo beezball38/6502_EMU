@@ -23,6 +23,7 @@
 Word address; //used by absolute, zero page, and indirect addressing modes
 Byte address_rel; //used only by branch instructions
 Byte value; //fetched value from address
+Byte current_instruction_length; //used by instructions to determine how many bytes to consume
 
 void print_cpu_state(CPU *cpu) {
     printf("A: 0x%02X\n", cpu->A);
@@ -2142,6 +2143,13 @@ void nmi(CPU *cpu) {
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->CYCLES += 8;
     return;
+}
+
+Instruction fetch_instruction(CPU *cpu, Instruction *table) {
+    assert(cpu != NULL);
+    assert(table != NULL);
+    Byte opcode = peek(cpu);
+    return table[opcode];
 }
 
 /*

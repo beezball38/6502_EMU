@@ -240,6 +240,7 @@ void reset(CPU *cpu);
 //todo add interrupt functions
 void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
+Instruction get_instruction(Byte opcode, Instruction *table);
 
 Byte peek(CPU *cpu);
 Byte process_byte(CPU *cpu); //will consume a byte
