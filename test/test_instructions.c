@@ -5,6 +5,8 @@
 #define MEM_SIZE 1024 * 64
 void Test_BRK(CPU *cpu, Instruction ins);
 void Test_BRK_HappyPath(CPU* cpu, Instruction ins);
+void Test_ORA(CPU *cpu, Instruction* instructions);
+void Test_ORA_Immediate(CPU *cpu, Instruction ins);
 
 int main(void)
 {
@@ -15,6 +17,8 @@ int main(void)
     Instruction table[0x100] = {0};
     init_instruction_table(table);
     Test_BRK(&cpu, table[0]);
+    Test_ORA(&cpu, table);
+
 }
 
 void Test_BRK(CPU *cpu, Instruction ins) {
@@ -49,5 +53,27 @@ void Test_BRK_HappyPath(CPU* cpu, Instruction ins) {
     munit_assert_int(low, ==, ((old_pc + 1) & 0xFF));
     munit_assert_int(high, ==, (old_pc >> 8));
     munit_assert_int(status, ==, (old_status | B | I));
-
 }
+
+void Test_ORA(CPU *cpu, Instruction *instructions) {
+    //test ORA immediate
+    Instruction ins = instructions[0x09];
+    Test_ORA_Immediate(cpu, ins);
+}
+
+void Test_ORA_Immediate(CPU *cpu, Instruction ins) {
+    Word old_pc = cpu->PC = 0x4000;
+    munit_assert_string_equal(ins.name, "ORA");
+    munit_assert_int(ins.opcode, ==, 0x09);
+    munit_assert_int(ins.length, ==, 2);
+    munit_assert_int(ins.cycles, ==, 2);
+    //set up the memory
+    write_to_addr(cpu, 0x4001, 0x01);
+    //set up the registers
+    cpu->A = 0x01;
+    ins.fetch(cpu);
+    //pc should be at next instruction
+    ins.execute(cpu);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length); 
+}
+    

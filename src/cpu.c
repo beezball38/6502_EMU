@@ -2067,15 +2067,6 @@ Byte peek(CPU *cpu) {
     return cpu->memory[cpu->PC];
 }
 
-/*
-    gets the value at the current PC and increments the PC
-*/
-Byte process_byte(CPU *cpu) {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
-    return cpu->memory[cpu->PC++];
-}
-
 Byte read_from_addr(CPU *cpu, Word address) {
     assert(cpu != NULL);
     assert(cpu->memory != NULL);
@@ -2178,7 +2169,7 @@ Byte IMP (CPU *cpu) {
 */
 Byte IMM (CPU *cpu) {
     assert(cpu != NULL);
-    value = process_byte(cpu);
+    value = read_from_addr(cpu, cpu->PC + 1);
     return 0;
 }
 
@@ -2190,7 +2181,7 @@ Byte IMM (CPU *cpu) {
 
 Byte ZP0 (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
+    value = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(address);
     value = read_from_addr(cpu, address);
     return 0;
@@ -2206,7 +2197,7 @@ Byte ZP0 (CPU *cpu) {
 */
 Byte ZPX (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
+    address = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(address);
     address += cpu->X;
     zero_high_byte(address); //for page wrap around
@@ -2224,7 +2215,7 @@ Byte ZPX (CPU *cpu) {
 */
 Byte ZPY (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
+    address = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(address);
     address += cpu->Y;
     zero_high_byte(address);
@@ -2239,7 +2230,7 @@ Byte ZPY (CPU *cpu) {
 */
 Byte REL (CPU *cpu) {
     assert(cpu != NULL);
-    address_rel = process_byte(cpu);
+    address_rel = read_from_addr(cpu, cpu->PC + 1);
     return 0;
 }
 
@@ -2251,8 +2242,9 @@ Byte REL (CPU *cpu) {
 */
 Byte ABS (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
-    address |= (process_byte(cpu) << 8);
+    Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
+    Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
+    address = (high_byte << 8) | low_byte;
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2268,8 +2260,8 @@ Byte ABS (CPU *cpu) {
 
 Byte ABX (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
-    address |= (process_byte(cpu) << 8);
+    Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
+    Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
     address += cpu->X;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2286,8 +2278,8 @@ Byte ABX (CPU *cpu) {
 
 Byte ABY (CPU *cpu) {
     assert(cpu != NULL);
-    address = process_byte(cpu);
-    address |= (process_byte(cpu) << 8);
+    Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
+    Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2305,8 +2297,8 @@ Byte ABY (CPU *cpu) {
 
 Byte IND (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = process_byte(cpu);
-    ptr |= (process_byte(cpu) << 8);
+    Word ptr = read_from_addr(cpu, cpu->PC + 1);
+    ptr |= ((read_from_addr(cpu, cpu->PC + 2)) << 8);
     //simulate page boundary hardware bug
     if ((ptr & 0x00FF) == 0x00FF) {
         address = (read_from_addr(cpu, ptr & 0xFF00) << 8) | read_from_addr(cpu, ptr);
@@ -2328,7 +2320,7 @@ Byte IND (CPU *cpu) {
 
 Byte IZX (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = process_byte(cpu);
+    Word ptr = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->X;
@@ -2347,7 +2339,7 @@ Byte IZX (CPU *cpu) {
 //todo not so sure about this one
 Byte IZY (CPU *cpu) {
     assert(cpu != NULL);
-    Word ptr = process_byte(cpu);
+    Word ptr = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(ptr);
     address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
     address += cpu->Y;
@@ -2630,8 +2622,8 @@ Byte PHA(CPU *cpu) {
 */
 Byte JMP(CPU *cpu) {
     assert(cpu != NULL);
-    Byte low = process_byte(cpu);
-    Byte high = process_byte(cpu);
+    Byte low = read_from_addr(cpu, cpu->PC + 1);
+    Byte high = read_from_addr(cpu, cpu->PC + 2);
     cpu->PC = (high << 8) | low;
     return 0;
 }
