@@ -19,6 +19,8 @@
 #define set_zn(cpu, value) \
     set_flag(cpu, Z, value == 0); \
     set_flag(cpu, N, value & 0x80);
+//macro to assemble byte from high and low bytes
+#define assemble_word(high, low) ((high) << 8) | (low)
 
 Word address; //used by absolute, zero page, and indirect addressing modes
 Byte address_rel; //used only by branch instructions
@@ -2252,7 +2254,7 @@ Byte ABS (CPU *cpu) {
     assert(cpu != NULL);
     Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
     Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
-    address = (high_byte << 8) | low_byte;
+    address = assemble_word(high_byte, low_byte);
     value = read_from_addr(cpu, address);
     return 0;
 }
@@ -2270,6 +2272,7 @@ Byte ABX (CPU *cpu) {
     assert(cpu != NULL);
     Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
     Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
+    address = (high_byte << 8) | low_byte;
     address += cpu->X;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2288,6 +2291,7 @@ Byte ABY (CPU *cpu) {
     assert(cpu != NULL);
     Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
     Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
+    address = assemble_word(high_byte, low_byte);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
     return 0;

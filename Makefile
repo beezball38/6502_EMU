@@ -4,7 +4,8 @@ BIN_DIR := bin
 OBJ_DIR := bin/obj
 
 CC := gcc
-CFLAGS := -Wall -Wextra -g
+CFLAGS := -Wall -Wextra -Werror -g
+TEST_FLAGS := -Wall -Wextra -g
 
 DEPS := $(SRC_DIR)/cpu.h $(SRC_DIR)/cpu.c
 MUNIT_DEPS := $(TEST_DIR)/munit/munit.h $(TEST_DIR)/munit/munit.c
@@ -21,7 +22,7 @@ $(TARGET): $(OBJ_DIR)/cpu.o $(OBJ_DIR)/cpu_emulator.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 munit.o : $(TEST_DIR)/munit/munit.c $(TEST_DIR)/munit/munit.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(TEST_FLAGS) -c $< -o $@
 
 test_instructions.o : $(TEST_DIR)/test_instructions.c $(DEPS) $(MUNIT_DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@

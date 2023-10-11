@@ -214,6 +214,7 @@ typedef struct CPU {
     Word PC;
     Byte STATUS;
     Byte CYCLES;
+    Byte current_instruction_length;
     unsigned char* memory;
 } CPU;
 
