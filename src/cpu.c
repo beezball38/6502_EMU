@@ -1795,7 +1795,7 @@ void register_init(CPU *cpu)
     return;
 }
 
-void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value)
+void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
 {
     if (value)
     {
@@ -1810,7 +1810,7 @@ void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value)
 
 void request_additional_cycles(CPU *cpu, Byte cycles)
 {
-    cpu->ADDITIONAL_CYCLES += cycles;
+    cpu->additional_cycles += cycles;
     return;
 }
 
@@ -1894,9 +1894,9 @@ void clock(CPU *cpu)
     Instruction *ins = fetch_current_instruction(cpu);
     ins->fetch(cpu);
     ins->execute(cpu);
-    if (cpu->PC_CHANGED)
+    if (cpu->pc_changed)
     { // if the PC was changed by the instruction, don't increment it
-        cpu->PC_CHANGED = 0;
+        cpu->pc_changed = 0;
     }
     else
     {
@@ -1928,9 +1928,9 @@ void irq(CPU *cpu)
     }
     push_addr(cpu, cpu->PC);
     push_byte(cpu, cpu->STATUS);
-    set_flag(cpu, I, 1);
+    set_flag(cpu, I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
-    cpu->ADDITIONAL_CYCLES += 7;
+    cpu->additional_cycles += 7;
     return;
 }
 
@@ -1940,7 +1940,7 @@ void nmi(CPU *cpu)
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
-    cpu->ADDITIONAL_CYCLES += 8;
+    cpu->additional_cycles += 8;
     return;
 }
 
@@ -2180,13 +2180,13 @@ Byte IZY(CPU *cpu)
 Byte BRK(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, 1);
+    set_flag(cpu, I, true);
     cpu->PC++;
     // pushes the next instruction address onto the stack
     push_addr(cpu, cpu->PC);
-    set_flag(cpu, B, 1); // sets the break flag because this is a software interrupt
+    set_flag(cpu, B, true); // sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
-    set_flag(cpu, B, 0); // clears the break flag
+    set_flag(cpu, B, false); // clears the break flag
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
     return 0;
 }
@@ -2256,7 +2256,7 @@ Byte BPL(CPU *cpu)
 Byte CLC(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, C, 0);
+    set_flag(cpu, C, false);
     return 0;
 }
 
@@ -2351,8 +2351,8 @@ Byte PLP(CPU *cpu)
 {
     assert(cpu != NULL);
     cpu->STATUS = pop_byte(cpu);
-    set_flag(cpu, U, 1);
-    set_flag(cpu, B, 0);
+    set_flag(cpu, U, true);
+    set_flag(cpu, B, false);
     return 0;
 }
 
@@ -2375,7 +2375,7 @@ Byte BMI(CPU *cpu)
 Byte SEC(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, C, 1);
+    set_flag(cpu, C, true);
     return 0;
 }
 
@@ -2392,8 +2392,8 @@ Byte RTI(CPU *cpu)
     Byte low = pop_byte(cpu);
     Byte high = pop_byte(cpu);
     cpu->PC = assemble_word(high, low);
-    set_flag(cpu, U, 1); // this is always logical 1
-    set_flag(cpu, B, 0); // B flag is only 1 when BRK is executed
+    set_flag(cpu, U, true); // this is always logical 1
+    set_flag(cpu, B, false); // B flag is only 1 when BRK is executed
     return 0;
 }
 
@@ -2493,7 +2493,7 @@ Byte BVC(CPU *cpu)
 Byte CLI(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, 0);
+    set_flag(cpu, I, false);
     return 0;
 }
 
@@ -2612,7 +2612,7 @@ Byte BVS(CPU *cpu)
 Byte SEI(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, 1);
+    set_flag(cpu, I, true);
     return 0;
 }
 
@@ -2804,7 +2804,7 @@ Byte BCS(CPU *cpu)
 Byte CLV(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, V, 0);
+    set_flag(cpu, V, false);
     return 0;
 }
 
@@ -2903,7 +2903,7 @@ Byte BNE(CPU *cpu)
 Byte CLD(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, D, 0);
+    set_flag(cpu, D, false);
     return 0;
 }
 
@@ -3013,7 +3013,7 @@ Byte BEQ(CPU *cpu)
 Byte SED(CPU *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, D, 1);
+    set_flag(cpu, D, true);
     return 0;
 }
 

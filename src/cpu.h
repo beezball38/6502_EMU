@@ -158,6 +158,82 @@ typedef uint16_t Word;
 #define INSTRUCTION_SBC_ABX 0xFD
 #define INSTRUCTION_INC_ABX 0xFE
 
+#define LIST_OF_INSTRUCTIONS \
+    X(BRK)                   \
+    X(ORA)                   \
+    X(ASL)                   \
+    X(PHP)                   \
+    X(BPL)                   \
+    X(CLC)                   \
+    X(JSR)                   \
+    X(AND)                   \
+    X(BIT)                   \
+    X(ROL)                   \
+    X(ROL_ACC)               \
+    X(LSR_ACC)               \
+    X(PLP)                   \
+    X(BMI)                   \
+    X(SEC)                   \
+    X(RTI)                   \
+    X(EOR)                   \
+    X(LSR)                   \
+    X(PHA)                   \
+    X(JMP)                   \
+    X(BVC)                   \
+    X(CLI)                   \
+    X(RTS)                   \
+    X(ADC)                   \
+    X(ROR)                   \
+    X(PLA)                   \
+    X(ROR_ACC)               \
+    X(BVS)                   \
+    X(SEI)                   \
+    X(STA)                   \
+    X(STY)                   \
+    X(STX)                   \
+    X(DEY)                   \
+    X(TXA)                   \
+    X(BCC)                   \
+    X(TYA)                   \
+    X(TXS)                   \
+    X(LDY)                   \
+    X(LDA)                   \
+    X(LDX)                   \
+    X(TAY)                   \
+    X(TAX)                   \
+    X(BCS)                   \
+    X(CLV)                   \
+    X(TSX)                   \
+    X(CPY)                   \
+    X(CMP)                   \
+    X(DEC)                   \
+    X(INY)                   \
+    X(DEX)                   \
+    X(BNE)                   \
+    X(CLD)                   \
+    X(CPX)                   \
+    X(SBC)                   \
+    X(INC)                   \
+    X(INX)                   \
+    X(BEQ)                   \
+    X(SED)                   \
+    X(NOP)
+
+#define LIST_OF_ADDR_MODES  \
+    X(IMP)                  \
+    X(IMM)                  \
+    X(ZP0)                  \
+    X(ZPX)                  \
+    X(ZPY)                  \
+    X(REL)                  \
+    X(ABS)                  \
+    X(ABX)                  \
+    X(ABY)                  \
+    X(IND)                  \
+    X(IZX)                  \
+    X(IZY)
+
+
 /*
  * Status register flags
  * C: Carry
@@ -205,19 +281,35 @@ typedef struct Instruction
     Ins_Func execute;
 } Instruction;
 
-// CPU struct
+
+/*
+    * CPU struct
+    * A: accumulator
+    * X: index register X
+    * Y: index register Y
+    * SP: stack pointer
+    * PC: program counter
+    * STATUS: status register
+    * additional_cycles: additional cycles to add to instruction
+    * pc_changed: flag to indicate if PC changed
+    * table: instruction table
+    * memory: memory
+*/
 struct CPU
 {
+    // registers
     Byte A;
     Byte X;
     Byte Y;
     Byte SP;
     Word PC;
     Byte STATUS;
-    Byte ADDITIONAL_CYCLES;
+
+    // internal state
+    unsigned char additional_cycles;
+    bool pc_changed;
     Instruction *table;
     unsigned char *memory;
-    bool PC_CHANGED;
 };
 
 // helper functions, not for prime time
@@ -228,7 +320,7 @@ void print_instruction(Byte opcode, Instruction *table);
 void init_instruction_table(Instruction *table);
 void init(CPU *cpu, Byte *memory);
 // todo add interrupt functions
-void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
+void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
 Instruction *fetch_current_instruction(CPU *cpu);
 
@@ -242,79 +334,15 @@ void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
 
 // addressing modes (fetch)
-Byte IMP(CPU *cpu);
-Byte IMM(CPU *cpu);
-Byte ZP0(CPU *cpu);
-Byte ZPX(CPU *cpu);
-Byte ZPY(CPU *cpu);
-Byte REL(CPU *cpu);
-Byte ABS(CPU *cpu);
-Byte ABX(CPU *cpu);
-Byte ABY(CPU *cpu);
-Byte IND(CPU *cpu);
-Byte IZX(CPU *cpu);
-Byte IZY(CPU *cpu);
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_ADDR_MODES
+#undef X
 
 // instructions (execute) in order of opcode
-Byte BRK(CPU *cpu);
-Byte ORA(CPU *cpu);
-Byte ASL(CPU *cpu);
-Byte PHP(CPU *cpu);
-Byte BPL(CPU *cpu);
-Byte CLC(CPU *cpu);
-Byte JSR(CPU *cpu);
-Byte AND(CPU *cpu);
-Byte BIT(CPU *cpu);
-Byte ROL(CPU *cpu);
-Byte ROL_ACC(CPU *cpu);
-Byte LSR_ACC(CPU *cpu);
-Byte PLP(CPU *cpu);
-Byte BMI(CPU *cpu);
-Byte SEC(CPU *cpu);
-Byte RTI(CPU *cpu);
-Byte EOR(CPU *cpu);
-Byte LSR(CPU *cpu);
-Byte PHA(CPU *cpu);
-Byte JMP(CPU *cpu);
-Byte BVC(CPU *cpu);
-Byte CLI(CPU *cpu);
-Byte RTS(CPU *cpu);
-Byte ADC(CPU *cpu);
-Byte ROR(CPU *cpu);
-Byte PLA(CPU *cpu);
-Byte ROR_ACC(CPU *cpu);
-Byte BVS(CPU *cpu);
-Byte SEI(CPU *cpu);
-Byte STA(CPU *cpu);
-Byte STY(CPU *cpu);
-Byte STX(CPU *cpu);
-Byte DEY(CPU *cpu);
-Byte TXA(CPU *cpu);
-Byte BCC(CPU *cpu);
-Byte TYA(CPU *cpu);
-Byte TXS(CPU *cpu);
-Byte LDY(CPU *cpu);
-Byte LDA(CPU *cpu);
-Byte LDX(CPU *cpu);
-Byte TAY(CPU *cpu);
-Byte TAX(CPU *cpu);
-Byte BCS(CPU *cpu);
-Byte CLV(CPU *cpu);
-Byte TSX(CPU *cpu);
-Byte CPY(CPU *cpu);
-Byte CMP(CPU *cpu);
-Byte DEC(CPU *cpu);
-Byte INY(CPU *cpu);
-Byte DEX(CPU *cpu);
-Byte BNE(CPU *cpu);
-Byte CLD(CPU *cpu);
-Byte CPX(CPU *cpu);
-Byte SBC(CPU *cpu);
-Byte INC(CPU *cpu);
-Byte INX(CPU *cpu);
-Byte BEQ(CPU *cpu);
-Byte SED(CPU *cpu);
-Byte NOP(CPU *cpu);
+//X Macro for instruction prototypes
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_INSTRUCTIONS
+#undef X
 
 // main CPU interface functions
 void clock(CPU *cpu);
