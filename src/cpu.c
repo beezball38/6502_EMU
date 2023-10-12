@@ -2509,7 +2509,7 @@ Byte RTS(CPU *cpu)
 Byte ADC(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word result = cpu->A + value + cpu->STATUS & C;
+    Word result = cpu->A + value + (cpu->STATUS & C);
     set_flag(cpu, C, result > 0xFF);
     set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, N, result & 0x0080);
@@ -2920,7 +2920,7 @@ Byte CPX(CPU *cpu)
 Byte SBC(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word result = cpu->A - value - (1 - cpu->STATUS & C);
+    Word result = cpu->A - value - (1 - (cpu->STATUS & C));
     set_flag(cpu, C, result < 0x100);
     set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, N, result & 0x0080);
