@@ -39,24 +39,9 @@ void print_cpu_state(CPU *cpu)
     return;
 }
 
-void print_instruction(Byte opcode, Instruction *table)
+void init_instruction_table(CPU* cpu)
 {
-    Instruction instruction = table[opcode];
-    // if any pointers are null, print "not implemented"
-    if (!(instruction.name == NULL || instruction.fetch == NULL || instruction.execute == NULL))
-    {
-        printf("Instruction: %s\n", instruction.name);
-        printf("Opcode: 0x%02X\n", instruction.opcode);
-        printf("Fetch: %p\n", (void *)instruction.fetch);
-        printf("Execute: %p\n", (void *)instruction.execute);
-        printf("Cycles: %d\n", instruction.cycles);
-        printf("Length: %d\n", instruction.length);
-    }
-    return;
-}
-
-void init_instruction_table(Instruction *table)
-{
+    Instruction* table = &cpu->table[0];
     // reference https://www.masswerk.at/6502/6502_instruction_set.html
     table[INSTRUCTION_BRK_IMP] = (Instruction){
         .name = "BRK",

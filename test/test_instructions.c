@@ -13,9 +13,7 @@ int main(void)
     Byte memory[MEM_SIZE] = {0};
     init(&cpu, memory);
     reset(&cpu);
-    Instruction table[0x100] = {0};
-    init_instruction_table(table);
-    cpu.table = table;
+    init_instruction_table(&cpu);
     Test_ORA(&cpu);
 }
 void Test_ORA(CPU *cpu)

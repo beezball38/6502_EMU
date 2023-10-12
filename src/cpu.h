@@ -5,7 +5,6 @@
 #include <stdbool.h>
 typedef uint8_t Byte;
 typedef uint16_t Word;
-// constants for the instructions in order of opcode (except illegal instructions)
 #define INSTRUCTION_BRK_IMP 0x00
 #define INSTRUCTION_ORA_IZX 0x01
 #define INSTRUCTION_ORA_ZP0 0x05
@@ -233,7 +232,6 @@ typedef uint16_t Word;
     X(IZX)                  \
     X(IZY)
 
-
 /*
  * Status register flags
  * C: Carry
@@ -305,41 +303,29 @@ struct CPU
     Word PC;
     Byte STATUS;
 
-    // internal state
+    //other
     unsigned char additional_cycles;
     bool pc_changed;
-    Instruction *table;
+    Instruction table[256];
     unsigned char *memory;
 };
 
-// helper functions, not for prime time
 void print_cpu_state(CPU *cpu);
-void print_instruction(Byte opcode, Instruction *table);
-
-// prototypes
-void init_instruction_table(Instruction *table);
+void init_instruction_table(CPU *cpu);
 void init(CPU *cpu, Byte *memory);
-// todo add interrupt functions
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
 Instruction *fetch_current_instruction(CPU *cpu);
-
 Byte peek(CPU *cpu);
-Byte process_byte(CPU *cpu); // will consume a byte
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
-
-// For use with cpu->SP
 void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
-
-// addressing modes (fetch)
 #define X(name) Byte name(CPU *cpu);
 LIST_OF_ADDR_MODES
 #undef X
 
 // instructions (execute) in order of opcode
-//X Macro for instruction prototypes
 #define X(name) Byte name(CPU *cpu);
 LIST_OF_INSTRUCTIONS
 #undef X

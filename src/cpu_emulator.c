@@ -15,8 +15,7 @@ CPU *get_cpu_instance(void)
 int main(void)
 {
     CPU *cpu = get_cpu_instance();
-    Instruction table[0x100] = {0};
-    init_instruction_table(table);
+    init_instruction_table(cpu);
     Byte memory[MEM_SIZE] = {0};
     init(cpu, memory);
     return 0;

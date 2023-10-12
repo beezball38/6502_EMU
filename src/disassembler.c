@@ -1,6 +1,12 @@
 #include "disassembler.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
+
+    
 #define UNIMPLEMENTED()                                                                   \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
