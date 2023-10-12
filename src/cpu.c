@@ -8,23 +8,24 @@
 #define UNIMPLEMENTED() \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
+
 #define MEM_SIZE 1024 * 1024 * 64
 //macro for zeroing out the high byte of a word
-#define zero_high_byte(word) word &= 0x00FF 
+#define zero_high_byte(word) (word) &= 0x00FF 
 //macro to push_byte an address to the stack
 #define push_addr(cpu, addr) \
-    push_byte(cpu, (addr & 0xFF00) >> 8); \
-    push_byte(cpu, addr & 0x00FF);
+    push_byte(cpu, ((addr) & 0xFF00) >> 8); \
+    push_byte(cpu, (addr) & 0x00FF);
 //macro to set Z and N flags
 #define set_zn(cpu, value) \
-    set_flag(cpu, Z, value == 0); \
-    set_flag(cpu, N, value & 0x80);
+    set_flag(cpu, Z, (value) == 0); \
+    set_flag(cpu, N, (value) & 0x80);
 //macro to assemble byte from high and low bytes
 #define assemble_word(high, low) ((high) << 8) | (low)
 
 Word address; //used by absolute, zero page, and indirect addressing modes
 Byte address_rel; //used only by branch instructions
-Byte value; //fetched value from address
+Byte value; //holds fetched value, could be immediate value or value from memory
 Byte current_instruction_length; //used by instructions to determine how many bytes to consume
 
 void print_cpu_state(CPU *cpu) {
@@ -2027,7 +2028,7 @@ void register_init(CPU *cpu) {
     cpu->X = 0;
     cpu->Y = 0;
     cpu->SP = 0xFF; //onelonecoder sets this to 0xFD, but I think it should be 0xFF?
-    cpu->PC = (read_from_addr(cpu, 0xFFFD) << 8) | read_from_addr(cpu, 0xFFFC);
+    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->STATUS = 0x00 | U; //set unused bit
     return;
 }
@@ -2112,7 +2113,20 @@ Byte pop_byte(CPU *cpu) {
     return byte;
 }
 
-//CPU interface functions
+
+void clock(CPU *cpu) {
+    assert(cpu != NULL);
+    Instruction ins = get_instruction(cpu->memory[cpu->PC], cpu->table);
+    ins.fetch(cpu);
+    ins.execute(cpu);
+    if(cpu->PC_CHANGED){
+        cpu->PC_CHANGED = 0;
+    } else {
+        cpu->PC += ins.length;
+    }
+    return;
+}
+
 void init(CPU *cpu, Byte *memory) {
     cpu->memory = memory;
     register_init(cpu);
@@ -2147,10 +2161,8 @@ void nmi(CPU *cpu) {
     return;
 }
 
-Instruction fetch_instruction(CPU *cpu, Instruction *table) {
-    assert(cpu != NULL);
+Instruction get_instruction(Byte opcode, Instruction *table) {
     assert(table != NULL);
-    Byte opcode = peek(cpu);
     return table[opcode];
 }
 
@@ -2272,7 +2284,7 @@ Byte ABX (CPU *cpu) {
     assert(cpu != NULL);
     Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
     Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
-    address = (high_byte << 8) | low_byte;
+    address = assemble_word(high_byte, low_byte);
     address += cpu->X;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2313,9 +2325,9 @@ Byte IND (CPU *cpu) {
     ptr |= ((read_from_addr(cpu, cpu->PC + 2)) << 8);
     //simulate page boundary hardware bug
     if ((ptr & 0x00FF) == 0x00FF) {
-        address = (read_from_addr(cpu, ptr & 0xFF00) << 8) | read_from_addr(cpu, ptr);
+        address = assemble_word(read_from_addr(cpu, ptr & 0xFF00), read_from_addr(cpu, ptr));
     } else {
-        address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
+        address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
     }
     value = read_from_addr(cpu, address);
     return 0;
@@ -2334,7 +2346,7 @@ Byte IZX (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(ptr);
-    address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
+    address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
     address += cpu->X;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2353,7 +2365,7 @@ Byte IZY (CPU *cpu) {
     assert(cpu != NULL);
     Word ptr = read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(ptr);
-    address = (read_from_addr(cpu, ptr + 1) << 8) | read_from_addr(cpu, ptr);
+    address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
     address += cpu->Y;
     value = read_from_addr(cpu, address);
     return 0;
@@ -2376,7 +2388,7 @@ Byte BRK(CPU *cpu) {
     set_flag(cpu, B, 1); //sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, B, 0); //clears the break flag
-    cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
+    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
     return 0;
 }
 
@@ -2561,8 +2573,9 @@ Byte SEC(CPU *cpu) {
 Byte RTI(CPU *cpu) {
     assert(cpu != NULL);
     cpu->STATUS = pop_byte(cpu);
-    cpu->PC = pop_byte(cpu);
-    cpu->PC |= (pop_byte(cpu) << 8);
+    Byte low = pop_byte(cpu);
+    Byte high = pop_byte(cpu);
+    cpu->PC = assemble_word(high, low);
     set_flag(cpu, U, 1); //this is always logical 1
     set_flag(cpu, B, 0); //B flag is only 1 when BRK is executed
     return 0;
@@ -2636,7 +2649,7 @@ Byte JMP(CPU *cpu) {
     assert(cpu != NULL);
     Byte low = read_from_addr(cpu, cpu->PC + 1);
     Byte high = read_from_addr(cpu, cpu->PC + 2);
-    cpu->PC = (high << 8) | low;
+    cpu->PC = assemble_word(high, low);
     return 0;
 }
 

@@ -2,6 +2,7 @@
 #ifndef CPU_H
 #define CPU_H
 #include <stdint.h>
+#include <stdbool.h>
 typedef uint8_t Byte;
 typedef uint16_t Word;
 //constants for the instructions in order of opcode (except illegal instructions)
@@ -192,31 +193,8 @@ typedef enum {
 */
 
 
-
-/*
-    * CPU struct
-    * A: Accumulator
-    * X: X register
-    * Y: Y register
-    * SP: Stack pointer (address of stack which is on the first page of memory)
-    * PC: Program counter
-    * STATUS: Processor status
-    * CYCLES: Number of cycles left for current instruction 
-    *         or an external event to complete such as an interrupt
-    *         or a DMA transfer
-    * memory: pointer to memory
-*/
-typedef struct CPU {
-    Byte A;
-    Byte X;
-    Byte Y;
-    Byte SP;
-    Word PC;
-    Byte STATUS;
-    Byte CYCLES;
-    Byte current_instruction_length;
-    unsigned char* memory;
-} CPU;
+//forward CPU declaration
+typedef struct CPU CPU;
 
 typedef Byte (*Ins_Func)(CPU *cpu);
 typedef struct Instruction {
@@ -228,6 +206,21 @@ typedef struct Instruction {
     Ins_Func execute;
 } Instruction;
 
+//CPU struct
+struct CPU {
+    Byte A;
+    Byte X;
+    Byte Y;
+    Byte SP;
+    Word PC;
+    Byte STATUS;
+    Byte CYCLES;
+    Instruction* table;
+    unsigned char* memory;
+    bool PC_CHANGED;
+};
+
+
 
 
 //helper functions, not for prime time
@@ -237,7 +230,6 @@ void print_instruction(Byte opcode, Instruction *table);
 //prototypes
 void init_instruction_table(Instruction* table);
 void init(CPU *cpu, Byte* memory);
-void reset(CPU *cpu);
 //todo add interrupt functions
 void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
@@ -326,4 +318,10 @@ Byte INX(CPU *cpu);
 Byte BEQ(CPU *cpu);
 Byte SED(CPU *cpu);
 Byte NOP(CPU *cpu);
+
+//main CPU interface functions
+void clock(CPU *cpu);
+void irq(CPU *cpu);
+void nmi(CPU *cpu);
+void reset(CPU *cpu);
 #endif
