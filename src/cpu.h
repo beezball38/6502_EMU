@@ -1,11 +1,11 @@
-//CPU struct for 6502 processor
+// CPU struct for 6502 processor
 #ifndef CPU_H
 #define CPU_H
 #include <stdint.h>
 #include <stdbool.h>
 typedef uint8_t Byte;
 typedef uint16_t Word;
-//constants for the instructions in order of opcode (except illegal instructions)
+// constants for the instructions in order of opcode (except illegal instructions)
 #define INSTRUCTION_BRK_IMP 0x00
 #define INSTRUCTION_ORA_IZX 0x01
 #define INSTRUCTION_ORA_ZP0 0x05
@@ -127,7 +127,7 @@ typedef uint16_t Word;
 #define INSTRUCTION_INY_IMP 0xC8
 #define INSTRUCTION_CMP_IMM 0xC9
 #define INSTRUCTION_DEX_IMP 0xCA
-#define INSTRUCTION_CPY_ABS 0xCC    
+#define INSTRUCTION_CPY_ABS 0xCC
 #define INSTRUCTION_CMP_ABS 0xCD
 #define INSTRUCTION_DEC_ABS 0xCE
 #define INSTRUCTION_BNE_REL 0xD0
@@ -158,46 +158,45 @@ typedef uint16_t Word;
 #define INSTRUCTION_SBC_ABX 0xFD
 #define INSTRUCTION_INC_ABX 0xFE
 
-
-
 /*
-    * Status register flags
-    * C: Carry
-    * Z: Zero
-    * I: Interrupt disable
-    * D: Decimal mode
-    * B: Break
-    * U: Unused
-    * V: Overflow
-    * N: Negative
-*/
-typedef enum {
-    C = (1 << 0), 
-    Z = (1 << 1), 
-    I = (1 << 2), 
-    D = (1 << 3), 
+ * Status register flags
+ * C: Carry
+ * Z: Zero
+ * I: Interrupt disable
+ * D: Decimal mode
+ * B: Break
+ * U: Unused
+ * V: Overflow
+ * N: Negative
+ */
+typedef enum
+{
+    C = (1 << 0),
+    Z = (1 << 1),
+    I = (1 << 2),
+    D = (1 << 3),
     B = (1 << 4),
-    U = (1 << 5), 
-    V = (1 << 6), 
-    N = (1 << 7), 
+    U = (1 << 5),
+    V = (1 << 6),
+    N = (1 << 7),
 } STATUS_FLAGS;
 
 /*
-    * Instruction struct
-    * name: name of instruction
-    * opcode: opcode of instruction
-    * length: length of instruction in bytes
-    * cycles: number of cycles instruction takes
-    * execute: function pointer to execute instruction
-    * fetch: function pointer to function to fetch operand
-*/
+ * Instruction struct
+ * name: name of instruction
+ * opcode: opcode of instruction
+ * length: length of instruction in bytes
+ * cycles: number of cycles instruction takes
+ * execute: function pointer to execute instruction
+ * fetch: function pointer to function to fetch operand
+ */
 
-
-//forward CPU declaration
+// forward CPU declaration
 typedef struct CPU CPU;
 
 typedef Byte (*Ins_Func)(CPU *cpu);
-typedef struct Instruction {
+typedef struct Instruction
+{
     char *name;
     Byte opcode;
     Byte length;
@@ -206,45 +205,43 @@ typedef struct Instruction {
     Ins_Func execute;
 } Instruction;
 
-//CPU struct
-struct CPU {
+// CPU struct
+struct CPU
+{
     Byte A;
     Byte X;
     Byte Y;
     Byte SP;
     Word PC;
     Byte STATUS;
-    Byte CYCLES;
-    Instruction* table;
-    unsigned char* memory;
+    Byte ADDITIONAL_CYCLES;
+    Instruction *table;
+    unsigned char *memory;
     bool PC_CHANGED;
 };
 
-
-
-
-//helper functions, not for prime time
+// helper functions, not for prime time
 void print_cpu_state(CPU *cpu);
 void print_instruction(Byte opcode, Instruction *table);
 
-//prototypes
-void init_instruction_table(Instruction* table);
-void init(CPU *cpu, Byte* memory);
-//todo add interrupt functions
+// prototypes
+void init_instruction_table(Instruction *table);
+void init(CPU *cpu, Byte *memory);
+// todo add interrupt functions
 void set_flag(CPU *cpu, STATUS_FLAGS flag, Byte value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
-Instruction get_instruction(Byte opcode, Instruction *table);
+Instruction *fetch_current_instruction(CPU *cpu);
 
 Byte peek(CPU *cpu);
-Byte process_byte(CPU *cpu); //will consume a byte
+Byte process_byte(CPU *cpu); // will consume a byte
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 
-//For use with cpu->SP
+// For use with cpu->SP
 void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
 
-//addressing modes (fetch)
+// addressing modes (fetch)
 Byte IMP(CPU *cpu);
 Byte IMM(CPU *cpu);
 Byte ZP0(CPU *cpu);
@@ -258,7 +255,7 @@ Byte IND(CPU *cpu);
 Byte IZX(CPU *cpu);
 Byte IZY(CPU *cpu);
 
-//instructions (execute) in order of opcode
+// instructions (execute) in order of opcode
 Byte BRK(CPU *cpu);
 Byte ORA(CPU *cpu);
 Byte ASL(CPU *cpu);
@@ -319,7 +316,7 @@ Byte BEQ(CPU *cpu);
 Byte SED(CPU *cpu);
 Byte NOP(CPU *cpu);
 
-//main CPU interface functions
+// main CPU interface functions
 void clock(CPU *cpu);
 void irq(CPU *cpu);
 void nmi(CPU *cpu);
