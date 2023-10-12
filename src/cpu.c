@@ -1780,6 +1780,11 @@ void register_init(CPU *cpu)
     return;
 }
 
+bool get_flag(CPU *cpu, STATUS_FLAGS flag)
+{
+    return (cpu->STATUS & flag) > 0;
+}
+
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
 {
     if (value)
@@ -1907,7 +1912,7 @@ void reset(CPU *cpu)
 
 void irq(CPU *cpu)
 {
-    if (cpu->STATUS & I)
+    if (get_flag(cpu, I))
     {
         return;
     }
@@ -2209,7 +2214,7 @@ Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value)
 {
     assert(cpu != NULL);
     // checks if the flag is set to the flag value
-    if ((cpu->STATUS & flag) == (flag_value & flag))
+    if ((get_flag(cpu, flag)) == (flag_value & flag))
     {
         Word old_PC = cpu->PC;
         cpu->PC += address_rel;
@@ -2509,7 +2514,7 @@ Byte RTS(CPU *cpu)
 Byte ADC(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word result = cpu->A + value + cpu->STATUS & C;
+    Word result = cpu->A + value + get_flag(cpu, C);
     set_flag(cpu, C, result > 0xFF);
     set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, N, result & 0x0080);
@@ -2534,7 +2539,7 @@ Byte ADC(CPU *cpu)
 Byte ROR(CPU *cpu)
 {
     assert(cpu != NULL);
-    Byte carry = cpu->STATUS & C;
+    Byte carry = (Byte) get_flag(cpu, C);
     // set the carry flag to the 0th bit of the value
     set_flag(cpu, C, value & 0x01);
     // shift the value right by 1 bit
@@ -2570,7 +2575,7 @@ Byte PLA(CPU *cpu)
 Byte ROR_ACC(CPU *cpu)
 {
     assert(cpu != NULL);
-    Byte carry = cpu->STATUS & C;
+    Byte carry = (Byte) get_flag(cpu, C);
     set_flag(cpu, C, cpu->A & 0x01);
     cpu->A >>= 1;
     cpu->A |= (carry << 7);
@@ -2920,7 +2925,7 @@ Byte CPX(CPU *cpu)
 Byte SBC(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word result = cpu->A - value - (1 - cpu->STATUS & C);
+    Word result = cpu->A - value - (1 - ((Byte) get_flag(cpu, C)));
     set_flag(cpu, C, result < 0x100);
     set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, N, result & 0x0080);

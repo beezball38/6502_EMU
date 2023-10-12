@@ -310,9 +310,18 @@ struct CPU
     unsigned char *memory;
 };
 
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_ADDR_MODES
+#undef X
+
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_INSTRUCTIONS
+#undef X
+
 void print_cpu_state(CPU *cpu);
 void init_instruction_table(CPU *cpu);
 void init(CPU *cpu, Byte *memory);
+bool get_flag(CPU *cpu, STATUS_FLAGS flag);
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
 void request_additional_cycles(CPU *cpu, Byte cycles);
 Instruction *fetch_current_instruction(CPU *cpu);
@@ -321,14 +330,6 @@ Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
-#define X(name) Byte name(CPU *cpu);
-LIST_OF_ADDR_MODES
-#undef X
-
-// instructions (execute) in order of opcode
-#define X(name) Byte name(CPU *cpu);
-LIST_OF_INSTRUCTIONS
-#undef X
 
 // main CPU interface functions
 void clock(CPU *cpu);
