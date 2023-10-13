@@ -1898,6 +1898,7 @@ void clock(CPU *cpu)
 void init(CPU *cpu, Byte *memory)
 {
     cpu->memory = memory;
+    init_instruction_table(cpu);
     register_init(cpu);
     reset_globals();
     return;

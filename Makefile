@@ -25,10 +25,10 @@ munit.o : $(TEST_DIR)/munit/munit.c $(TEST_DIR)/munit/munit.h
 	$(CC) $(TEST_FLAGS) -c $< -o $@
 
 test_instructions.o : $(TEST_DIR)/test_instructions.c $(DEPS) $(MUNIT_DEPS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(TEST_FLAGS) -c $< -o $@
 
 test_instructions: test_instructions.o $(OBJ_DIR)/cpu.o munit.o
-	$(CC) $(CFLAGS) $^ -o $(BIN_DIR)/tests/test_instructions
+	$(CC) $(TEST_FLAGS) $^ -o $(BIN_DIR)/tests/test_instructions
 
 .PHONY: clean
 
