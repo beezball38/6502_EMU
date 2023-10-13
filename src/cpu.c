@@ -2137,6 +2137,7 @@ Byte IZX(CPU *cpu)
     Byte high_byte = read_from_addr(cpu, zp_addr + 1);
     address = (low_byte + cpu->X) & 0x00FF;
     address |= (high_byte << 8);
+    value = read_from_addr(cpu, address);
     return 0;
 }
 
@@ -2184,7 +2185,6 @@ Byte BRK(CPU *cpu)
 
 Byte ORA(CPU *cpu)
 {
-    printf("%d\n", value);
     cpu->A |= value;
     set_zn(cpu, cpu->A);
     return 0;

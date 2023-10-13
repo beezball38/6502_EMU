@@ -318,7 +318,7 @@ void Test_ORA_IZX(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0040] = 0x50;
     cpu->memory[0x0041] = 0x80;
-    cpu->memory[0x8050] = 0x80;
+    cpu->memory[0x8050 + cpu->X] = 0x80;
     clock(cpu);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
