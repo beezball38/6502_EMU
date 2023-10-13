@@ -305,7 +305,25 @@ void Test_ORA_ABY(CPU *cpu)
 
 void Test_ORA_IZX(CPU *cpu)
 {
-    (void)cpu;
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_ORA_IZX;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "ORA");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_ORA_IZX);
+    munit_assert_int(ins.length, ==, 2);
+    munit_assert_int(ins.cycles, ==, 6);
+    // test negative case
+    cpu->A = 0;
+    cpu->X = 0x10;
+    cpu->memory[cpu->PC + 1] = 0x40;
+    cpu->memory[0x0040] = 0x50;
+    cpu->memory[0x0041] = 0x80;
+    cpu->memory[0x8050] = 0x80;
+    clock(cpu);
+    munit_assert_int(cpu->A, ==, 0x80);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, N);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
 }
 
 void Test_ORA_IZY(CPU *cpu)

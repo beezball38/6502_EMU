@@ -2132,11 +2132,11 @@ Byte IND(CPU *cpu)
 Byte IZX(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word ptr = read_from_addr(cpu, cpu->PC + 1);
-    zero_high_byte(ptr);
-    address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
-    address += cpu->X;
-    value = read_from_addr(cpu, address);
+    Byte zp_addr = read_from_addr(cpu, cpu->PC + 1);
+    Byte low_byte = read_from_addr(cpu, zp_addr);
+    Byte high_byte = read_from_addr(cpu, zp_addr + 1);
+    address = (low_byte + cpu->X) & 0x00FF;
+    address |= (high_byte << 8);
     return 0;
 }
 
@@ -2184,6 +2184,7 @@ Byte BRK(CPU *cpu)
 
 Byte ORA(CPU *cpu)
 {
+    printf("%d\n", value);
     cpu->A |= value;
     set_zn(cpu, cpu->A);
     return 0;
