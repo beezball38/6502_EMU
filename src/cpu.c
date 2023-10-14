@@ -22,6 +22,8 @@
     set_flag(cpu, N, (value)&0x80);
 // macro to assemble byte from high and low bytes
 #define assemble_word(high, low) ((high) << 8) | (low)
+#define crosses_boundery(addr1, addr2) ((addr1) & 0xFF00) != ((addr2) & 0xFF00)
+
 
 Word address;                    // used by absolute, zero page, and indirect addressing modes
 Byte address_rel;                // used only by branch instructions
@@ -1804,18 +1806,13 @@ void request_additional_cycles(CPU *cpu, Byte cycles)
     return;
 }
 
-bool crosses_page_boundary(Word old_pc, Word new_pc)
-{
-    return (old_pc & 0xFF00) != (new_pc & 0xFF00);
-}
-
 Byte branch_pc(CPU *cpu)
 {
     Word old_pc = cpu->PC;
     cpu->PC += address_rel;
-    if (crosses_page_boundary(old_pc, cpu->PC))
+    if(crosses_boundery(old_pc, cpu->PC))
     {
-        return 1;
+        cpu->additional_cycles += 1;
     }
     return 0;
 }
@@ -1956,6 +1953,7 @@ Instruction *fetch_current_instruction(CPU *cpu)
 Byte IMP(CPU *cpu)
 {
     assert(cpu != NULL);
+    value = cpu->A; //could be the accumulator for some instructions
     return 0;
 }
 
@@ -2033,6 +2031,10 @@ Byte REL(CPU *cpu)
 {
     assert(cpu != NULL);
     address_rel = read_from_addr(cpu, cpu->PC + 1);
+    if (address_rel & 0x80)
+    { // if the address is negative
+        address_rel |= 0xFF00; // sign extend
+    }
     return 0;
 }
 
@@ -2068,8 +2070,9 @@ Byte ABX(CPU *cpu)
     Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
     address = assemble_word(high_byte, low_byte);
     address += cpu->X;
+    //indicate that we need an additional cycle if the address crosses a page boundary
     value = read_from_addr(cpu, address);
-    return 0;
+    return crosses_boundery(address - cpu->X, address) ? 1 : 0;
 }
 
 /*
@@ -2089,45 +2092,39 @@ Byte ABY(CPU *cpu)
     address = assemble_word(high_byte, low_byte);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
-    return 0;
+    return crosses_boundery(address - cpu->Y, address) ? 1 : 0;
 }
 
 /*
  * Indirect addressing mode
- * Fetches the next two bytes in memory and stores it in the address variable
- * Increments the program counter
- * Fetches the value at the address and stores it in the value variable
- * Fetches the next two bytes in memory and stores it in the address variable
- * Increments the program counter
- * Fetches the value at the address and stores it in the value variable
- */
+ * Fetches the next two bytes in memory and stores it in the ptr variable
+ * Checks if the low byte of the ptr is 0xFF
+ * Simulate the page boundary hardware bug: if the low byte is 0xFF, the high byte is fetched from the same page
+ * Otherwise, the high byte is fetched from ptr + 1
+ */ 
 
 Byte IND(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word ptr = read_from_addr(cpu, cpu->PC + 1);
-    ptr |= ((read_from_addr(cpu, cpu->PC + 2)) << 8);
+    Byte low_byte = read_from_addr(cpu, cpu->PC + 1);
+    Byte high_byte = read_from_addr(cpu, cpu->PC + 2);
+    Word ptr = assemble_word(high_byte, low_byte);
+
     // simulate page boundary hardware bug
-    if ((ptr & 0x00FF) == 0x00FF)
-    {
-        address = assemble_word(read_from_addr(cpu, ptr & 0xFF00), read_from_addr(cpu, ptr));
-    }
-    else
-    {
-        address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
-    }
+    low_byte = read_from_addr(cpu, ptr);
+    high_byte = (ptr & 0x00FF) == 0x00FF ? read_from_addr(cpu, ptr & 0xFF00) : read_from_addr(cpu, ptr + 1);
+    
+    address = assemble_word(high_byte, low_byte);
     value = read_from_addr(cpu, address);
     return 0;
 }
 
 /*
- * Indirect X addressing mode
- * Fetches the next byte in memory and stores it in the address variable
- * Increments the program counter
- * Adds the X register to the address
- * Stores the result in the address variable
- * Fetches the value at the address and stores it in the value variable
- */
+    * Indirect X addressing mode
+    * Fetches the next byte in memory interprets it as a zero page address
+    * Assembles the address by adding the X register to the zero page address
+    * Fetches the value at the address and stores it in the value variable
+*/
 
 Byte IZX(CPU *cpu)
 {
@@ -2137,7 +2134,7 @@ Byte IZX(CPU *cpu)
     Byte high = read_from_addr(cpu, (zp_addr + cpu->X + 1) & 0x00FF);
     address = assemble_word(high, low);
     value = read_from_addr(cpu, address);
-    return 0;
+    return 0; //this will never cross a page boundary
 }
 
 /*
@@ -2148,16 +2145,15 @@ Byte IZX(CPU *cpu)
  * Adds the Y register to the address
  * Stores the result in the address variable
  */
-// todo not so sure about this one
 Byte IZY(CPU *cpu)
 {
     assert(cpu != NULL);
-    Word ptr = read_from_addr(cpu, cpu->PC + 1);
+    Word ptr = (Word)read_from_addr(cpu, cpu->PC + 1);
     zero_high_byte(ptr);
     address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
     address += cpu->Y;
     value = read_from_addr(cpu, address);
-    return 0;
+    return crosses_boundery(address - cpu->Y, address) ? 1 : 0; //indicate if we need an additional cycle
 }
 // 6502 instructions LITTLE ENDIAN
 /*
@@ -2220,7 +2216,7 @@ Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value)
         Word old_PC = cpu->PC;
         cpu->PC += address_rel;
         // checks if the page boundary is crossed
-        if (crosses_page_boundary(old_PC, cpu->PC))
+        if (crosses_boundery(old_PC, cpu->PC))
         {
             return 1;
         }
