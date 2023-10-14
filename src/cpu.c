@@ -2133,10 +2133,9 @@ Byte IZX(CPU *cpu)
 {
     assert(cpu != NULL);
     Byte zp_addr = read_from_addr(cpu, cpu->PC + 1);
-    Byte low_byte = read_from_addr(cpu, zp_addr);
-    Byte high_byte = read_from_addr(cpu, zp_addr + 1);
-    address = (low_byte + cpu->X) & 0x00FF;
-    address |= (high_byte << 8);
+    Byte low = read_from_addr(cpu, (zp_addr + cpu->X) & 0x00FF);
+    Byte high = read_from_addr(cpu, (zp_addr + cpu->X + 1) & 0x00FF);
+    address = assemble_word(high, low);
     value = read_from_addr(cpu, address);
     return 0;
 }

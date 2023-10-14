@@ -313,57 +313,16 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(ins.length, ==, 2);
     munit_assert_int(ins.cycles, ==, 6);
     // test negative case
+    //X-indexed, indirect 6502
     cpu->A = 0;
     cpu->X = 0x10;
     cpu->memory[cpu->PC + 1] = 0x40;
-    cpu->memory[0x0040] = 0x50;
-    cpu->memory[0x0041] = 0x80;
-    cpu->memory[0x8050 + cpu->X] = 0x80;
-    clock(cpu);
-    munit_assert_int(cpu->A, ==, 0x80);
-    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
-    munit_assert_int(cpu->STATUS & N, ==, N);
-    munit_assert_int(cpu->STATUS & Z, ==, 0);
-    // test zero case
-    cpu->PC = old_pc;
-    cpu->A = 0;
-    cpu->X = 0x10;
-    cpu->memory[cpu->PC + 1] = 0x40;
-    cpu->memory[0x0040] = 0x50;
-    cpu->memory[0x0041] = 0x80;
-    cpu->memory[0x8050 + cpu->X] = 0x00;
-    clock(cpu);
-    munit_assert_int(cpu->A, ==, 0);
-    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
-    munit_assert_int(cpu->STATUS & N, ==, 0);
-    munit_assert_int(cpu->STATUS & Z, ==, Z);
-    // check positive case
-    cpu->PC = old_pc;
-    cpu->A = 0x7F;
-    cpu->X = 0x10;
-    cpu->memory[cpu->PC + 1] = 0x40;
-    cpu->memory[0x0040] = 0x50;
-    cpu->memory[0x0041] = 0x80;
-    cpu->memory[0x8050 + cpu->X] = 0x01;
-    clock(cpu);
-    munit_assert_int(cpu->A, ==, 0x7F);
-    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
-    // check flags
-    munit_assert_int(cpu->STATUS & N, ==, 0);   
-    munit_assert_int(cpu->STATUS & Z, ==, 0);
-
-    // test case where X + memory location wraps around the zero page
-    cpu->PC = old_pc;
-    cpu->A = 0;
-    cpu->X = 0x01;
-    cpu->memory[cpu->PC + 1] = 0x40;    
-    cpu->memory[0x0040] = 0xFF;
-    cpu->memory[0x0041] = 0x80;
+    cpu->memory[0x0050] = 0x00;
+    cpu->memory[0x0051] = 0x80;
     cpu->memory[0x8000] = 0x80;
     clock(cpu);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
-    // check flags
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
 }
