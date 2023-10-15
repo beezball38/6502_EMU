@@ -1874,7 +1874,6 @@ void clock(CPU *cpu)
     } 
     else 
     {
-        printf("additional cycles: %d\n", cpu->additional_cycles);
         cpu->additional_cycles -= 1;
     }
     
@@ -1919,6 +1918,13 @@ void nmi(CPU *cpu)
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->additional_cycles += 8;
+    return;
+}
+
+void run(CPU *cpu, Byte cycles){
+    for(int i = 0; i < cycles; i++){
+        clock(cpu);
+    }
     return;
 }
 
