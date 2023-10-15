@@ -306,6 +306,8 @@ struct CPU
     //other
     unsigned char additional_cycles;
     bool pc_changed;
+    bool may_need_additional_cycle;
+    bool does_need_additional_cycle;
     Instruction table[256];
     unsigned char *memory;
 };
@@ -318,19 +320,17 @@ LIST_OF_ADDR_MODES
 LIST_OF_INSTRUCTIONS
 #undef X
 
-void print_cpu_state(CPU *cpu);
 void init_instruction_table(CPU *cpu);
 void init(CPU *cpu, Byte *memory);
 bool get_flag(CPU *cpu, STATUS_FLAGS flag);
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
-void request_additional_cycles(CPU *cpu, Byte cycles);
 Instruction *fetch_current_instruction(CPU *cpu);
 Byte peek(CPU *cpu);
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
-
+void adjust_pc(CPU* cpu, Byte instruction_length); //setup for next instruction
 // main CPU interface functions
 void clock(CPU *cpu);
 void irq(CPU *cpu);

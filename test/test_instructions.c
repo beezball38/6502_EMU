@@ -16,7 +16,7 @@
     X(ORA, IZY)
 
 
-#define X(instruction) void Test_##instruction(CPU *cpu);
+#define X(instruction) void Test_##instruction(CPU *cpu, Byte *memory);
 LIST_OF_INSTRUCTIONS
 #undef X
 
@@ -29,20 +29,27 @@ int main(void)
     CPU cpu;
     Byte memory[MEM_SIZE] = {0};
     init(&cpu, memory);
-    reset(&cpu);
-    Test_ORA(&cpu);
+    Test_ORA(&cpu, memory);
     printf("All tests passed\n");
 }
-void Test_ORA(CPU *cpu)
-{
-    Test_ORA_IMM(cpu);
+
+void Test_ORA(CPU *cpu, Byte *memory)
+{   Test_ORA_IMM(cpu);
+    init(cpu, memory);
     Test_ORA_ZP0(cpu);
+    init(cpu, memory);
     Test_ORA_ZPX(cpu);
+    init(cpu, memory);
     Test_ORA_ABS(cpu);
+    init(cpu, memory);
     Test_ORA_ABX(cpu);
+    init(cpu, memory);
     Test_ORA_ABY(cpu);
+    init(cpu, memory);
     Test_ORA_IZX(cpu);
+    init(cpu, memory);
     Test_ORA_IZY(cpu);
+    init(cpu, memory);
 }
 
 void Test_ORA_IMM(CPU *cpu)
@@ -64,6 +71,7 @@ void Test_ORA_IMM(CPU *cpu)
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
     // test zero case
+    //ensure additional_cycles is set to 0
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x00;
@@ -313,7 +321,7 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(ins.length, ==, 2);
     munit_assert_int(ins.cycles, ==, 6);
     // test negative case
-    //X-indexed, indirect 6502
+    //X-indexed, indrect 6502
     cpu->A = 0;
     cpu->X = 0x10;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -325,6 +333,32 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    // test zero case
+    cpu->PC = old_pc;
+    cpu->A = 0;
+    cpu->X = 0x10;
+    cpu->memory[cpu->PC + 1] = 0x40;
+    cpu->memory[0x0050] = 0x00;
+    cpu->memory[0x0051] = 0x80;
+    cpu->memory[0x8000] = 0x00;
+    clock(cpu);
+    munit_assert_int(cpu->A, ==, 0);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, Z);
+    // check positive case
+    cpu->PC = old_pc;
+    cpu->A = 0x7F;
+    cpu->X = 0x10;
+    cpu->memory[cpu->PC + 1] = 0x40;
+    cpu->memory[0x0050] = 0x00;
+    cpu->memory[0x0051] = 0x80;
+    cpu->memory[0x8000] = 0x01;
+    clock(cpu);
+    munit_assert_int(cpu->A, ==, 0x7F);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, 0); 
 }
 
 void Test_ORA_IZY(CPU *cpu)

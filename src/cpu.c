@@ -30,17 +30,6 @@ Byte address_rel;                // used only by branch instructions
 Byte value;                      // holds fetched value, could be immediate value or value from memory
 Byte current_instruction_length; // used by instructions to determine how many bytes to consume
 
-void print_cpu_state(CPU *cpu)
-{
-    printf("A: 0x%02X\n", cpu->A);
-    printf("X: 0x%02X\n", cpu->X);
-    printf("Y: 0x%02X\n", cpu->Y);
-    printf("SP: 0x%02X\n", cpu->SP);
-    printf("PC: 0x%04X\n", cpu->PC);
-    printf("STATUS: 0x%02X\n", cpu->STATUS);
-    return;
-}
-
 void init_instruction_table(CPU* cpu)
 {
     Instruction* table = &cpu->table[0];
@@ -1800,12 +1789,6 @@ void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
     return;
 }
 
-void request_additional_cycles(CPU *cpu, Byte cycles)
-{
-    cpu->additional_cycles += cycles;
-    return;
-}
-
 Byte branch_pc(CPU *cpu)
 {
     Word old_pc = cpu->PC;
@@ -1878,18 +1861,23 @@ Byte pop_byte(CPU *cpu)
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
-    Instruction *ins = fetch_current_instruction(cpu);
-    ins->fetch(cpu);
-    ins->execute(cpu);
-    if (cpu->pc_changed)
-    { // if the PC was changed by the instruction, don't increment it
-        cpu->pc_changed = 0;
-    }
-    else
+    if(cpu->additional_cycles == 0)
     {
+        Instruction *ins = fetch_current_instruction(cpu);
+        cpu->additional_cycles += ins->cycles;
+        ins->fetch(cpu);
+        ins->execute(cpu);
+        if(cpu->may_need_additional_cycle && cpu->does_need_additional_cycle){
+            cpu->additional_cycles += 1;    
+        }
         cpu->PC += ins->length;
+    } 
+    else 
+    {
+        printf("additional cycles: %d\n", cpu->additional_cycles);
+        cpu->additional_cycles -= 1;
     }
-    return;
+    
 }
 
 void init(CPU *cpu, Byte *memory)
@@ -1898,6 +1886,7 @@ void init(CPU *cpu, Byte *memory)
     init_instruction_table(cpu);
     register_init(cpu);
     reset_globals();
+    cpu->additional_cycles = 0;
     return;
 }
 
@@ -1905,6 +1894,7 @@ void reset(CPU *cpu)
 {
     register_init(cpu);
     reset_globals();
+    cpu->additional_cycles = 8;
     return;
 }
 
@@ -1936,6 +1926,12 @@ Instruction *fetch_current_instruction(CPU *cpu)
 {
     Byte opcode = peek(cpu);
     return &cpu->table[opcode];
+}
+
+void adjust_pc(CPU *cpu, Byte length)
+{
+    cpu->PC += length;
+    return;
 }
 
 /*
