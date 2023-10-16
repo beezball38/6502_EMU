@@ -1894,6 +1894,7 @@ void reset(CPU *cpu)
 {
     register_init(cpu);
     reset_globals();
+    //memory is left alone
     cpu->additional_cycles = 8;
     return;
 }
