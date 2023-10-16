@@ -34,7 +34,8 @@ int main(void)
 }
 
 void Test_ORA(CPU *cpu, Byte *memory)
-{   Test_ORA_IMM(cpu);
+{   
+    Test_ORA_IMM(cpu);
     init(cpu, memory);
     Test_ORA_ZP0(cpu);
     init(cpu, memory);
@@ -65,17 +66,16 @@ void Test_ORA_IMM(CPU *cpu)
     // test negative case
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
     // test zero case
-    //ensure additional_cycles is set to 0
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -84,7 +84,7 @@ void Test_ORA_IMM(CPU *cpu)
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     // check flags
@@ -106,7 +106,7 @@ void Test_ORA_ZP0(CPU *cpu)
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0040] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -116,7 +116,7 @@ void Test_ORA_ZP0(CPU *cpu)
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0040] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -126,7 +126,7 @@ void Test_ORA_ZP0(CPU *cpu)
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0040] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);

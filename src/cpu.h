@@ -336,4 +336,6 @@ void clock(CPU *cpu);
 void irq(CPU *cpu);
 void nmi(CPU *cpu);
 void reset(CPU *cpu);
+
+void run(CPU *cpu, Byte cycles);
 #endif
