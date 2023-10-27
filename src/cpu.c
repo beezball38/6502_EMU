@@ -10,19 +10,17 @@
     abort();
 
 #define MEM_SIZE 1024 * 1024 * 64
-// macro for zeroing out the high byte of a word
+
+//convinience macros
 #define zero_high_byte(word) (word) &= 0x00FF
-// macro to push_byte an address to the stack
-#define push_addr(cpu, addr)              \
+#define push_addr_to_stack(cpu, addr)              \
     push_byte(cpu, ((addr)&0xFF00) >> 8); \
     push_byte(cpu, (addr)&0x00FF);
-// macro to set Z and N flags
 #define set_zn(cpu, value)          \
     set_flag(cpu, Z, (value) == 0); \
     set_flag(cpu, N, (value)&0x80);
-// macro to assemble byte from high and low bytes
 #define assemble_word(high, low) ((high) << 8) | (low)
-#define crosses_boundery(addr1, addr2) ((addr1) & 0xFF00) != ((addr2) & 0xFF00)
+#define does_cross_boundery(addr1, addr2) ((addr1) & 0xFF00) != ((addr2) & 0xFF00)
 
 
 Word address;                    // used by absolute, zero page, and indirect addressing modes
@@ -30,9 +28,9 @@ Byte address_rel;                // used only by branch instructions
 Byte value;                      // holds fetched value, could be immediate value or value from memory
 Byte current_instruction_length; // used by instructions to determine how many bytes to consume
 
-void init_instruction_table(CPU* cpu)
+void init_instruction_table(CPU *cpu)
 {
-    Instruction* table = &cpu->table[0];
+    Instruction *table = &cpu->table[0];
     // reference https://www.masswerk.at/6502/6502_instruction_set.html
     table[INSTRUCTION_BRK_IMP] = (Instruction)
     {
@@ -2277,14 +2275,17 @@ void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
     }
     return;
 }
-
+/*
+    This function is unique in that it directly modifies the cycle count
+*/
 Byte branch_pc(CPU *cpu)
 {
     Word old_pc = cpu->PC;
     cpu->PC += address_rel;
-    if(crosses_boundery(old_pc, cpu->PC))
+    
+    if(does_cross_boundery(old_pc, cpu->PC))
     {
-        cpu->additional_cycles += 1;
+        cpu->instruction_cycles += 1;
     }
     return 0;
 }
@@ -2350,22 +2351,17 @@ Byte pop_byte(CPU *cpu)
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
-    if(cpu->additional_cycles > 0)
+    if(cpu->instruction_cycles == 0)
     {
-        cpu->additional_cycles -= 1;
-        return;
+        Instruction *instruction = fetch_current_instruction(cpu);
+        cpu->instruction_cycles  = instruction->cycles;
+        cpu->may_need_additional_cycle = instruction->fetch(cpu);
+        cpu->may_need_additional_cycle = instruction->execute(cpu) && cpu->may_need_additional_cycle;
+        adjust_pc(cpu, instruction->length);
     }
     else
     {
-        Instruction *instruction = fetch_current_instruction(cpu);
-        bool may_need_cycles = instruction->fetch(cpu);
-        may_need_cycles = instruction->execute(cpu) && may_need_cycles;
-        if(instruction->fetch(cpu) && instruction->execute(cpu))
-        {
-            cpu->additional_cycles++;
-        }
-        instruction->execute(cpu);
-        return;
+        cpu->instruction_cycles--;
     }
 }
 
@@ -2375,7 +2371,7 @@ void init(CPU *cpu, Byte *memory)
     init_instruction_table(cpu);
     register_init(cpu);
     reset_globals();
-    cpu->additional_cycles = 0;
+    cpu->instruction_cycles = 0;
     return;
 }
 
@@ -2384,7 +2380,7 @@ void reset(CPU *cpu)
     register_init(cpu);
     reset_globals();
     //memory is left alone
-    cpu->additional_cycles = 8;
+    cpu->instruction_cycles = 8;
     return;
 }
 
@@ -2394,21 +2390,21 @@ void irq(CPU *cpu)
     {
         return;
     }
-    push_addr(cpu, cpu->PC);
+    push_addr_to_stack(cpu, cpu->PC);
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
-    cpu->additional_cycles += 7;
+    cpu->instruction_cycles += 7;
     return;
 }
 
 void nmi(CPU *cpu)
 {
-    push_addr(cpu, cpu->PC);
+    push_addr_to_stack(cpu, cpu->PC);
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
-    cpu->additional_cycles += 8;
+    cpu->instruction_cycles += 8;
     return;
 }
 
@@ -2558,7 +2554,7 @@ Byte ABX(CPU *cpu)
     address += cpu->X;
     //indicate that we need an additional cycle if the address crosses a page boundary
     value = read_from_addr(cpu, address);
-    return crosses_boundery(address - cpu->X, address) ? 1 : 0;
+    return does_cross_boundery(address - cpu->X, address) ? 1 : 0;
 }
 
 /*
@@ -2578,7 +2574,7 @@ Byte ABY(CPU *cpu)
     address = assemble_word(high_byte, low_byte);
     address += cpu->Y;
     value = read_from_addr(cpu, address);
-    return crosses_boundery(address - cpu->Y, address) ? 1 : 0;
+    return does_cross_boundery(address - cpu->Y, address) ? 1 : 0;
 }
 
 /*
@@ -2639,7 +2635,7 @@ Byte IZY(CPU *cpu)
     address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
     address += cpu->Y;
     value = read_from_addr(cpu, address);
-    return crosses_boundery(address - cpu->Y, address) ? 1 : 0; //indicate if we need an additional cycle
+    return does_cross_boundery(address - cpu->Y, address) ? 1 : 0; //indicate if we need an additional cycle
 }
 // 6502 instructions LITTLE ENDIAN
 /*
@@ -2656,7 +2652,7 @@ Byte BRK(CPU *cpu)
     set_flag(cpu, I, true);
     cpu->PC++;
     // pushes the next instruction address onto the stack
-    push_addr(cpu, cpu->PC);
+    push_addr_to_stack(cpu, cpu->PC);
     set_flag(cpu, B, true); // sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, B, false); // clears the break flag
@@ -2702,7 +2698,7 @@ Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value)
         Word old_PC = cpu->PC;
         cpu->PC += address_rel;
         // checks if the page boundary is crossed
-        if (crosses_boundery(old_PC, cpu->PC))
+        if (does_cross_boundery(old_PC, cpu->PC))
         {
             return 1;
         }
@@ -2742,7 +2738,7 @@ Byte JSR(CPU *cpu)
 {
     assert(cpu != NULL);
     Word val = cpu->PC + 1;
-    push_addr(cpu, val); // todo check if this is correct
+    push_addr_to_stack(cpu, val); // todo check if this is correct
     cpu->PC = address;
     return 0;
 }
