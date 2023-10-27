@@ -303,11 +303,11 @@ struct CPU
     Word PC;
     Byte STATUS;
 
-    //other
-    unsigned char additional_cycles;
+    // internal
+    unsigned char instruction_cycles; //grabbed from current instruction
+    unsigned char additional_cycles; //additional cycles that must be clocked before next instruction
     bool pc_changed;
     bool may_need_additional_cycle;
-    bool does_need_additional_cycle;
     Instruction table[256];
     unsigned char *memory;
 };
@@ -337,5 +337,4 @@ void irq(CPU *cpu);
 void nmi(CPU *cpu);
 void reset(CPU *cpu);
 
-void run(CPU *cpu, Byte cycles);
 #endif

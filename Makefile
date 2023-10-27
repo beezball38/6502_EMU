@@ -5,7 +5,7 @@ OBJ_DIR := bin/obj
 
 CC := gcc
 CFLAGS := -Wall -Wextra -Werror -g
-TEST_FLAGS := -w
+TEST_FLAGS := -w -g
 
 DEPS := $(SRC_DIR)/cpu.h $(SRC_DIR)/cpu.c
 MUNIT_DEPS := $(TEST_DIR)/munit/munit.h $(TEST_DIR)/munit/munit.c

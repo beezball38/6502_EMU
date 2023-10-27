@@ -15,7 +15,6 @@
     X(ORA, IZX) \
     X(ORA, IZY)
 
-
 #define X(instruction) void Test_##instruction(CPU *cpu, Byte *memory);
 LIST_OF_INSTRUCTIONS
 #undef X
@@ -23,6 +22,14 @@ LIST_OF_INSTRUCTIONS
 #define X(instruction, mode) void Test_##instruction##_##mode(CPU *cpu);
 TEST_LIST
 #undef X
+
+void run(CPU *cpu, int cycles)
+{
+    for (int i = 0; i < cycles; i++)
+    {
+        clock(cpu);
+    }
+}
 
 int main(void)
 {
