@@ -13,7 +13,8 @@
     X(ORA, ABX) \
     X(ORA, ABY) \
     X(ORA, IZX) \
-    X(ORA, IZY)
+    X(ORA, IZY) \
+    X(PHP, IMP) \
 
 #define X(instruction) void Test_##instruction(CPU *cpu, Byte *memory);
 LIST_OF_INSTRUCTIONS
@@ -37,6 +38,7 @@ int main(void)
     Byte memory[MEM_SIZE] = {0};
     init(&cpu, memory);
     Test_ORA(&cpu, memory);
+    Test_PHP(&cpu, memory);
     printf("All tests passed\n");
 }
 
@@ -370,5 +372,79 @@ void Test_ORA_IZX(CPU *cpu)
 
 void Test_ORA_IZY(CPU *cpu)
 {
-    (void)cpu;
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_ORA_IZY;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "ORA");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_ORA_IZY);
+    munit_assert_int(ins.length, ==, 2);
+    munit_assert_int(ins.cycles, ==, 5);
+    // test negative case
+    //Indirect, Y-indexed 6502
+    cpu->A = 0;
+    cpu->Y = 0x10;
+    cpu->memory[cpu->PC + 1] = 0x40;
+    cpu->memory[0x0040] = 0x00;
+    cpu->memory[0x0041] = 0x80;
+    cpu->memory[0x8010] = 0x80;
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0x80);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, N);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+    // test zero case
+    cpu->PC = old_pc;
+    cpu->A = 0;
+    cpu->Y = 0x10;
+    cpu->memory[cpu->PC + 1] = 0x40;
+    cpu->memory[0x0040] = 0x00;
+    cpu->memory[0x0041] = 0x80;
+    cpu->memory[0x8010] = 0x00;
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, Z);
+    // check positive case
+    cpu->PC = old_pc;
+    cpu->A = 0x7F;
+    cpu->Y = 0x10;
+    cpu->memory[cpu->PC + 1] = 0;
+    cpu->memory[0x0040] = 0x00;
+    cpu->memory[0x0041] = 0x80;
+    cpu->memory[0x8010] = 0x01;
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0x7F);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+}
+
+void Test_PHP(CPU *cpu, Byte *memory)
+{
+    Test_PHP_IMP(cpu);
+    init(cpu, memory);
+}
+
+void Test_PHP_IMP(CPU *cpu)
+{
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_PHP_IMP;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "PHP");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_PHP_IMP);
+    munit_assert_int(ins.length, ==, 1);
+    munit_assert_int(ins.cycles, ==, 3);
+
+    //set status to random value between 0 and 255
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
+    //ensure stack is empty
+    cpu->SP = 0xFF;
+    run(cpu, ins.cycles);
+    //check that status was pushed to stack (with the caveat that B flag is set to 1)
+    munit_assert_int(cpu->memory[0x01FF], ==, old_status | B ); //todo: check that B and U flag are set to 1
+    //check that stack pointer was decremented
+    munit_assert_int(cpu->SP, ==, 0xFE);
+    //check that program counter was incremented
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
 }

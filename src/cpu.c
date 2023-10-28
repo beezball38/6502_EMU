@@ -2355,6 +2355,20 @@ Byte pop_byte(CPU *cpu)
 }
 
 /*
+    "Runs" the instruction by first fetching it's operands 
+    and putting them into global variables
+    Then, executes the instruction using those operands
+    If the instruction needs an additional cycle, returns true
+*/
+bool fetch_and_execute(CPU *cpu)
+{
+    assert(cpu != NULL && cpu->current_instruction != NULL);
+    bool result = cpu->current_instruction->fetch(cpu);
+    result = cpu->current_instruction->execute(cpu) && result;
+    return result;
+}
+
+/*
     One 6502 clock tick
     Executes the instruction in one tick, once the remaining cycles are 0 if it exists
     Otherwise, fetches the instruction, stores it in the cpu's instruction variable
@@ -2365,9 +2379,15 @@ Byte pop_byte(CPU *cpu)
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
+    if(cpu->does_need_additional_cycle)
+    {
+        cpu->does_need_additional_cycle = false;
+        return; //noop
+    }
+    
     if (cpu->current_instruction == NULL)
     {
-        cpu->current_instruction = fetch_current_instruction(cpu);
+        cpu->current_instruction = &cpu->table[peek(cpu)];
         cpu->instruction_cycles = cpu->current_instruction->cycles - 1; // -1 because the first cycle is the fetch cycle
     }
     else
@@ -2377,8 +2397,7 @@ void clock(CPU *cpu)
 
     if (cpu->instruction_cycles == 0)
     {
-        cpu->current_instruction->fetch(cpu);
-        cpu->current_instruction->execute(cpu);
+        cpu->does_need_additional_cycle = fetch_and_execute(cpu);
         adjust_pc(cpu, cpu->current_instruction->length);
         cpu->current_instruction = NULL;
     }
@@ -2425,12 +2444,6 @@ void nmi(CPU *cpu)
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->instruction_cycles += 8;
     return;
-}
-
-Instruction *fetch_current_instruction(CPU *cpu)
-{
-    Byte opcode = peek(cpu);
-    return &cpu->table[opcode];
 }
 
 void adjust_pc(CPU *cpu, Byte length)
@@ -2700,7 +2713,7 @@ Byte ASL(CPU *cpu)
 */
 Byte PHP(CPU *cpu)
 {
-    push_byte(cpu, cpu->STATUS);
+    push_byte(cpu, cpu->STATUS | B | U); // pushes the status register with the break and unused bits set 
     return 0;
 }
 

@@ -307,7 +307,7 @@ struct CPU
     unsigned char instruction_cycles; //grabbed from current instruction
     Instruction *current_instruction;
     bool pc_changed;
-    bool may_need_additional_cycle;
+    bool does_need_additional_cycle;
     Instruction table[256];
     unsigned char *memory;
 };
@@ -324,7 +324,6 @@ void init_instruction_table(CPU *cpu);
 void init(CPU *cpu, Byte *memory);
 bool get_flag(CPU *cpu, STATUS_FLAGS flag);
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
-Instruction *fetch_current_instruction(CPU *cpu);
 Byte peek(CPU *cpu);
 Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
