@@ -154,7 +154,7 @@ void Test_ORA_ZPX(CPU *cpu)
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0050] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -165,7 +165,7 @@ void Test_ORA_ZPX(CPU *cpu)
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0050] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -176,7 +176,7 @@ void Test_ORA_ZPX(CPU *cpu)
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0050] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -197,7 +197,7 @@ void Test_ORA_ABS(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8000] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -208,7 +208,7 @@ void Test_ORA_ABS(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8000] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -219,7 +219,7 @@ void Test_ORA_ABS(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8000] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -241,7 +241,7 @@ void Test_ORA_ABX(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -253,7 +253,7 @@ void Test_ORA_ABX(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -265,7 +265,7 @@ void Test_ORA_ABX(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -287,7 +287,7 @@ void Test_ORA_ABY(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -299,7 +299,7 @@ void Test_ORA_ABY(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -311,7 +311,7 @@ void Test_ORA_ABY(CPU *cpu)
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
     cpu->memory[0x8010] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -335,7 +335,7 @@ void Test_ORA_IZX(CPU *cpu)
     cpu->memory[0x0050] = 0x00;
     cpu->memory[0x0051] = 0x80;
     cpu->memory[0x8000] = 0x80;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x80);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
@@ -348,7 +348,7 @@ void Test_ORA_IZX(CPU *cpu)
     cpu->memory[0x0050] = 0x00;
     cpu->memory[0x0051] = 0x80;
     cpu->memory[0x8000] = 0x00;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
@@ -361,7 +361,7 @@ void Test_ORA_IZX(CPU *cpu)
     cpu->memory[0x0050] = 0x00;
     cpu->memory[0x0051] = 0x80;
     cpu->memory[0x8000] = 0x01;
-    clock(cpu);
+    run(cpu, ins.cycles);
     munit_assert_int(cpu->A, ==, 0x7F);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);

@@ -2356,18 +2356,32 @@ Byte pop_byte(CPU *cpu)
 
 /*
     One 6502 clock tick
-    In this implementation will behave accordingly:
-    1. If there are no stored cycles (ie an instruction has just been executed)
-        fetch the next instruction.
-    2. If there are stored cycles, decrement the cycle count by 1
-    3. If the cycle count is 0 execute the instruction and increment the program counter by
-        the length of the instruction
-    
+    Executes the instruction in one tick, once the remaining cycles are 0 if it exists
+    Otherwise, fetches the instruction, stores it in the cpu's instruction variable
+    and then executes it once the remaining cycles are 0
 */
+//todo: fix this
+//clock is ticking 3 times on 2 cycle instructions...something is wrong
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
-    UNIMPLEMENTED();
+    if (cpu->current_instruction == NULL)
+    {
+        cpu->current_instruction = fetch_current_instruction(cpu);
+        cpu->instruction_cycles = cpu->current_instruction->cycles - 1; // -1 because the first cycle is the fetch cycle
+    }
+    else
+    {
+        cpu->instruction_cycles--;
+    }
+
+    if (cpu->instruction_cycles == 0)
+    {
+        cpu->current_instruction->fetch(cpu);
+        cpu->current_instruction->execute(cpu);
+        adjust_pc(cpu, cpu->current_instruction->length);
+        cpu->current_instruction = NULL;
+    }
 }
 
 void init(CPU *cpu, Byte *memory)
