@@ -305,6 +305,7 @@ struct CPU
 
     // internal
     unsigned char instruction_cycles; //grabbed from current instruction
+    Instruction *current_instruction;
     bool pc_changed;
     bool may_need_additional_cycle;
     Instruction table[256];
@@ -329,7 +330,8 @@ Byte read_from_addr(CPU *cpu, Word address);
 void write_to_addr(CPU *cpu, Word address, Byte value);
 void push_byte(CPU *cpu, Byte value);
 Byte pop_byte(CPU *cpu);
-void adjust_pc(CPU* cpu, Byte instruction_length); //setup for next instruction
+void adjust_pc(CPU *cpu, Byte instruction_length); //setup for next instruction
+
 // main CPU interface functions
 void clock(CPU *cpu);
 void irq(CPU *cpu);

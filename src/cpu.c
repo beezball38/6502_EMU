@@ -2300,6 +2300,9 @@ Byte peek(CPU *cpu)
     return cpu->memory[cpu->PC];
 }
 
+/*
+    gets the value at memory[address]
+*/
 Byte read_from_addr(CPU *cpu, Word address)
 {
     assert(cpu != NULL);
@@ -2307,6 +2310,9 @@ Byte read_from_addr(CPU *cpu, Word address)
     return cpu->memory[address];
 }
 
+/*
+    writes value to memory[address]
+*/
 void write_to_addr(CPU *cpu, Word address, Byte value)
 {
     assert(cpu != NULL);
@@ -2348,21 +2354,20 @@ Byte pop_byte(CPU *cpu)
     return byte;
 }
 
+/*
+    One 6502 clock tick
+    In this implementation will behave accordingly:
+    1. If there are no stored cycles (ie an instruction has just been executed)
+        fetch the next instruction.
+    2. If there are stored cycles, decrement the cycle count by 1
+    3. If the cycle count is 0 execute the instruction and increment the program counter by
+        the length of the instruction
+    
+*/
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
-    if(cpu->instruction_cycles == 0)
-    {
-        Instruction *instruction = fetch_current_instruction(cpu);
-        cpu->instruction_cycles  = instruction->cycles;
-        cpu->may_need_additional_cycle = instruction->fetch(cpu);
-        cpu->may_need_additional_cycle = instruction->execute(cpu) && cpu->may_need_additional_cycle;
-        adjust_pc(cpu, instruction->length);
-    }
-    else
-    {
-        cpu->instruction_cycles--;
-    }
+    UNIMPLEMENTED();
 }
 
 void init(CPU *cpu, Byte *memory)
