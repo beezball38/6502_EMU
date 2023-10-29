@@ -165,6 +165,7 @@ void Test_ORA_IMM(CPU *cpu)
     munit_assert_int(ins.length, ==, 2);
     munit_assert_int(ins.cycles, ==, 2);
     // test negative case
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x80;
     run(cpu, ins.cycles);
@@ -172,8 +173,10 @@ void Test_ORA_IMM(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
     cpu->PC = old_pc;
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x00;
     run(cpu, ins.cycles);
@@ -181,8 +184,10 @@ void Test_ORA_IMM(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // check positive case
     cpu->PC = old_pc;
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x01;
     run(cpu, ins.cycles);
@@ -191,6 +196,7 @@ void Test_ORA_IMM(CPU *cpu)
     // check flags
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_ZP0(CPU *cpu)
@@ -204,6 +210,7 @@ void Test_ORA_ZP0(CPU *cpu)
     munit_assert_int(ins.cycles, ==, 3);
     // test negative case
     // put 0x80 in memory location 0x0040
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
     cpu->memory[0x0040] = 0x80;
@@ -212,7 +219,9 @@ void Test_ORA_ZP0(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -222,7 +231,9 @@ void Test_ORA_ZP0(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -232,6 +243,7 @@ void Test_ORA_ZP0(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_ZPX(CPU *cpu)
@@ -244,6 +256,7 @@ void Test_ORA_ZPX(CPU *cpu)
     munit_assert_int(ins.length, ==, 2);
     munit_assert_int(ins.cycles, ==, 4);
     // test negative case
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->X = 0x10;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -253,7 +266,9 @@ void Test_ORA_ZPX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->X = 0x10;
     cpu->A = 0;
@@ -264,7 +279,9 @@ void Test_ORA_ZPX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->X = 0x10;
     cpu->A = 0x7F;
@@ -275,6 +292,7 @@ void Test_ORA_ZPX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_ABS(CPU *cpu)
@@ -287,6 +305,7 @@ void Test_ORA_ABS(CPU *cpu)
     munit_assert_int(ins.length, ==, 3);
     munit_assert_int(ins.cycles, ==, 4);
     // test negative case
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x00;
     cpu->memory[cpu->PC + 2] = 0x80;
@@ -296,7 +315,9 @@ void Test_ORA_ABS(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->memory[cpu->PC + 1] = 0x00;
@@ -306,8 +327,10 @@ void Test_ORA_ABS(CPU *cpu)
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
-    munit_assert_int(cpu->STATUS & Z, ==, Z);   
+    munit_assert_int(cpu->STATUS & Z, ==, Z);  
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z)); 
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->memory[cpu->PC + 1] = 0x00;
@@ -318,6 +341,7 @@ void Test_ORA_ABS(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_ABX(CPU *cpu)
@@ -330,6 +354,7 @@ void Test_ORA_ABX(CPU *cpu)
     munit_assert_int(ins.length, ==, 3);
     munit_assert_int(ins.cycles, ==, 4);
     // test negative case
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->X = 0x10;
     cpu->memory[cpu->PC + 1] = 0x00;
@@ -340,7 +365,9 @@ void Test_ORA_ABX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->X = 0x10;
@@ -352,7 +379,9 @@ void Test_ORA_ABX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);   
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->X = 0x10;
@@ -364,6 +393,7 @@ void Test_ORA_ABX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_ABY(CPU *cpu)
@@ -376,6 +406,7 @@ void Test_ORA_ABY(CPU *cpu)
     munit_assert_int(ins.length, ==, 3);
     munit_assert_int(ins.cycles, ==, 4);
     // test negative case
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->Y = 0x10;
     cpu->memory[cpu->PC + 1] = 0x00;
@@ -386,7 +417,9 @@ void Test_ORA_ABY(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->Y = 0x10;
@@ -397,8 +430,10 @@ void Test_ORA_ABY(CPU *cpu)
     munit_assert_int(cpu->A, ==, 0);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
-    munit_assert_int(cpu->STATUS & Z, ==, Z);  
+    munit_assert_int(cpu->STATUS & Z, ==, Z); 
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z)); 
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->Y = 0x10;
@@ -410,6 +445,7 @@ void Test_ORA_ABY(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0); 
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_IZX(CPU *cpu)
@@ -423,6 +459,7 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(ins.cycles, ==, 6);
     // test negative case
     //X-indexed, indrect 6502
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->X = 0x10;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -434,7 +471,9 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->X = 0x10;
@@ -447,7 +486,9 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));    
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->X = 0x10;
@@ -460,6 +501,7 @@ void Test_ORA_IZX(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0); 
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_ORA_IZY(CPU *cpu)
@@ -473,6 +515,7 @@ void Test_ORA_IZY(CPU *cpu)
     munit_assert_int(ins.cycles, ==, 5);
     // test negative case
     //Indirect, Y-indexed 6502
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->A = 0;
     cpu->Y = 0x10;
     cpu->memory[cpu->PC + 1] = 0x40;
@@ -484,7 +527,9 @@ void Test_ORA_IZY(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, N);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
     // test zero case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0;
     cpu->Y = 0x10;
@@ -497,7 +542,10 @@ void Test_ORA_IZY(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
+
     // check positive case
+    old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->PC = old_pc;
     cpu->A = 0x7F;
     cpu->Y = 0x10;
@@ -510,6 +558,7 @@ void Test_ORA_IZY(CPU *cpu)
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS & N, ==, 0);
     munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
 }
 
 void Test_PHP(CPU *cpu, Byte *memory)
@@ -531,7 +580,7 @@ void Test_PHP_IMP(CPU *cpu)
     Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->SP = 0xFF;
     run(cpu, ins.cycles);
-    munit_assert_int(cpu->memory[0x01FF], ==, old_status | B); //todo: check that B and U flag are set to 1
+    munit_assert_int(cpu->memory[0x01FF], ==, old_status | B); 
     munit_assert_int(cpu->SP, ==, 0xFE);
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
 }
@@ -571,7 +620,7 @@ void Test_CLC(CPU *cpu, Byte *memory)
     Test_CLC_IMP(cpu);
 }
 
-void Test_CLC_IMP(CPU* cpu)
+void Test_CLC_IMP(CPU *cpu)
 {
     Word old_pc = cpu->PC = 0x4000;
     cpu->memory[cpu->PC] = INSTRUCTION_CLC_IMP;
@@ -581,15 +630,10 @@ void Test_CLC_IMP(CPU* cpu)
     munit_assert_int(ins.length, ==, 1);
     munit_assert_int(ins.cycles, ==, 2);
 
-    //save status as random status between 0 and 255
 
-    Byte old_status = cpu->STATUS = rand() % 256;
-    //set carry flag to 1
-    cpu->STATUS |= C;
+    Byte old_status = cpu->STATUS = (rand() % 256) | C | U;
     run(cpu, ins.cycles);
-    //check that carry flag was set to 0
     munit_assert_int(cpu->STATUS & C, ==, 0);
-    //check that program counter was incremented
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
     munit_assert_int(cpu->STATUS, ==, old_status & ~C);
 }
