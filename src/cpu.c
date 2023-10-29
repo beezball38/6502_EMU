@@ -2266,13 +2266,9 @@ bool get_flag(CPU *cpu, STATUS_FLAGS flag)
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
 {
     if (value)
-    {
         cpu->STATUS |= flag;
-    }
     else
-    {
         cpu->STATUS &= ~flag;
-    }
     return;
 }
 /*
@@ -2295,8 +2291,7 @@ Byte branch_pc(CPU *cpu)
 */
 Byte peek(CPU *cpu)
 {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
+    assert(cpu != NULL && cpu->memory != NULL);
     return cpu->memory[cpu->PC];
 }
 
@@ -2305,8 +2300,7 @@ Byte peek(CPU *cpu)
 */
 Byte read_from_addr(CPU *cpu, Word address)
 {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
+    assert(cpu != NULL && cpu->memory != NULL);
     return cpu->memory[address];
 }
 
@@ -2315,8 +2309,7 @@ Byte read_from_addr(CPU *cpu, Word address)
 */
 void write_to_addr(CPU *cpu, Word address, Byte value)
 {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
+    assert(cpu != NULL && cpu->memory != NULL);
     cpu->memory[address] = value;
     return;
 }
@@ -2327,8 +2320,7 @@ void write_to_addr(CPU *cpu, Word address, Byte value)
 */
 void push_byte(CPU *cpu, Byte byte)
 {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
+    assert(cpu != NULL && cpu->memory != NULL);
     if (cpu->SP == 0x00)
     {
         cpu->SP = 0xFF; // stack is full, wrap around
@@ -2342,8 +2334,7 @@ void push_byte(CPU *cpu, Byte byte)
 
 Byte pop_byte(CPU *cpu)
 {
-    assert(cpu != NULL);
-    assert(cpu->memory != NULL);
+    assert(cpu != NULL && cpu->memory != NULL);
     cpu->SP++;
     if (cpu->SP == 0xFF)
     {
@@ -2692,12 +2683,19 @@ Byte BRK(CPU *cpu)
     return 0;
 }
 
+/*
+    ORA - OR Memory with Accumulator
+    ORs the value with the accumulator
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+*/
 Byte ORA(CPU *cpu)
 {
     cpu->A |= value;
     set_zn(cpu, cpu->A);
     return 0;
 }
+
 
 Byte ASL(CPU *cpu)
 {
@@ -2709,7 +2707,6 @@ Byte ASL(CPU *cpu)
 /*
     Push Processor Status on Stack
     Pushes the status register onto the stack
-    Decrements the stack pointer?
 */
 Byte PHP(CPU *cpu)
 {

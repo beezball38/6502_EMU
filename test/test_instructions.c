@@ -6,6 +6,8 @@
 #define MEM_SIZE 1024 * 64
 
 #define TEST_LIST \
+    X(AND, IMM) \
+    X(CLC, IMP) \
     X(ORA, IMM) \
     X(ORA, ZP0) \
     X(ORA, ZPX) \
@@ -14,6 +16,7 @@
     X(ORA, ABY) \
     X(ORA, IZX) \
     X(ORA, IZY) \
+    X(PHA, IMP) \
     X(PHP, IMP) \
 
 #define X(instruction) void Test_##instruction(CPU *cpu, Byte *memory);
@@ -37,9 +40,24 @@ int main(void)
     CPU cpu;
     Byte memory[MEM_SIZE] = {0};
     init(&cpu, memory);
+    Test_AND(&cpu, memory);
+    Test_CLC(&cpu, memory);
     Test_ORA(&cpu, memory);
     Test_PHP(&cpu, memory);
+    Test_PHA(&cpu, memory);
     printf("All tests passed\n");
+    return EXIT_SUCCESS;
+}
+
+void Test_AND(CPU *cpu, Byte *memory)
+{
+    Test_AND_IMM(cpu);
+    init(cpu, memory);
+}
+
+void Test_AND_IMM(CPU* cpu)
+{
+    //todo: test the instruction
 }
 
 void Test_ORA(CPU *cpu, Byte *memory)
@@ -437,14 +455,72 @@ void Test_PHP_IMP(CPU *cpu)
     munit_assert_int(ins.cycles, ==, 3);
 
     //set status to random value between 0 and 255
-    Byte old_status = cpu->STATUS = (rand() % 256) | U;
+    Byte old_status = cpu->STATUS = rand() % 256;
     //ensure stack is empty
     cpu->SP = 0xFF;
     run(cpu, ins.cycles);
-    //check that status was pushed to stack (with the caveat that B flag is set to 1)
-    munit_assert_int(cpu->memory[0x01FF], ==, old_status | B ); //todo: check that B and U flag are set to 1
+    //check that status was pushed to stack (with the caveat that B and U flag is set to 1)
+    munit_assert_int(cpu->memory[0x01FF], ==, old_status ); //todo: check that B and U flag are set to 1
     //check that stack pointer was decremented
     munit_assert_int(cpu->SP, ==, 0xFE);
     //check that program counter was incremented
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+}
+
+void Test_PHA(CPU *cpu, Byte *memory)
+{
+    Test_PHA_IMP(cpu);
+    init(cpu, memory);
+}
+
+void Test_PHA_IMP(CPU *cpu)
+{
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_PHA_IMP;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "PHA");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_PHA_IMP);
+    munit_assert_int(ins.length, ==, 1);
+    munit_assert_int(ins.cycles, ==, 3);
+
+    //set A to random value between 0 and 255
+    Byte old_A = cpu->A = rand() % 256;
+    //ensure stack is empty
+    cpu->SP = 0xFF;
+    run(cpu, ins.cycles);
+    //check that A was pushed to stack
+    munit_assert_int(cpu->memory[0x01FF], ==, old_A);
+    //check that stack pointer was decremented
+    munit_assert_int(cpu->SP, ==, 0xFE);
+    //check that program counter was incremented
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+}
+
+void Test_CLC(CPU *cpu, Byte *memory)
+{
+    Test_CLC_IMP(cpu);
+    init(cpu, memory);
+}
+
+void Test_CLC_IMP(CPU* cpu)
+{
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_CLC_IMP;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "CLC");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_CLC_IMP);
+    munit_assert_int(ins.length, ==, 1);
+    munit_assert_int(ins.cycles, ==, 2);
+
+    //save status as random status between 0 and 255
+
+    Byte old_status = cpu->STATUS = rand() % 256;
+    //set carry flag to 1
+    cpu->STATUS |= C;
+    run(cpu, ins.cycles);
+    //check that carry flag was set to 0
+    munit_assert_int(cpu->STATUS & C, ==, 0);
+    //check that program counter was incremented
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    munit_assert_int(cpu->STATUS, ==, old_status & ~C);
 }
