@@ -7,6 +7,13 @@
 
 #define TEST_LIST \
     X(AND, IMM) \
+    X(AND, ZP0) \
+    X(AND, ZPX) \
+    X(AND, ABS) \
+    X(AND, ABX) \
+    X(AND, ABY) \
+    X(AND, IZX) \
+    X(AND, IZY) \
     X(CLC, IMP) \
     X(ORA, IMM) \
     X(ORA, ZP0) \
@@ -51,17 +58,85 @@ int main(void)
 
 void Test_AND(CPU *cpu, Byte *memory)
 {
+    init(cpu, memory);
     Test_AND_IMM(cpu);
     init(cpu, memory);
+    Test_AND_ZP0(cpu);
 }
 
-void Test_AND_IMM(CPU* cpu)
+void Test_AND_IMM(CPU *cpu)
 {
-    //todo: test the instruction
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_AND_IMM;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "AND");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_AND_IMM);
+    munit_assert_int(ins.length, ==, 2);
+    munit_assert_int(ins.cycles, ==, 2);
+    // test case where A is negative after AND
+    cpu->A = 0x80;
+    cpu->memory[cpu->PC + 1] = 0x81;
+    //save status
+    Byte old_status = cpu->STATUS = (rand() % 256) & ~N | Z;
+    //assert N is not set and Z is set
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, Z);
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0x80);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    //assert the N and Z flags have been changed, and nothing else is edited
+    munit_assert_int(cpu->STATUS & N, ==, N);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
+    // test case where A is zero after AND
+    cpu->PC = old_pc;
+    cpu->A = 0x01;
+    cpu->memory[cpu->PC + 1] = 0x00;
+    //save status
+    old_status = cpu->STATUS = (rand() % 256) & ~Z | N;
+    //assert N is set and Z is not set
+    munit_assert_int(cpu->STATUS & N, ==, N);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0x00);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    //assert the N and Z flags have been changed, and nothing else is edited
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, Z);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
+    // test case where A is positive after AND
+    cpu->PC = old_pc;
+    cpu->A = 0x01;
+    cpu->memory[cpu->PC + 1] = 0x01;
+    //save status
+    old_status = cpu->STATUS = (rand() % 256) & ~(N | Z);
+    //assert N is not set and Z is not set
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+    run(cpu, ins.cycles);
+    munit_assert_int(cpu->A, ==, 0x01);
+    munit_assert_int(cpu->PC, ==, old_pc + ins.length);
+    //assert the N and Z flags have been changed, and nothing else is edited
+    munit_assert_int(cpu->STATUS & N, ==, 0);
+    munit_assert_int(cpu->STATUS & Z, ==, 0);
+    munit_assert_int(cpu->STATUS & ~(N | Z), ==, old_status & ~(N | Z));
+}
+
+void Test_AND_ZP0(CPU *cpu)
+{
+    Word old_pc = cpu->PC = 0x4000;
+    cpu->memory[cpu->PC] = INSTRUCTION_AND_ZP0;
+    Instruction ins = cpu->table[cpu->memory[cpu->PC]];
+    munit_assert_string_equal(ins.name, "AND");
+    munit_assert_int(ins.opcode, ==, INSTRUCTION_AND_ZP0);
+    munit_assert_int(ins.length, ==, 2);
+    munit_assert_int(ins.cycles, ==, 3);
+    //todo finish this test
 }
 
 void Test_ORA(CPU *cpu, Byte *memory)
 {   
+    init(cpu, memory);
     Test_ORA_IMM(cpu);
     init(cpu, memory);
     Test_ORA_ZP0(cpu);
@@ -77,7 +152,6 @@ void Test_ORA(CPU *cpu, Byte *memory)
     Test_ORA_IZX(cpu);
     init(cpu, memory);
     Test_ORA_IZY(cpu);
-    init(cpu, memory);
 }
 
 void Test_ORA_IMM(CPU *cpu)
@@ -440,8 +514,8 @@ void Test_ORA_IZY(CPU *cpu)
 
 void Test_PHP(CPU *cpu, Byte *memory)
 {
-    Test_PHP_IMP(cpu);
     init(cpu, memory);
+    Test_PHP_IMP(cpu);
 }
 
 void Test_PHP_IMP(CPU *cpu)
@@ -454,23 +528,18 @@ void Test_PHP_IMP(CPU *cpu)
     munit_assert_int(ins.length, ==, 1);
     munit_assert_int(ins.cycles, ==, 3);
 
-    //set status to random value between 0 and 255
-    Byte old_status = cpu->STATUS = rand() % 256;
-    //ensure stack is empty
+    Byte old_status = cpu->STATUS = (rand() % 256) | U;
     cpu->SP = 0xFF;
     run(cpu, ins.cycles);
-    //check that status was pushed to stack (with the caveat that B and U flag is set to 1)
-    munit_assert_int(cpu->memory[0x01FF], ==, old_status ); //todo: check that B and U flag are set to 1
-    //check that stack pointer was decremented
+    munit_assert_int(cpu->memory[0x01FF], ==, old_status | B); //todo: check that B and U flag are set to 1
     munit_assert_int(cpu->SP, ==, 0xFE);
-    //check that program counter was incremented
     munit_assert_int(cpu->PC, ==, old_pc + ins.length);
 }
 
 void Test_PHA(CPU *cpu, Byte *memory)
 {
-    Test_PHA_IMP(cpu);
     init(cpu, memory);
+    Test_PHA_IMP(cpu);
 }
 
 void Test_PHA_IMP(CPU *cpu)
@@ -498,8 +567,8 @@ void Test_PHA_IMP(CPU *cpu)
 
 void Test_CLC(CPU *cpu, Byte *memory)
 {
-    Test_CLC_IMP(cpu);
     init(cpu, memory);
+    Test_CLC_IMP(cpu);
 }
 
 void Test_CLC_IMP(CPU* cpu)
