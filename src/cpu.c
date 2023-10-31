@@ -2365,8 +2365,6 @@ bool fetch_and_execute(CPU *cpu)
     Otherwise, fetches the instruction, stores it in the cpu's instruction variable
     and then executes it once the remaining cycles are 0
 */
-//todo: fix this
-//clock is ticking 3 times on 2 cycle instructions...something is wrong
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
