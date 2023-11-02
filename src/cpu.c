@@ -2247,7 +2247,7 @@ void reset_globals()
     return;
 }
 
-void register_init(CPU *cpu)
+void member_init(CPU *cpu)
 {
     cpu->A = 0;
     cpu->X = 0;
@@ -2255,6 +2255,7 @@ void register_init(CPU *cpu)
     cpu->SP = 0xFF; // onelonecoder sets this to 0xFD, but I think it should be 0xFF?
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->STATUS = 0x00 | U; // set unused bit
+    cpu->instruction_cycles = 0;
     return;
 }
 
@@ -2323,11 +2324,10 @@ void push_byte(CPU *cpu, Byte byte)
     assert(cpu != NULL && cpu->memory != NULL);
     if (cpu->SP == 0x00)
     {
-        cpu->SP = 0xFF; // stack is full, wrap around
+        cpu->SP = 0xFF; // stack is full, wrap around page 1
     }
     Word stack_addr = 0x0100 + cpu->SP;
     write_to_addr(cpu, stack_addr, byte);
-    // assert byte was actually written
     cpu->SP--;
     return;
 }
@@ -2338,7 +2338,7 @@ Byte pop_byte(CPU *cpu)
     cpu->SP++;
     if (cpu->SP == 0xFF)
     {
-        cpu->SP = 0x00; // stack is empty, wrap around
+        cpu->SP = 0x00; // stack is empty, wrap around page 1
     }
     Word stack_addr = 0x0100 + cpu->SP;
     Byte byte = read_from_addr(cpu, stack_addr);
@@ -2396,15 +2396,14 @@ void init(CPU *cpu, Byte *memory)
 {
     cpu->memory = memory;
     init_instruction_table(cpu);
-    register_init(cpu);
+    member_init(cpu);
     reset_globals();
-    cpu->instruction_cycles = 0;
     return;
 }
 
 void reset(CPU *cpu)
 {
-    register_init(cpu);
+    member_init(cpu);
     reset_globals();
     //memory is left alone
     cpu->instruction_cycles = 8;
@@ -2691,7 +2690,7 @@ Byte ORA(CPU *cpu)
 {
     cpu->A |= value;
     set_zn(cpu, cpu->A);
-    return 0;
+    return 1; // this instruction can take an extra cycle
 }
 
 
@@ -2775,13 +2774,14 @@ Byte JSR(CPU *cpu)
     ANDs the value with the accumulator
     Sets the zero flag if the result is zero
     Sets the negative flag if the result is negative
+    This instruction can potentially take an extra cycle
 */
 Byte AND(CPU *cpu)
 {
     assert(cpu != NULL);
     cpu->A &= value;
     set_zn(cpu, cpu->A);
-    return 0;
+    return 1;
 }
 
 /*
