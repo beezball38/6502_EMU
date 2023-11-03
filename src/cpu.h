@@ -1,10 +1,10 @@
 // CPU struct for 6502 processor
 #ifndef CPU_H
 #define CPU_H
+
 #include <stdint.h>
 #include <stdbool.h>
-typedef uint8_t Byte;
-typedef uint16_t Word;
+#include <stddef.h>
 #define INSTRUCTION_BRK_IMP 0x00
 #define INSTRUCTION_ORA_IZX 0x01
 #define INSTRUCTION_ORA_ZP0 0x05
@@ -232,6 +232,19 @@ typedef uint16_t Word;
     X(IZX)                  \
     X(IZY)
 
+typedef uint8_t Byte;
+typedef uint16_t Word;
+typedef struct CPU CPU;
+
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_ADDR_MODES
+#undef X
+
+#define X(name) Byte name(CPU *cpu);
+LIST_OF_INSTRUCTIONS
+#undef X
+
+typedef Byte (*Ins_Func)(CPU *cpu);
 /*
  * Status register flags
  * C: Carry
@@ -255,6 +268,7 @@ typedef enum
     N = (1 << 7),
 } STATUS_FLAGS;
 
+
 /*
  * Instruction struct
  * name: name of instruction
@@ -264,11 +278,6 @@ typedef enum
  * execute: function pointer to execute instruction
  * fetch: function pointer to function to fetch operand
  */
-
-// forward CPU declaration
-typedef struct CPU CPU;
-
-typedef Byte (*Ins_Func)(CPU *cpu);
 typedef struct Instruction
 {
     char *name;
@@ -295,7 +304,6 @@ typedef struct Instruction
 */
 struct CPU
 {
-    // registers
     Byte A;
     Byte X;
     Byte Y;
@@ -303,38 +311,89 @@ struct CPU
     Word PC;
     Byte STATUS;
 
-    // internal
-    unsigned char instruction_cycles; //grabbed from current instruction
+    size_t cycles;
     Instruction *current_instruction;
     bool pc_changed;
     bool does_need_additional_cycle;
+    Byte *memory;
     Instruction table[256];
-    unsigned char *memory;
 };
 
-#define X(name) Byte name(CPU *cpu);
-LIST_OF_ADDR_MODES
-#undef X
-
-#define X(name) Byte name(CPU *cpu);
-LIST_OF_INSTRUCTIONS
-#undef X
-
 void init_instruction_table(CPU *cpu);
-void init(CPU *cpu, Byte *memory);
+void cpu_init(CPU *cpu, Byte *memory);
+/*
+    6502 get flag
+    Reads flag from status register
+*/
 bool get_flag(CPU *cpu, STATUS_FLAGS flag);
+/*
+    6502 set flag
+    Sets flag in status register
+*/
 void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
-Byte peek(CPU *cpu);
-Byte read_from_addr(CPU *cpu, Word address);
-void write_to_addr(CPU *cpu, Word address, Byte value);
-void push_byte(CPU *cpu, Byte value);
-Byte pop_byte(CPU *cpu);
-void adjust_pc(CPU *cpu, Byte instruction_length); //setup for next instruction
 
-// main CPU interface functions
+/*
+    6502 peek
+    Peeks at the next byte in memory
+    Does not increment PC
+*/
+Byte peek(CPU *cpu);
+/*
+    6502 read from address
+    Reads a byte from memory at address
+*/
+
+Byte read_from_addr(CPU *cpu, Word address);
+/*
+    6502 write to address
+    Writes a byte to memory at address
+*/
+
+void write_to_addr(CPU *cpu, Word address, Byte value);
+/*
+    6502 push to stack
+    Pushes a byte to the stack
+*/
+
+void push_byte(CPU *cpu, Byte value);
+/*
+    6502 pop from stack
+    Pops a byte from the stack
+*/
+
+Byte pop_byte(CPU *cpu);
+/*
+    Adjust PC by instruction length
+*/
+void adjust_pc(CPU *cpu, Byte instruction_length);
+
+/*
+    6502 clock
+    Executes one tick of the CPU
+    Executes the instructions on the last cycle (not clock cycle accurate to the 6502)
+*/
 void clock(CPU *cpu);
+
+/*
+    6502 irq interrupt
+    Interrupt request signal
+    Will not be executed if I flag is set
+    Takes 7 cycles
+*/
 void irq(CPU *cpu);
+/*
+    6502 nmi interrupt
+    Non-maskable interrupt
+    Does not check I flag before executing
+    Takes 8 cycles
+*/
 void nmi(CPU *cpu);
+/*
+    6502 reset
+    Resets CPU to initial state
+    sets PC to address stored at 0xFFFC
+    Takes 8 cycles
+*/
 void reset(CPU *cpu);
 
 #endif

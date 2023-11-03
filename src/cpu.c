@@ -2239,23 +2239,15 @@ void init_instruction_table(CPU *cpu)
     };
 }
 
+/*
+    Zero-out the global variables that are
+    used to store the operands of the current instruction
+*/
 void reset_globals()
 {
     address = 0x0000;
     address_rel = 0x00;
     value = 0;
-    return;
-}
-
-void member_init(CPU *cpu)
-{
-    cpu->A = 0;
-    cpu->X = 0;
-    cpu->Y = 0;
-    cpu->SP = 0xFF; // onelonecoder sets this to 0xFD, but I think it should be 0xFF?
-    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
-    cpu->STATUS = 0x00 | U; // set unused bit
-    cpu->instruction_cycles = 0;
     return;
 }
 
@@ -2282,32 +2274,23 @@ Byte branch_pc(CPU *cpu)
     
     if(does_cross_boundery(old_pc, cpu->PC))
     {
-        cpu->instruction_cycles += 1;
+        cpu->cycles += 1;
     }
     return 0;
 }
 
-/*
-    gets the value at current PC without incrementing
-*/
 Byte peek(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL);
     return cpu->memory[cpu->PC];
 }
 
-/*
-    gets the value at memory[address]
-*/
 Byte read_from_addr(CPU *cpu, Word address)
 {
     assert(cpu != NULL && cpu->memory != NULL);
     return cpu->memory[address];
 }
 
-/*
-    writes value to memory[address]
-*/
 void write_to_addr(CPU *cpu, Word address, Byte value)
 {
     assert(cpu != NULL && cpu->memory != NULL);
@@ -2315,10 +2298,6 @@ void write_to_addr(CPU *cpu, Word address, Byte value)
     return;
 }
 
-/*
-    Stack functions
-    Only memory on the first page (0x0100 - 0x01FF) is used for the stack
-*/
 void push_byte(CPU *cpu, Byte byte)
 {
     assert(cpu != NULL && cpu->memory != NULL);
@@ -2346,6 +2325,7 @@ Byte pop_byte(CPU *cpu)
 }
 
 /*
+    Internal function
     "Runs" the instruction by first fetching it's operands 
     and putting them into global variables
     Then, executes the instruction using those operands
@@ -2359,12 +2339,6 @@ bool fetch_and_execute(CPU *cpu)
     return result;
 }
 
-/*
-    One 6502 clock tick
-    Executes the instruction in one tick, once the remaining cycles are 0 if it exists
-    Otherwise, fetches the instruction, stores it in the cpu's instruction variable
-    and then executes it once the remaining cycles are 0
-*/
 void clock(CPU *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
@@ -2377,14 +2351,14 @@ void clock(CPU *cpu)
     if (cpu->current_instruction == NULL)
     {
         cpu->current_instruction = &cpu->table[peek(cpu)];
-        cpu->instruction_cycles = cpu->current_instruction->cycles - 1; // -1 because the first cycle is the fetch cycle
+        cpu->cycles = cpu->current_instruction->cycles - 1; //takes one cycle to fetch
     }
     else
     {
-        cpu->instruction_cycles--;
+        cpu->cycles--;
     }
 
-    if (cpu->instruction_cycles == 0)
+    if (cpu->cycles == 0)
     {
         cpu->does_need_additional_cycle = fetch_and_execute(cpu);
         adjust_pc(cpu, cpu->current_instruction->length);
@@ -2392,21 +2366,32 @@ void clock(CPU *cpu)
     }
 }
 
-void init(CPU *cpu, Byte *memory)
+//Just for constructing the CPU, not an actual interrupt
+void cpu_init(CPU *cpu, Byte *memory)
 {
+    assert(cpu != NULL && memory != NULL);
+    cpu->A = 0x00;
+    cpu->X = 0x00;
+    cpu->Y = 0x00;
+    cpu->SP = 0xFD;
+    cpu->STATUS = 0x00 | U;
+    cpu->PC = 0x0000;
+    cpu->does_need_additional_cycle = false;
+
     cpu->memory = memory;
     init_instruction_table(cpu);
-    member_init(cpu);
+
+
     reset_globals();
     return;
 }
 
 void reset(CPU *cpu)
 {
-    member_init(cpu);
+    cpu_init(cpu, cpu->memory);
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));  
-    cpu->instruction_cycles = 8;
+    cpu->cycles += 8;
     return;
 }
 
@@ -2420,7 +2405,7 @@ void irq(CPU *cpu)
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
-    cpu->instruction_cycles += 7;
+    cpu->cycles += 7;
     return;
 }
 
@@ -2430,7 +2415,7 @@ void nmi(CPU *cpu)
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
-    cpu->instruction_cycles += 8;
+    cpu->cycles += 8;
     return;
 }
 
@@ -2440,12 +2425,6 @@ void adjust_pc(CPU *cpu, Byte length)
     return;
 }
 
-/*
-    Addressing mode functions
-    These functions fetch the address and value of the operand
-    and store them in the address and value variables
-    If an additional cycle is needed, the function returns 1
-*/
 
 /*
  * Implied addressing mode

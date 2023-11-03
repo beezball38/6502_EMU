@@ -14,8 +14,8 @@ CPU *get_cpu_instance(void)
 
 int main(void)
 {
-    CPU *cpu = get_cpu_instance();
-    Byte memory[MEM_SIZE] = {0};
-    init(cpu, memory);
+    //CPU *cpu = get_cpu_instance();
+    //Byte memory[MEM_SIZE] = {0};
+    //cpu_init(cpu, memory);
     return 0;
 }

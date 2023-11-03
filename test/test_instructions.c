@@ -6,6 +6,7 @@
 #include "../src/cpu.h"
 
 // 64 kb memory
+#define RESET_VECTOR 0xFFFC
 #define MEM_SIZE 1024 * 64
 
 //instruction test suite prototypes
@@ -57,12 +58,18 @@ typedef enum
 TEST_LIST
 #undef X
 
+typedef struct
+{
+    CPU *cpu;
+    Word program_counter //start of instruction
+} Test_Fixture;
+
 CPU *cpu_create()
 {
     CPU *cpu = malloc(sizeof(CPU));
     Byte *memory = malloc(MEM_SIZE);
 
-    init(cpu, memory);
+    cpu_init(cpu, memory);
 
     return cpu;
 }
@@ -70,14 +77,19 @@ CPU *cpu_create()
 static void* setup(const MunitParameter params[], void *user_data)
 {
     CPU *cpu = cpu_create();
-    return cpu;
+    Test_Fixture *fixture = malloc(sizeof(Test_Fixture));
+    fixture->cpu = cpu;
+    //random program counter in address space (like an NES program)
+    fixture->program_counter = rand() % MEM_SIZE;
+    return fixture;
 }
 
 static void tear_down(void *fixture)
 {
-    CPU *cpu = (CPU*)fixture;
-    free(cpu->memory);
-    free(cpu);
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    free(test_fixture->cpu->memory);
+    free(test_fixture->cpu);
+    free(test_fixture);
 }
 
 static bool check_nz_flags(CPU *cpu, Result_Sign sign, Byte old_status)
@@ -114,41 +126,49 @@ static void run(CPU *cpu, size_t cycles)
 
 int main(int argc, char *argv[])
 {
-    //Munit test array for first instruction only
-    //test is for AND IMM
     MunitTest tests[] = {
-        { "/AND/IMM", Test_AND_IMM, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+        {
+            "Instructions", //name
+            Test_AND_IMM, //test
+            setup, //setup
+            tear_down, //tear down
+            MUNIT_TEST_OPTION_NONE, //options
+        },
         { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
     };
-    //create test suite with this one test
     MunitSuite suite = {
-        "/AND/IMM", //name
+        "Instruction Tests", //name
         tests, //tests
         NULL, //suites
         1, //iterations
-        MUNIT_SUITE_OPTION_NONE //options
+        MUNIT_SUITE_OPTION_NONE, //options
     };
-    //run
     return munit_suite_main(&suite, NULL, argc, argv);
 }
 
-//test for AND IMM
 MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 {
-    CPU *cpu = (CPU*)fixture;
-    Word instruction_address = 0x4000;
-    //set reset vector to instruction address
-    cpu->memory[0xFFFC] = instruction_address & 0xFF;
-    cpu->memory[0xFFFD] = instruction_address >> 8; 
-    cpu->memory[instruction_address] = INSTRUCTION_AND_IMM;
-    cpu->memory[instruction_address + 1] = 0x01;
-    reset(cpu);
-    Byte old_status = cpu->STATUS & ~(N | Z) | U;
-    assert_int(cpu->PC, ==, 0x4000);
-    run(cpu, 2);
-    assert_int(cpu->A, ==, 0x00);
-    assert_true(check_nz_flags(cpu, ZERO, old_status));
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    CPU *cpu = test_fixture->cpu;
+    Word program_counter = test_fixture->program_counter;
+    Byte opcode = INSTRUCTION_AND_IMM;
 
+    //set up reset vector
+    cpu->memory[RESET_VECTOR] = (Byte)program_counter;
+    cpu->memory[RESET_VECTOR + 1] = (Byte)(program_counter >> 8);
+
+    //set up instruction for negative case
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = 0x80;
+    cpu->A = 0x81;
+    cpu->STATUS = rand() % 256 & ~(N | Z) | U;
+
+    //run
+    run(cpu, 2);
+    assert_int(cpu->A, ==, 0x80);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+    //program counter should be incremented by length of instruction
+    assert_int(cpu->PC, ==, program_counter + 2);
     return MUNIT_OK;
 }
 
