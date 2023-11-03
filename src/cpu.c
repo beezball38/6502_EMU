@@ -2405,7 +2405,7 @@ void reset(CPU *cpu)
 {
     member_init(cpu);
     reset_globals();
-    //memory is left alone
+    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));  
     cpu->instruction_cycles = 8;
     return;
 }

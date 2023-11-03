@@ -1,3 +1,5 @@
+#define MUNIT_ENABLE_ASSERT_ALIASES
+
 #include <stdio.h>
 #include <stdbool.h>
 #include "munit/munit.h"
@@ -55,6 +57,29 @@ typedef enum
 TEST_LIST
 #undef X
 
+CPU *cpu_create()
+{
+    CPU *cpu = malloc(sizeof(CPU));
+    Byte *memory = malloc(MEM_SIZE);
+
+    init(cpu, memory);
+
+    return cpu;
+}
+
+static void* setup(const MunitParameter params[], void *user_data)
+{
+    CPU *cpu = cpu_create();
+    return cpu;
+}
+
+static void tear_down(void *fixture)
+{
+    CPU *cpu = (CPU*)fixture;
+    free(cpu->memory);
+    free(cpu);
+}
+
 static bool check_nz_flags(CPU *cpu, Result_Sign sign, Byte old_status)
 {
     //ensure that only the N and Z flags have been changed
@@ -83,21 +108,6 @@ static void run(CPU *cpu, size_t cycles)
     }
 }
 
-//main function for munit tests
-//documentation https://nemequ.github.io/munit/
-
-//function to get an initialized cpu with memory
-CPU *cpu_create()
-{
-    //create cpu and memory
-    CPU *cpu = malloc(sizeof(CPU));
-    Byte *memory = malloc(MEM_SIZE);
-
-    //initialize cpu and memory
-    init(cpu, memory);
-
-    return cpu;
-}
 
 
 
@@ -107,7 +117,7 @@ int main(int argc, char *argv[])
     //Munit test array for first instruction only
     //test is for AND IMM
     MunitTest tests[] = {
-        { "/AND/IMM", Test_AND_IMM, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+        { "/AND/IMM", Test_AND_IMM, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
         { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
     };
     //create test suite with this one test
@@ -125,33 +135,19 @@ int main(int argc, char *argv[])
 //test for AND IMM
 MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 {
-    //create cpu and memory
-    CPU *cpu = cpu_create();
-
-    //set up memory
-    //why is this at the end of memory?
-    //0xFFFC is the reset vector
-    //0xFFFD is the reset vector + 1
-    //0x0042 is the address of the AND IMM instruction
-    cpu->memory[0xFFFC] = 0x42;
-    cpu->memory[0xFFFD] = 0x00;
-    cpu->memory[0x0042] = INSTRUCTION_AND_IMM;
-    //reset cpu and check program counter
+    CPU *cpu = (CPU*)fixture;
+    Word instruction_address = 0x4000;
+    //set reset vector to instruction address
+    cpu->memory[0xFFFC] = instruction_address & 0xFF;
+    cpu->memory[0xFFFD] = instruction_address >> 8; 
+    cpu->memory[instruction_address] = INSTRUCTION_AND_IMM;
+    cpu->memory[instruction_address + 1] = 0x01;
     reset(cpu);
-    munit_assert_int(cpu->PC, ==, 0x0042);
-
-    //run cpu
+    Byte old_status = cpu->STATUS & ~(N | Z) | U;
+    assert_int(cpu->PC, ==, 0x4000);
     run(cpu, 2);
-
-    //check that A is 0x42
-    munit_assert_int(cpu->A, ==, 0x42);
-
-    //check that N and Z flags are set
-    munit_assert_true(check_nz_flags(cpu, NEG, 0x00));
-
-    //free cpu and memory
-    free(cpu->memory);
-    free(cpu);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, old_status));
 
     return MUNIT_OK;
 }
