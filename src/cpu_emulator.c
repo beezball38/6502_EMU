@@ -5,10 +5,10 @@
 // 64 kb macro
 #define MEM_SIZE 1024 * 64
 
-CPU *get_cpu_instance(void);
-CPU *get_cpu_instance(void)
+cpu_s *get_cpu_instance(void);
+cpu_s *get_cpu_instance(void)
 {
-    static CPU cpu;
+    static cpu_s cpu;
     return &cpu;
 }
 

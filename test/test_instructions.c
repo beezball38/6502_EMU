@@ -15,9 +15,9 @@ ALL_INSTRUCTIONS
 
 typedef struct
 {
-    CPU *cpu;
+    cpu_s *cpu;
     word_t program_counter //start of instruction
-} Test_Fixture;
+} test_fixture_s;
 
 typedef enum
 {
@@ -26,14 +26,14 @@ typedef enum
     POS
 } sign_t;
 
-static void instruction_init(Instruction ins, word_t starting_addr)
+static void instruction_init(instruction_s ins, word_t starting_addr)
 {
     
 }
 
-CPU *cpu_create()
+cpu_s *cpu_create()
 {
-    CPU *cpu = malloc(sizeof(CPU));
+    cpu_s *cpu = malloc(sizeof(cpu_s));
     byte_t *memory = malloc(MEM_SIZE);
 
     cpu_init(cpu, memory);
@@ -43,8 +43,8 @@ CPU *cpu_create()
 
 static void* setup(const MunitParameter params[], void *user_data)
 {
-    CPU *cpu = cpu_create();
-    Test_Fixture *fixture = malloc(sizeof(Test_Fixture));
+    cpu_s *cpu = cpu_create();
+    test_fixture_s *fixture = malloc(sizeof(test_fixture_s));
     fixture->cpu = cpu;
     //random program counter in address space (like an NES program)
     fixture->program_counter = rand() % MEM_SIZE;
@@ -53,13 +53,13 @@ static void* setup(const MunitParameter params[], void *user_data)
 
 static void tear_down(void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
     free(test_fixture->cpu->memory);
     free(test_fixture->cpu);
     free(test_fixture);
 }
 
-static bool check_nz_flags(CPU *cpu, sign_t sign, byte_t old_status)
+static bool check_nz_flags(cpu_s *cpu, sign_t sign, byte_t old_status)
 {
     //ensure that only the N and Z flags have been changed
     bool valid = (cpu->STATUS & ~(N | Z)) == (old_status & ~(N | Z));
@@ -80,7 +80,7 @@ static bool check_nz_flags(CPU *cpu, sign_t sign, byte_t old_status)
 }
 
 
-static void run(CPU *cpu, size_t cycles)
+static void run(cpu_s *cpu, size_t cycles)
 {
     while(cycles--)
     {
@@ -165,12 +165,12 @@ int main(int argc, char *argv[])
 
 MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_IMM;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
 
     //ensure instruction is correct
 
@@ -218,12 +218,12 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 
 MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_ZP0;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
     //ensure instruction is correct
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 3);
@@ -274,12 +274,12 @@ MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
 
 MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_ZPX;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
     //ensure instruction is correct
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 4);
@@ -347,12 +347,12 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
 
 MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_ABS;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
     //ensure instruction is correct
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 4);
@@ -402,12 +402,12 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 
 MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_ABX;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
     //ensure instruction is correct
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 4);
@@ -478,12 +478,12 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
 
 MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
 {
-    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
-    CPU *cpu = test_fixture->cpu;
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
     word_t program_counter = test_fixture->program_counter;
     byte_t opcode = INSTRUCTION_AND_ABY;
     cpu->memory[program_counter] = opcode;
-    Instruction instruction = cpu->table[opcode];
+    instruction_s instruction = cpu->table[opcode];
     //ensure instruction is correct
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 4);

@@ -236,7 +236,7 @@
 
 typedef uint8_t byte_t;
 typedef uint16_t word_t;
-typedef struct CPU CPU; // Forward declaration
+typedef struct cpu_s cpu_s; // Forward declaration
 
 typedef enum 
 {
@@ -245,7 +245,7 @@ typedef enum
     #undef X
 } addr_mode_t;
 
-#define X(name) byte_t name(CPU *cpu);
+#define X(name) byte_t name(cpu_s *cpu);
 LIST_OF_ADDR_MODES
 #undef X
 
@@ -257,11 +257,11 @@ typedef enum
 } instruction_info_t;
 
 
-#define X(name) byte_t name(CPU *cpu);
+#define X(name) byte_t name(cpu_s *cpu);
 UNIQUE_OPCODES
 #undef X
 
-typedef byte_t (*Ins_Func)(CPU *cpu);
+typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 /*
  * Status register flags
  * C: Carry
@@ -295,15 +295,15 @@ typedef enum
  * execute: function pointer to execute instruction
  * fetch: function pointer to function to fetch operand
  */
-typedef struct Instruction
+typedef struct
 {
     char *name;
     byte_t opcode;
     byte_t length;
     byte_t cycles;
-    Ins_Func fetch;
-    Ins_Func execute;
-} Instruction;
+    instruction_func_t fetch;
+    instruction_func_t execute;
+} instruction_s;
 
 
 /*
@@ -319,7 +319,7 @@ typedef struct Instruction
     * table: instruction table
     * memory: memory
 */
-struct CPU
+struct cpu_s
 {
     byte_t A;
     byte_t X;
@@ -329,67 +329,67 @@ struct CPU
     byte_t STATUS;
 
     size_t cycles;
-    Instruction *current_instruction;
+    instruction_s *current_instruction;
     bool pc_changed;
     bool does_need_additional_cycle;
     byte_t *memory;
-    Instruction table[256];
+    instruction_s table[256];
 };
 
-void init_instruction_table(CPU *cpu);
-void cpu_init(CPU *cpu, byte_t *memory);
+void init_instruction_table(cpu_s *cpu);
+void cpu_init(cpu_s *cpu, byte_t *memory);
 /*
     6502 get flag
     Reads flag from status register
 */
-bool get_flag(CPU *cpu, status_flag_t flag);
+bool get_flag(cpu_s *cpu, status_flag_t flag);
 /*
     6502 set flag
     Sets flag in status register
 */
-void set_flag(CPU *cpu, status_flag_t flag, bool value);
+void set_flag(cpu_s *cpu, status_flag_t flag, bool value);
 
 /*
     6502 peek
     Peeks at the next byte in memory
     Does not increment PC
 */
-byte_t peek(CPU *cpu);
+byte_t peek(cpu_s *cpu);
 /*
     6502 read from address
     Reads a byte from memory at address
 */
 
-byte_t read_from_addr(CPU *cpu, word_t address);
+byte_t read_from_addr(cpu_s *cpu, word_t address);
 /*
     6502 write to address
     Writes a byte to memory at address
 */
 
-void write_to_addr(CPU *cpu, word_t address, byte_t value);
+void write_to_addr(cpu_s *cpu, word_t address, byte_t value);
 /*
     6502 push to stack
     Pushes a byte to the stack
 */
 
-void push_byte(CPU *cpu, byte_t value);
+void push_byte(cpu_s *cpu, byte_t value);
 /*
     6502 pop from stack
     Pops a byte from the stack
 */
 
-byte_t pop_byte(CPU *cpu);
+byte_t pop_byte(cpu_s *cpu);
 /*
     Adjust PC by instruction length
 */
-void adjust_pc(CPU *cpu, byte_t instruction_length);
+void adjust_pc(cpu_s *cpu, byte_t instruction_length);
 
 /*
     6502 clock
     Executes one tick of the CPU
     Executes the instructions on the last cycle (not clock cycle accurate to the 6502)
 */
-void clock(CPU *cpu);
+void clock(cpu_s *cpu);
 
 /*
     6502 irq interrupt
@@ -397,20 +397,20 @@ void clock(CPU *cpu);
     Will not be executed if I flag is set
     Takes 7 cycles
 */
-void irq(CPU *cpu);
+void irq(cpu_s *cpu);
 /*
     6502 nmi interrupt
     Non-maskable interrupt
     Does not check I flag before executing
     Takes 8 cycles
 */
-void nmi(CPU *cpu);
+void nmi(cpu_s *cpu);
 /*
     6502 reset
     Resets CPU to initial state
     sets PC to address stored at 0xFFFC
     Takes 8 cycles
 */
-void reset(CPU *cpu);
+void reset(cpu_s *cpu);
 
 #endif
