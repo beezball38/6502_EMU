@@ -2251,12 +2251,12 @@ void reset_globals()
     return;
 }
 
-bool get_flag(CPU *cpu, STATUS_FLAGS flag)
+bool get_flag(CPU *cpu, status_flag_t flag)
 {
     return (cpu->STATUS & flag) > 0;
 }
 
-void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value)
+void set_flag(CPU *cpu, status_flag_t flag, bool value)
 {
     if (value)
         cpu->STATUS |= flag;
@@ -2695,7 +2695,7 @@ Byte PHP(CPU *cpu)
 // if flag value is 1, we check if the flag is set
 // otherwise we check if the flag is not set
 // returns 1 if page boundary is crossed and branch taken, 0 otherwise
-Byte branch_on_flag(CPU *cpu, STATUS_FLAGS flag, Byte flag_value)
+Byte branch_on_flag(CPU *cpu, status_flag_t flag, Byte flag_value)
 {
     assert(cpu != NULL);
     // checks if the flag is set to the flag value

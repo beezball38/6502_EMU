@@ -266,7 +266,7 @@ typedef enum
     U = (1 << 5),
     V = (1 << 6),
     N = (1 << 7),
-} STATUS_FLAGS;
+} status_flag_t;
 
 
 /*
@@ -325,12 +325,12 @@ void cpu_init(CPU *cpu, Byte *memory);
     6502 get flag
     Reads flag from status register
 */
-bool get_flag(CPU *cpu, STATUS_FLAGS flag);
+bool get_flag(CPU *cpu, status_flag_t flag);
 /*
     6502 set flag
     Sets flag in status register
 */
-void set_flag(CPU *cpu, STATUS_FLAGS flag, bool value);
+void set_flag(CPU *cpu, status_flag_t flag, bool value);
 
 /*
     6502 peek
