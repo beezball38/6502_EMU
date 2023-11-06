@@ -9,53 +9,8 @@
 #define RESET_VECTOR 0xFFFC
 #define MEM_SIZE 1024 * 64
 
-//instruction test suite prototypes
-#define X(instruction) void Test_##instruction(CPU *cpu, Byte *memory);
-LIST_OF_INSTRUCTIONS
-#undef X
-
-typedef enum
-{
-    NEG,
-    ZERO,
-    POS
-} sign_t;
-
-//test prototypes
-#define TEST_LIST \
-    X(AND, IMM) \
-    X(AND, ZP0) \
-    X(AND, ZPX) \
-    X(AND, ABS) \
-    X(AND, ABX) \
-    X(AND, ABY) \
-    X(AND, IZX) \
-    X(AND, IZY) \
-    X(CLC, IMP) \
-    X(LDA, IMM) \
-    X(LDA, ZP0) \
-    X(LDA, ZPX) \
-    X(LDA, ABS) \
-    X(LDA, ABX) \
-    X(LDA, ABY) \
-    X(LDA, IZX) \
-    X(LDA, IZY) \
-    X(ORA, IMM) \
-    X(ORA, ZP0) \
-    X(ORA, ZPX) \
-    X(ORA, ABS) \
-    X(ORA, ABX) \
-    X(ORA, ABY) \
-    X(ORA, IZX) \
-    X(ORA, IZY) \
-    X(PHA, IMP) \
-    X(PHP, IMP) \
-
-
-
-//xmacro for munit tests
-#define X(instruction, mode) MunitResult Test_##instruction##_##mode(const MunitParameter params[], void *fixture);
-TEST_LIST
+#define X(instruction, mode, opcode) MunitResult Test_##instruction##_##mode(const MunitParameter params[], void *fixture);
+ALL_INSTRUCTIONS
 #undef X
 
 typedef struct
@@ -64,15 +19,12 @@ typedef struct
     Word program_counter //start of instruction
 } Test_Fixture;
 
-//use the X macro to define an enum for LIST_OF_ADDR_MODES
-//namine scheme is addr_mode_<mode>
-typedef enum 
+typedef enum
 {
-    #define X(mode) ADDR_MODE_##mode,
-    LIST_OF_ADDR_MODES
-    #undef X
-} addr_mode_t;
-
+    NEG,
+    ZERO,
+    POS
+} sign_t;
 
 static void instruction_init(Instruction ins, Word starting_addr)
 {

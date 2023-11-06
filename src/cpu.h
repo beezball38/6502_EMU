@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define LIST_OF_INSTRUCTIONS \
+#define UNIQUE_OPCODES \
     X(BRK)                   \
     X(ORA)                   \
     X(ASL)                   \
@@ -236,7 +236,14 @@
 
 typedef uint8_t Byte;
 typedef uint16_t Word;
-typedef struct CPU CPU;
+typedef struct CPU CPU; // Forward declaration
+
+typedef enum 
+{
+    #define X(mode) ADDR_MODE_##mode,
+    LIST_OF_ADDR_MODES
+    #undef X
+} addr_mode_t;
 
 #define X(name) Byte name(CPU *cpu);
 LIST_OF_ADDR_MODES
@@ -251,7 +258,7 @@ typedef enum
 
 
 #define X(name) Byte name(CPU *cpu);
-LIST_OF_INSTRUCTIONS
+UNIQUE_OPCODES
 #undef X
 
 typedef Byte (*Ins_Func)(CPU *cpu);
