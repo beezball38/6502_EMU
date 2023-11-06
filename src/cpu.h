@@ -237,6 +237,7 @@
 typedef uint8_t byte_t;
 typedef uint16_t word_t;
 typedef struct cpu_s cpu_s; // Forward declaration
+typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 typedef enum 
 {
@@ -245,10 +246,6 @@ typedef enum
     #undef X
 } addr_mode_t;
 
-#define X(name) byte_t name(cpu_s *cpu);
-LIST_OF_ADDR_MODES
-#undef X
-
 typedef enum
 {
     #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
@@ -256,12 +253,14 @@ typedef enum
     #undef X
 } instruction_info_t;
 
+#define X(name) byte_t name(cpu_s *cpu);
+LIST_OF_ADDR_MODES
+#undef X
 
 #define X(name) byte_t name(cpu_s *cpu);
 UNIQUE_OPCODES
 #undef X
 
-typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 /*
  * Status register flags
  * C: Carry
@@ -285,7 +284,6 @@ typedef enum
     N = (1 << 7),
 } status_flag_t;
 
-
 /*
  * Instruction struct
  * name: name of instruction
@@ -304,7 +302,6 @@ typedef struct
     instruction_func_t fetch;
     instruction_func_t execute;
 } instruction_s;
-
 
 /*
     * CPU struct
@@ -338,11 +335,13 @@ struct cpu_s
 
 void init_instruction_table(cpu_s *cpu);
 void cpu_init(cpu_s *cpu, byte_t *memory);
+
 /*
     6502 get flag
     Reads flag from status register
 */
 bool get_flag(cpu_s *cpu, status_flag_t flag);
+
 /*
     6502 set flag
     Sets flag in status register
@@ -355,30 +354,31 @@ void set_flag(cpu_s *cpu, status_flag_t flag, bool value);
     Does not increment PC
 */
 byte_t peek(cpu_s *cpu);
+
 /*
     6502 read from address
     Reads a byte from memory at address
 */
-
 byte_t read_from_addr(cpu_s *cpu, word_t address);
+
 /*
     6502 write to address
     Writes a byte to memory at address
 */
-
 void write_to_addr(cpu_s *cpu, word_t address, byte_t value);
+
 /*
     6502 push to stack
     Pushes a byte to the stack
 */
-
 void push_byte(cpu_s *cpu, byte_t value);
+
 /*
     6502 pop from stack
     Pops a byte from the stack
 */
-
 byte_t pop_byte(cpu_s *cpu);
+
 /*
     Adjust PC by instruction length
 */
@@ -398,6 +398,7 @@ void clock(cpu_s *cpu);
     Takes 7 cycles
 */
 void irq(cpu_s *cpu);
+
 /*
     6502 nmi interrupt
     Non-maskable interrupt
@@ -405,6 +406,7 @@ void irq(cpu_s *cpu);
     Takes 8 cycles
 */
 void nmi(cpu_s *cpu);
+
 /*
     6502 reset
     Resets CPU to initial state
