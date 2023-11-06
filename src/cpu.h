@@ -234,8 +234,8 @@
     X(SBC, ABX, 0xFD)       \
     X(INC, ABX, 0xFE)
 
-typedef uint8_t Byte;
-typedef uint16_t Word;
+typedef uint8_t byte_t;
+typedef uint16_t word_t;
 typedef struct CPU CPU; // Forward declaration
 
 typedef enum 
@@ -245,7 +245,7 @@ typedef enum
     #undef X
 } addr_mode_t;
 
-#define X(name) Byte name(CPU *cpu);
+#define X(name) byte_t name(CPU *cpu);
 LIST_OF_ADDR_MODES
 #undef X
 
@@ -257,11 +257,11 @@ typedef enum
 } instruction_info_t;
 
 
-#define X(name) Byte name(CPU *cpu);
+#define X(name) byte_t name(CPU *cpu);
 UNIQUE_OPCODES
 #undef X
 
-typedef Byte (*Ins_Func)(CPU *cpu);
+typedef byte_t (*Ins_Func)(CPU *cpu);
 /*
  * Status register flags
  * C: Carry
@@ -298,9 +298,9 @@ typedef enum
 typedef struct Instruction
 {
     char *name;
-    Byte opcode;
-    Byte length;
-    Byte cycles;
+    byte_t opcode;
+    byte_t length;
+    byte_t cycles;
     Ins_Func fetch;
     Ins_Func execute;
 } Instruction;
@@ -321,23 +321,23 @@ typedef struct Instruction
 */
 struct CPU
 {
-    Byte A;
-    Byte X;
-    Byte Y;
-    Byte SP;
-    Word PC;
-    Byte STATUS;
+    byte_t A;
+    byte_t X;
+    byte_t Y;
+    byte_t SP;
+    word_t PC;
+    byte_t STATUS;
 
     size_t cycles;
     Instruction *current_instruction;
     bool pc_changed;
     bool does_need_additional_cycle;
-    Byte *memory;
+    byte_t *memory;
     Instruction table[256];
 };
 
 void init_instruction_table(CPU *cpu);
-void cpu_init(CPU *cpu, Byte *memory);
+void cpu_init(CPU *cpu, byte_t *memory);
 /*
     6502 get flag
     Reads flag from status register
@@ -354,35 +354,35 @@ void set_flag(CPU *cpu, status_flag_t flag, bool value);
     Peeks at the next byte in memory
     Does not increment PC
 */
-Byte peek(CPU *cpu);
+byte_t peek(CPU *cpu);
 /*
     6502 read from address
     Reads a byte from memory at address
 */
 
-Byte read_from_addr(CPU *cpu, Word address);
+byte_t read_from_addr(CPU *cpu, word_t address);
 /*
     6502 write to address
     Writes a byte to memory at address
 */
 
-void write_to_addr(CPU *cpu, Word address, Byte value);
+void write_to_addr(CPU *cpu, word_t address, byte_t value);
 /*
     6502 push to stack
     Pushes a byte to the stack
 */
 
-void push_byte(CPU *cpu, Byte value);
+void push_byte(CPU *cpu, byte_t value);
 /*
     6502 pop from stack
     Pops a byte from the stack
 */
 
-Byte pop_byte(CPU *cpu);
+byte_t pop_byte(CPU *cpu);
 /*
     Adjust PC by instruction length
 */
-void adjust_pc(CPU *cpu, Byte instruction_length);
+void adjust_pc(CPU *cpu, byte_t instruction_length);
 
 /*
     6502 clock

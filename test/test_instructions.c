@@ -16,7 +16,7 @@ ALL_INSTRUCTIONS
 typedef struct
 {
     CPU *cpu;
-    Word program_counter //start of instruction
+    word_t program_counter //start of instruction
 } Test_Fixture;
 
 typedef enum
@@ -26,7 +26,7 @@ typedef enum
     POS
 } sign_t;
 
-static void instruction_init(Instruction ins, Word starting_addr)
+static void instruction_init(Instruction ins, word_t starting_addr)
 {
     
 }
@@ -34,7 +34,7 @@ static void instruction_init(Instruction ins, Word starting_addr)
 CPU *cpu_create()
 {
     CPU *cpu = malloc(sizeof(CPU));
-    Byte *memory = malloc(MEM_SIZE);
+    byte_t *memory = malloc(MEM_SIZE);
 
     cpu_init(cpu, memory);
 
@@ -59,7 +59,7 @@ static void tear_down(void *fixture)
     free(test_fixture);
 }
 
-static bool check_nz_flags(CPU *cpu, sign_t sign, Byte old_status)
+static bool check_nz_flags(CPU *cpu, sign_t sign, byte_t old_status)
 {
     //ensure that only the N and Z flags have been changed
     bool valid = (cpu->STATUS & ~(N | Z)) == (old_status & ~(N | Z));
@@ -167,8 +167,8 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_IMM;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_IMM;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
 
@@ -180,8 +180,8 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, IMM);
     assert_int(instruction.execute, ==, AND);
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
     
     reset(cpu);
     cpu->memory[program_counter] = opcode;
@@ -220,8 +220,8 @@ MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_ZP0;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_ZP0;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
     //ensure instruction is correct
@@ -231,10 +231,10 @@ MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, ZP0);
     assert_int(instruction.execute, ==, AND);
 
-    Byte zero_page_address = 0x80;
+    byte_t zero_page_address = 0x80;
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
     
     reset(cpu);
     cpu->memory[program_counter] = opcode;
@@ -276,8 +276,8 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_ZPX;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_ZPX;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
     //ensure instruction is correct
@@ -287,11 +287,11 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, ZPX);
     assert_int(instruction.execute, ==, AND);
 
-    Byte zero_page_address = 0x80;
-    Byte x = 0x01;
+    byte_t zero_page_address = 0x80;
+    byte_t x = 0x01;
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
@@ -349,8 +349,8 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_ABS;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_ABS;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
     //ensure instruction is correct
@@ -360,15 +360,15 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, ABS);
     assert_int(instruction.execute, ==, AND);
 
-    Word address = 0x8000;
+    word_t address = 0x8000;
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->A = 0x81;
     cpu->memory[address] = 0x80;
     run(cpu, instruction.cycles);
@@ -378,8 +378,8 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->A = 0x00;
     cpu->memory[address] = 0x00;
     run(cpu, instruction.cycles);
@@ -389,8 +389,8 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->A = 0x03;
     cpu->memory[address] = 0x01;
     run(cpu, instruction.cycles);
@@ -404,8 +404,8 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_ABX;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_ABX;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
     //ensure instruction is correct
@@ -415,16 +415,16 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, ABX);
     assert_int(instruction.execute, ==, AND);
 
-    Word address = 0x8000;
-    Byte x = 0x01;
+    word_t address = 0x8000;
+    byte_t x = 0x01;
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->X = x;
     cpu->A = 0x81;
     cpu->memory[address + x] = 0x80;
@@ -435,8 +435,8 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->X = x;
     cpu->A = 0x00;
     cpu->memory[address + x] = 0x00;
@@ -447,8 +447,8 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
     
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->X = x;
     cpu->A = 0x03;
     cpu->memory[address + x] = 0x01;
@@ -480,8 +480,8 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
 {
     Test_Fixture *test_fixture = (Test_Fixture*)fixture;
     CPU *cpu = test_fixture->cpu;
-    Word program_counter = test_fixture->program_counter;
-    Byte opcode = INSTRUCTION_AND_ABY;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_AND_ABY;
     cpu->memory[program_counter] = opcode;
     Instruction instruction = cpu->table[opcode];
     //ensure instruction is correct
@@ -491,16 +491,16 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, ABY);
     assert_int(instruction.execute, ==, AND);
 
-    Word address = 0x8000;
-    Byte y = 0x01;
+    word_t address = 0x8000;
+    byte_t y = 0x01;
 
-    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->Y = y;
     cpu->A = 0x81;
     cpu->memory[address + y] = 0x80;
@@ -511,8 +511,8 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
 
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->Y = y;
     cpu->A = 0x00;
     cpu->memory[address + y] = 0x00;
@@ -523,8 +523,8 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
     
     reset(cpu);
     cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
     cpu->Y = y;
     cpu->A = 0x03;
     cpu->memory[address + y] = 0x01;
