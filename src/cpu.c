@@ -2392,6 +2392,7 @@ void reset(CPU *cpu)
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));  
     cpu->cycles += 8;
+    cpu->STATUS = (rand() % 256) | U;
     return;
 }
 

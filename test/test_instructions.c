@@ -128,11 +128,60 @@ int main(int argc, char *argv[])
 {
     MunitTest tests[] = {
         {
-            "Instructions", //name
-            Test_AND_IMM, //test
-            setup, //setup
-            tear_down, //tear down
-            MUNIT_TEST_OPTION_NONE, //options
+            "/AND IMM",
+            Test_AND_IMM,
+            setup,
+            tear_down, 
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND ZP0", 
+            Test_AND_ZP0, 
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND ZPX", 
+            Test_AND_ZPX, 
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND ABS",
+            Test_AND_ABS,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND ABX",
+            Test_AND_ABX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND ABY",
+            Test_AND_ABY,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND IZX",
+            Test_AND_IZX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND IZY",
+            Test_AND_IZY,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
         },
         { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
     };
@@ -152,23 +201,325 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
     CPU *cpu = test_fixture->cpu;
     Word program_counter = test_fixture->program_counter;
     Byte opcode = INSTRUCTION_AND_IMM;
+    cpu->memory[program_counter] = opcode;
+    Instruction instruction = cpu->table[opcode];
 
-    //set up reset vector
-    cpu->memory[RESET_VECTOR] = (Byte)program_counter;
-    cpu->memory[RESET_VECTOR + 1] = (Byte)(program_counter >> 8);
+    //ensure instruction is correct
 
-    //set up instruction for negative case
+    assert_int(instruction.name, ==, "AND");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 2);
+    assert_int(instruction.fetch, ==, IMM);
+    assert_int(instruction.execute, ==, AND);
+
+    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    
+    reset(cpu);
     cpu->memory[program_counter] = opcode;
     cpu->memory[program_counter + 1] = 0x80;
     cpu->A = 0x81;
-    cpu->STATUS = rand() % 256 & ~(N | Z) | U;
 
-    //run
-    run(cpu, 2);
+    run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
-    //program counter should be incremented by length of instruction
-    assert_int(cpu->PC, ==, program_counter + 2);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = 0x00;
+    cpu->A = 0x00;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = 0x01;
+    cpu->A = 0x03;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    
     return MUNIT_OK;
 }
 
+MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
+{
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    CPU *cpu = test_fixture->cpu;
+    Word program_counter = test_fixture->program_counter;
+    Byte opcode = INSTRUCTION_AND_ZP0;
+    cpu->memory[program_counter] = opcode;
+    Instruction instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "AND");
+    assert_int(instruction.cycles, ==, 3);
+    assert_int(instruction.length, ==, 2);
+    assert_int(instruction.fetch, ==, ZP0);
+    assert_int(instruction.execute, ==, AND);
+
+    Byte zero_page_address = 0x80;
+
+    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+    
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->A = 0x81;
+    cpu->memory[zero_page_address] = 0x81;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x81);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->A = 0x00;
+    cpu->memory[zero_page_address] = 0x00;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->A = 0x03;
+    cpu->memory[zero_page_address] = 0x01;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
+{
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    CPU *cpu = test_fixture->cpu;
+    Word program_counter = test_fixture->program_counter;
+    Byte opcode = INSTRUCTION_AND_ZPX;
+    cpu->memory[program_counter] = opcode;
+    Instruction instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "AND");
+    assert_int(instruction.cycles, ==, 4);
+    assert_int(instruction.length, ==, 2);
+    assert_int(instruction.fetch, ==, ZPX);
+    assert_int(instruction.execute, ==, AND);
+
+    Byte zero_page_address = 0x80;
+    Byte x = 0x01;
+
+    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->X = x;
+    cpu->A = 0x81;
+    cpu->memory[zero_page_address + x] = 0x81;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x81);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->X = x;
+    cpu->A = 0x00;
+    cpu->memory[zero_page_address + x] = 0x00;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = zero_page_address;
+    cpu->X = x;
+    cpu->A = 0x03;
+    cpu->memory[zero_page_address + x] = 0x01;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    //test wrap around
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = 0xFF;
+    cpu->X = 0x01;
+    cpu->A = 0x03;
+    cpu->memory[0x0000] = 0x01;
+
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
+{
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    CPU *cpu = test_fixture->cpu;
+    Word program_counter = test_fixture->program_counter;
+    Byte opcode = INSTRUCTION_AND_ABS;
+    cpu->memory[program_counter] = opcode;
+    Instruction instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "AND");
+    assert_int(instruction.cycles, ==, 4);
+    assert_int(instruction.length, ==, 3);
+    assert_int(instruction.fetch, ==, ABS);
+    assert_int(instruction.execute, ==, AND);
+
+    Word address = 0x8000;
+
+    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->A = 0x81;
+    cpu->memory[address] = 0x80;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x80);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->A = 0x00;
+    cpu->memory[address] = 0x00;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->A = 0x03;
+    cpu->memory[address] = 0x01;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
+{
+    Test_Fixture *test_fixture = (Test_Fixture*)fixture;
+    CPU *cpu = test_fixture->cpu;
+    Word program_counter = test_fixture->program_counter;
+    Byte opcode = INSTRUCTION_AND_ABX;
+    cpu->memory[program_counter] = opcode;
+    Instruction instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "AND");
+    assert_int(instruction.cycles, ==, 4);
+    assert_int(instruction.length, ==, 3);
+    assert_int(instruction.fetch, ==, ABX);
+    assert_int(instruction.execute, ==, AND);
+
+    Word address = 0x8000;
+    Byte x = 0x01;
+
+    cpu->memory[RESET_VECTOR] = (Byte) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (Byte)((program_counter & 0xFF00) >> 8);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->X = x;
+    cpu->A = 0x81;
+    cpu->memory[address + x] = 0x80;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x80);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->X = x;
+    cpu->A = 0x00;
+    cpu->memory[address + x] = 0x00;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = (Byte)(address & 0x00FF);
+    cpu->memory[program_counter + 2] = (Byte)((address & 0xFF00) >> 8);
+    cpu->X = x;
+    cpu->A = 0x03;
+    cpu->memory[address + x] = 0x01;
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+
+    //candidate for page boundery cross
+    reset(cpu);
+    cpu->memory[program_counter] = opcode;
+    cpu->memory[program_counter + 1] = 0xFF;
+    cpu->memory[program_counter + 2] = 0x00;
+    cpu->X = 0x01;
+    cpu->A = 0x03;
+    cpu->memory[0x1000] = 0x01;
+    run(cpu, instruction.cycles);
+    //PC should not have changed
+    assert_int(cpu->PC, ==, program_counter);
+    //clock
+    clock(cpu);
+    //PC should have changed
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_IZX(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_OK;
+}
+
+MunitResult Test_AND_IZY(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_OK;
+}

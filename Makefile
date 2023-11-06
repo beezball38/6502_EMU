@@ -4,7 +4,7 @@ BIN_DIR := bin
 OBJ_DIR := bin/obj
 
 CC := gcc
-CFLAGS := -Wall -Wextra -Werror -g
+CFLAGS := -Wall -Wextra -Werror -g -std=c11
 TEST_FLAGS := -w -g
 
 DEPS := $(SRC_DIR)/cpu.h $(SRC_DIR)/cpu.c
