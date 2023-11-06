@@ -5,157 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#define INSTRUCTION_BRK_IMP 0x00
-#define INSTRUCTION_ORA_IZX 0x01
-#define INSTRUCTION_ORA_ZP0 0x05
-#define INSTRUCTION_ASL_ZP0 0x06
-#define INSTRUCTION_PHP_IMP 0x08
-#define INSTRUCTION_ORA_IMM 0x09
-#define INSTRUCTION_ASL_ACC 0x0A
-#define INSTRUCTION_ASL_ABS 0x0E
-#define INSTRUCTION_ORA_ABS 0x0D
-#define INSTRUCTION_BPL_REL 0x10
-#define INSTRUCTION_ORA_IZY 0x11
-#define INSTRUCTION_ORA_ZPX 0x15
-#define INSTRUCTION_ASL_ZPX 0x16
-#define INSTRUCTION_CLC_IMP 0x18
-#define INSTRUCTION_ORA_ABY 0x19
-#define INSTRUCTION_ORA_ABX 0x1D
-#define INSTRUCTION_ASL_ABX 0x1E
-#define INSTRUCTION_JSR_ABS 0x20
-#define INSTRUCTION_AND_IZX 0x21
-#define INSTRUCTION_BRK_ZP0 0x24
-#define INSTRUCTION_AND_ZP0 0x25
-#define INSTRUCTION_ROL_ZP0 0x26
-#define INSTRUCTION_PLP_IMP 0x28
-#define INSTRUCTION_AND_IMM 0x29
-#define INSTRUCTION_ROL_ACC 0x2A
-#define INSTRUCTION_BIT_ABS 0x2C
-#define INSTRUCTION_AND_ABS 0x2D
-#define INSTRUCTION_ROL_ABS 0x2E
-#define INSTRUCTION_BMI_REL 0x30
-#define INSTRUCTION_AND_IZY 0x31
-#define INSTRUCTION_AND_ZPX 0x35
-#define INSTRUCTION_ROL_ZPX 0x36
-#define INSTRUCTION_SEC_IMP 0x38
-#define INSTRUCTION_AND_ABY 0x39
-#define INSTRUCTION_AND_ABX 0x3D
-#define INSTRUCTION_ROL_ABX 0x3E
-#define INSTRUCTION_RTI_IMP 0x40
-#define INSTRUCTION_EOR_IZX 0x41
-#define INSTRUCTION_EOR_ZP0 0x45
-#define INSTRUCTION_LSR_ZP0 0x46
-#define INSTRUCTION_PHA_IMP 0x48
-#define INSTRUCTION_EOR_IMM 0x49
-#define INSTRUCTION_LSR_ACC 0x4A
-#define INSTRUCTION_JMP_ABS 0x4C
-#define INSTRUCTION_EOR_ABS 0x4D
-#define INSTRUCTION_LSR_ABS 0x4E
-#define INSTRUCTION_BVC_REL 0x50
-#define INSTRUCTION_EOR_IZY 0x51
-#define INSTRUCTION_EOR_ZPX 0x55
-#define INSTRUCTION_LSR_ZPX 0x56
-#define INSTRUCTION_CLI_IMP 0x58
-#define INSTRUCTION_EOR_ABY 0x59
-#define INSTRUCTION_EOR_ABX 0x5D
-#define INSTRUCTION_LSR_ABX 0x5E
-#define INSTRUCTION_RTS_IMP 0x60
-#define INSTRUCTION_ADC_IZX 0x61
-#define INSTRUCTION_ADC_ZP0 0x65
-#define INSTRUCTION_ROR_ZP0 0x66
-#define INSTRUCTION_PLA_IMP 0x68
-#define INSTRUCTION_ADC_IMM 0x69
-#define INSTRUCTION_ROR_ACC 0x6A
-#define INSTRUCTION_JMP_IND 0x6C
-#define INSTRUCTION_ADC_ABS 0x6D
-#define INSTRUCTION_ROR_ABS 0x6E
-#define INSTRUCTION_BVS_REL 0x70
-#define INSTRUCTION_ADC_IZY 0x71
-#define INSTRUCTION_ADC_ZPX 0x75
-#define INSTRUCTION_ROR_ZPX 0x76
-#define INSTRUCTION_SEI_IMP 0x78
-#define INSTRUCTION_ADC_ABY 0x79
-#define INSTRUCTION_ADC_ABX 0x7D
-#define INSTRUCTION_ROR_ABX 0x7E
-#define INSTRUCTION_STA_IZX 0x81
-#define INSTRUCTION_STY_ZP0 0x84
-#define INSTRUCTION_STA_ZP0 0x85
-#define INSTRUCTION_STX_ZP0 0x86
-#define INSTRUCTION_DEY_IMP 0x88
-#define INSTRUCTION_TXA_IMP 0x8A
-#define INSTRUCTION_STY_ABS 0x8C
-#define INSTRUCTION_STA_ABS 0x8D
-#define INSTRUCTION_STX_ABS 0x8E
-#define INSTRUCTION_BCC_REL 0x90
-#define INSTRUCTION_STA_IZY 0x91
-#define INSTRUCTION_STY_ZPX 0x94
-#define INSTRUCTION_STA_ZPX 0x95
-#define INSTRUCTION_STX_ZPY 0x96
-#define INSTRUCTION_TYA_IMP 0x98
-#define INSTRUCTION_STA_ABY 0x99
-#define INSTRUCTION_TXS_IMP 0x9A
-#define INSTRUCTION_STA_ABX 0x9D
-#define INSTRUCTION_LDY_IMM 0xA0
-#define INSTRUCTION_LDA_IZX 0xA1
-#define INSTRUCTION_LDX_IMM 0xA2
-#define INSTRUCTION_LDY_ZP0 0xA4
-#define INSTRUCTION_LDA_ZP0 0xA5
-#define INSTRUCTION_LDX_ZP0 0xA6
-#define INSTRUCTION_TAY_IMP 0xA8
-#define INSTRUCTION_LDA_IMM 0xA9
-#define INSTRUCTION_TAX_IMP 0xAA
-#define INSTRUCTION_LDY_ABS 0xAC
-#define INSTRUCTION_LDA_ABS 0xAD
-#define INSTRUCTION_LDX_ABS 0xAE
-#define INSTRUCTION_BCS_REL 0xB0
-#define INSTRUCTION_LDA_IZY 0xB1
-#define INSTRUCTION_LDY_ZPX 0xB4
-#define INSTRUCTION_LDA_ZPX 0xB5
-#define INSTRUCTION_LDX_ZPY 0xB6
-#define INSTRUCTION_CLV_IMP 0xB8
-#define INSTRUCTION_LDA_ABY 0xB9
-#define INSTRUCTION_TSX_IMP 0xBA
-#define INSTRUCTION_LDY_ABX 0xBC
-#define INSTRUCTION_LDA_ABX 0xBD
-#define INSTRUCTION_LDX_ABY 0xBE
-#define INSTRUCTION_CPY_IMM 0xC0
-#define INSTRUCTION_CMP_IZX 0xC1
-#define INSTRUCTION_CPY_ZP0 0xC4
-#define INSTRUCTION_CMP_ZP0 0xC5
-#define INSTRUCTION_DEC_ZP0 0xC6
-#define INSTRUCTION_INY_IMP 0xC8
-#define INSTRUCTION_CMP_IMM 0xC9
-#define INSTRUCTION_DEX_IMP 0xCA
-#define INSTRUCTION_CPY_ABS 0xCC
-#define INSTRUCTION_CMP_ABS 0xCD
-#define INSTRUCTION_DEC_ABS 0xCE
-#define INSTRUCTION_BNE_REL 0xD0
-#define INSTRUCTION_CMP_IZY 0xD1
-#define INSTRUCTION_CMP_ZPX 0xD5
-#define INSTRUCTION_DEC_ZPX 0xD6
-#define INSTRUCTION_CLD_IMP 0xD8
-#define INSTRUCTION_CMP_ABY 0xD9
-#define INSTRUCTION_CMP_ABX 0xDD
-#define INSTRUCTION_DEC_ABX 0xDE
-#define INSTRUCTION_CPX_IMM 0xE0
-#define INSTRUCTION_SBC_IZX 0xE1
-#define INSTRUCTION_CPX_ZP0 0xE4
-#define INSTRUCTION_SBC_ZP0 0xE5
-#define INSTRUCTION_INC_ZP0 0xE6
-#define INSTRUCTION_INX_IMP 0xE8
-#define INSTRUCTION_SBC_IMM 0xE9
-#define INSTRUCTION_NOP_IMP 0xEA
-#define INSTRUCTION_CPX_ABS 0xEC
-#define INSTRUCTION_SBC_ABS 0xED
-#define INSTRUCTION_INC_ABS 0xEE
-#define INSTRUCTION_BEQ_REL 0xF0
-#define INSTRUCTION_SBC_IZY 0xF1
-#define INSTRUCTION_SBC_ZPX 0xF5
-#define INSTRUCTION_INC_ZPX 0xF6
-#define INSTRUCTION_SED_IMP 0xF8
-#define INSTRUCTION_SBC_ABY 0xF9
-#define INSTRUCTION_SBC_ABX 0xFD
-#define INSTRUCTION_INC_ABX 0xFE
 
 #define LIST_OF_INSTRUCTIONS \
     X(BRK)                   \
@@ -232,6 +81,159 @@
     X(IZX)                  \
     X(IZY)
 
+#define ALL_INSTRUCTIONS    \
+    X(BRK, IMP, 0x00)       \
+    X(ORA, IZX, 0x01)       \
+    X(ORA, ZP0, 0x05)       \
+    X(ASL, ZP0, 0x06)       \
+    X(PHP, IMP, 0x08)       \
+    X(ORA, IMM, 0x09)       \
+    X(ASL, ACC, 0x0A)       \
+    X(ASL, ABS, 0x0E)       \
+    X(ORA, ABS, 0x0D)       \
+    X(BPL, REL, 0x10)       \
+    X(ORA, IZY, 0x11)       \
+    X(ORA, ZPX, 0x15)       \
+    X(ASL, ZPX, 0x16)       \
+    X(CLC, IMP, 0x18)       \
+    X(ORA, ABY, 0x19)       \
+    X(ORA, ABX, 0x1D)       \
+    X(ASL, ABX, 0x1E)       \
+    X(JSR, ABS, 0x20)       \
+    X(AND, IZX, 0x21)       \
+    X(BRK, ZP0, 0x24)       \
+    X(AND, ZP0, 0x25)       \
+    X(ROL, ZP0, 0x26)       \
+    X(PLP, IMP, 0x28)       \
+    X(AND, IMM, 0x29)       \
+    X(ROL, ACC, 0x2A)       \
+    X(BIT, ABS, 0x2C)       \
+    X(AND, ABS, 0x2D)       \
+    X(ROL, ABS, 0x2E)       \
+    X(BMI, REL, 0x30)       \
+    X(AND, IZY, 0x31)       \
+    X(AND, ZPX, 0x35)       \
+    X(ROL, ZPX, 0x36)       \
+    X(SEC, IMP, 0x38)       \
+    X(AND, ABY, 0x39)       \
+    X(AND, ABX, 0x3D)       \
+    X(ROL, ABX, 0x3E)       \
+    X(RTI, IMP, 0x40)       \
+    X(EOR, IZX, 0x41)       \
+    X(EOR, ZP0, 0x45)       \
+    X(LSR, ZP0, 0x46)       \
+    X(PHA, IMP, 0x48)       \
+    X(EOR, IMM, 0x49)       \
+    X(LSR, ACC, 0x4A)       \
+    X(JMP, ABS, 0x4C)       \
+    X(EOR, ABS, 0x4D)       \
+    X(LSR, ABS, 0x4E)       \
+    X(BVC, REL, 0x50)       \
+    X(EOR, IZY, 0x51)       \
+    X(EOR, ZPX, 0x55)       \
+    X(LSR, ZPX, 0x56)       \
+    X(CLI, IMP, 0x58)       \
+    X(EOR, ABY, 0x59)       \
+    X(EOR, ABX, 0x5D)       \
+    X(LSR, ABX, 0x5E)       \
+    X(RTS, IMP, 0x60)       \
+    X(ADC, IZX, 0x61)       \
+    X(ADC, ZP0, 0x65)       \
+    X(ROR, ZP0, 0x66)       \
+    X(PLA, IMP, 0x68)       \
+    X(ADC, IMM, 0x69)       \
+    X(ROR, ACC, 0x6A)       \
+    X(JMP, IND, 0x6C)       \
+    X(ADC, ABS, 0x6D)       \
+    X(ROR, ABS, 0x6E)       \
+    X(BVS, REL, 0x70)       \
+    X(ADC, IZY, 0x71)       \
+    X(ADC, ZPX, 0x75)       \
+    X(ROR, ZPX, 0x76)       \
+    X(SEI, IMP, 0x78)       \
+    X(ADC, ABY, 0x79)       \
+    X(ADC, ABX, 0x7D)       \
+    X(ROR, ABX, 0x7E)       \
+    X(STA, IZX, 0x81)       \
+    X(STY, ZP0, 0x84)       \
+    X(STA, ZP0, 0x85)       \
+    X(STX, ZP0, 0x86)       \
+    X(DEY, IMP, 0x88)       \
+    X(TXA, IMP, 0x8A)       \
+    X(STY, ABS, 0x8C)       \
+    X(STA, ABS, 0x8D)       \
+    X(STX, ABS, 0x8E)       \
+    X(BCC, REL, 0x90)       \
+    X(STA, IZY, 0x91)       \
+    X(STY, ZPX, 0x94)       \
+    X(STA, ZPX, 0x95)       \
+    X(STX, ZPY, 0x96)       \
+    X(TYA, IMP, 0x98)       \
+    X(STA, ABY, 0x99)       \
+    X(TXS, IMP, 0x9A)       \
+    X(STA, ABX, 0x9D)       \
+    X(LDY, IMM, 0xA0)       \
+    X(LDA, IZX, 0xA1)       \
+    X(LDX, IMM, 0xA2)       \
+    X(LDY, ZP0, 0xA4)       \
+    X(LDA, ZP0, 0xA5)       \
+    X(LDX, ZP0, 0xA6)       \
+    X(TAY, IMP, 0xA8)       \
+    X(LDA, IMM, 0xA9)       \
+    X(TAX, IMP, 0xAA)       \
+    X(LDY, ABS, 0xAC)       \
+    X(LDA, ABS, 0xAD)       \
+    X(LDX, ABS, 0xAE)       \
+    X(BCS, REL, 0xB0)       \
+    X(LDA, IZY, 0xB1)       \
+    X(LDY, ZPX, 0xB4)       \
+    X(LDA, ZPX, 0xB5)       \
+    X(LDX, ZPY, 0xB6)       \
+    X(CLV, IMP, 0xB8)       \
+    X(LDA, ABY, 0xB9)       \
+    X(TSX, IMP, 0xBA)       \
+    X(LDY, ABX, 0xBC)       \
+    X(LDA, ABX, 0xBD)       \
+    X(LDX, ABY, 0xBE)       \
+    X(CPY, IMM, 0xC0)       \
+    X(CMP, IZX, 0xC1)       \
+    X(CPY, ZP0, 0xC4)       \
+    X(CMP, ZP0, 0xC5)       \
+    X(DEC, ZP0, 0xC6)       \
+    X(INY, IMP, 0xC8)       \
+    X(CMP, IMM, 0xC9)       \
+    X(DEX, IMP, 0xCA)       \
+    X(CPY, ABS, 0xCC)       \
+    X(CMP, ABS, 0xCD)       \
+    X(DEC, ABS, 0xCE)       \
+    X(BNE, REL, 0xD0)       \
+    X(CMP, IZY, 0xD1)       \
+    X(CMP, ZPX, 0xD5)       \
+    X(DEC, ZPX, 0xD6)       \
+    X(CLD, IMP, 0xD8)       \
+    X(CMP, ABY, 0xD9)       \
+    X(CMP, ABX, 0xDD)       \
+    X(DEC, ABX, 0xDE)       \
+    X(CPX, IMM, 0xE0)       \
+    X(SBC, IZX, 0xE1)       \
+    X(CPX, ZP0, 0xE4)       \
+    X(SBC, ZP0, 0xE5)       \
+    X(INC, ZP0, 0xE6)       \
+    X(INX, IMP, 0xE8)       \
+    X(SBC, IMM, 0xE9)       \
+    X(NOP, IMP, 0xEA)       \
+    X(CPX, ABS, 0xEC)       \
+    X(SBC, ABS, 0xED)       \
+    X(INC, ABS, 0xEE)       \
+    X(BEQ, REL, 0xF0)       \
+    X(SBC, IZY, 0xF1)       \
+    X(SBC, ZPX, 0xF5)       \
+    X(INC, ZPX, 0xF6)       \
+    X(SED, IMP, 0xF8)       \
+    X(SBC, ABY, 0xF9)       \
+    X(SBC, ABX, 0xFD)       \
+    X(INC, ABX, 0xFE)
+
 typedef uint8_t Byte;
 typedef uint16_t Word;
 typedef struct CPU CPU;
@@ -239,6 +241,14 @@ typedef struct CPU CPU;
 #define X(name) Byte name(CPU *cpu);
 LIST_OF_ADDR_MODES
 #undef X
+
+typedef enum
+{
+    #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
+    ALL_INSTRUCTIONS
+    #undef X
+} instruction_info_t;
+
 
 #define X(name) Byte name(CPU *cpu);
 LIST_OF_INSTRUCTIONS
