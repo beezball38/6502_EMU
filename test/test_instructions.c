@@ -41,6 +41,12 @@ static byte_t get_test_val(sign_t sign)
     }
 }
 
+static void load_reset_vector(cpu_s *cpu, word_t program_counter)
+{
+    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
+    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
+}
+
 typedef struct
 {
     cpu_s *cpu;
@@ -60,6 +66,9 @@ static void instruction_init(instruction_init_s *args)
     word_t instruction_addr = args->instruction_addr;
     switch(addr_mode)
     {
+        case ADDR_MODE_IMP:
+            cpu->memory[instruction_addr] = args->opcode;
+            break;
         case ADDR_MODE_IMM:
             cpu->memory[instruction_addr] = args->opcode;
             cpu->memory[instruction_addr + 1] = get_test_val(args->sign);
@@ -243,6 +252,111 @@ int main(int argc, char *argv[])
             tear_down,
             MUNIT_TEST_OPTION_NONE,
         },
+        {
+            "/CLC IMP",
+            Test_CLC_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/CLI IMP",
+            Test_CLI_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/CLV IMP",
+            Test_CLV_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/CLD IMP",
+            Test_CLD_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/SEC IMP",
+            Test_SEC_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/SEI IMP",
+            Test_SEI_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/SED IMP",
+            Test_SED_IMP,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA IMM",
+            Test_LDA_IMM,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA ZP0",
+            Test_LDA_ZP0,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA ZPX",
+            Test_LDA_ZPX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA ABS",
+            Test_LDA_ABS,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA ABX",
+            Test_LDA_ABX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA ABY",
+            Test_LDA_ABY,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA IZX",
+            Test_LDA_IZX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/LDA IZY",
+            Test_LDA_IZY,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
         { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
     };
     MunitSuite suite = {
@@ -270,8 +384,7 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
     assert_int(instruction.fetch, ==, IMM);
     assert_int(instruction.execute, ==, AND);
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
+    load_reset_vector(cpu, program_counter);
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -327,9 +440,7 @@ MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
 
     byte_t zero_page_address = 0x80;
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-    
+    load_reset_vector(cpu, program_counter); 
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -388,8 +499,7 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     byte_t zero_page_address = 0x80;
     byte_t x = 0x01;
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
+    load_reset_vector(cpu, program_counter);
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -462,9 +572,7 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
 
     word_t address = 0x8000;
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-
+    load_reset_vector(cpu, program_counter);
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -521,9 +629,7 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
     word_t address = 0x8000;
     byte_t x = 0x01;
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-
+    load_reset_vector(cpu, program_counter);
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -597,9 +703,7 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
     word_t address = 0x8000;
     byte_t y= 0x01;
 
-    cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
-    cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-
+    load_reset_vector(cpu, program_counter);
     instruction_init_s args = 
     {
         .cpu = cpu,
@@ -662,6 +766,317 @@ MunitResult Test_AND_IZX(const MunitParameter params[], void *fixture)
 }
 
 MunitResult Test_AND_IZY(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_CLC_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_CLC_IMP;
+    instruction_s instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "CLC");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, CLC);
+
+    load_reset_vector(cpu, program_counter);    
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = INSTRUCTION_CLC_IMP,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    set_flag(cpu, C, true);
+    assert_true(cpu->STATUS & C);
+    run(cpu, instruction.cycles);
+    assert_false(cpu->STATUS & C);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_CLI_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_CLI_IMP;
+    instruction_s instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "CLI");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, CLI);
+
+    load_reset_vector(cpu, program_counter);    
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = INSTRUCTION_CLI_IMP,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    set_flag(cpu, I, true);
+    assert_true(cpu->STATUS & I);
+    run(cpu, instruction.cycles);
+    assert_false(cpu->STATUS & I);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_CLV_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_CLV_IMP;
+    instruction_s instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "CLV");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, CLV);
+
+    load_reset_vector(cpu, program_counter);    
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = INSTRUCTION_CLV_IMP,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    set_flag(cpu, V, true);
+    assert_true(cpu->STATUS & V);
+    run(cpu, instruction.cycles);
+    assert_false(cpu->STATUS & V);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_CLD_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_CLD_IMP;
+    instruction_s instruction = cpu->table[opcode];
+    //ensure instruction is correct
+    assert_int(instruction.name, ==, "CLD");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, CLD);
+
+    load_reset_vector(cpu, program_counter);    
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = INSTRUCTION_CLD_IMP,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    set_flag(cpu, D, true);
+    assert_true(cpu->STATUS & D);
+    run(cpu, instruction.cycles);
+    assert_false(cpu->STATUS & D);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_SEC_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_SEC_IMP;
+
+    instruction_s instruction = cpu->table[opcode];
+    assert_int(instruction.name, ==, "SEC"); 
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, SEC);
+
+    load_reset_vector(cpu, program_counter);
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    assert_false(cpu->STATUS & C);
+    run(cpu, instruction.cycles);
+    assert_true(cpu->STATUS & C);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_SEI_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_SEI_IMP;
+
+    instruction_s instruction = cpu->table[opcode];
+    assert_int(instruction.name, ==, "SEI"); 
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, SEI);
+
+    load_reset_vector(cpu, program_counter);
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    assert_false(cpu->STATUS & I);
+    run(cpu, instruction.cycles);
+    assert_true(cpu->STATUS & I);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_SED_IMP(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+    byte_t opcode = INSTRUCTION_SED_IMP;
+
+    instruction_s instruction = cpu->table[opcode];
+    assert_int(instruction.name, ==, "SED"); 
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 1);
+    assert_int(instruction.fetch, ==, IMP);
+    assert_int(instruction.execute, ==, SED);
+
+    load_reset_vector(cpu, program_counter);
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMP,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+    };
+    reset(cpu);
+    instruction_init(&args);
+    cpu->STATUS = 0x00 | U;
+    assert_false(cpu->STATUS & D);
+    run(cpu, instruction.cycles);
+    assert_true(cpu->STATUS & D);
+    assert_int(cpu->PC, ==, program_counter + instruction.length);
+    return MUNIT_OK;
+}
+
+MunitResult Test_LDA_IMM(const MunitParameter params[], void *fixture)
+{
+    test_fixture_s *test_fixture = (test_fixture_s*)fixture;
+    cpu_s *cpu = test_fixture->cpu;
+    word_t program_counter = test_fixture->program_counter;
+
+    byte_t opcode = INSTRUCTION_LDA_IMM;
+    instruction_s instruction = cpu->table[opcode];
+    assert_int(instruction.name, ==, "LDA");
+    assert_int(instruction.cycles, ==, 2);
+    assert_int(instruction.length, ==, 2);
+    assert_int(instruction.fetch, ==, IMM);
+    assert_int(instruction.execute, ==, LDA);
+
+    load_reset_vector(cpu, program_counter);
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMM,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .sign = NEG
+    };
+    reset(cpu);
+    assert_int(cpu->A, ==, 0x00);
+    instruction_init(&args);
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x80);
+    assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
+
+    args.sign = ZERO;
+    reset(cpu);
+    assert_int(cpu->A, ==, 0x00);
+    instruction_init(&args);
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x00);
+    assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
+
+    args.sign = POS;
+    reset(cpu);
+    assert_int(cpu->A, ==, 0x00);
+    instruction_init(&args);
+    run(cpu, instruction.cycles);
+    assert_int(cpu->A, ==, 0x01);
+    assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
+    return MUNIT_OK;
+}
+
+MunitResult Test_LDA_ZP0(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_ZPX(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_ABS(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_ABX(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_ABY(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_IZX(const MunitParameter params[], void *fixture)
+{
+    return MUNIT_SKIP;
+}
+
+MunitResult Test_LDA_IZY(const MunitParameter params[], void *fixture)
 {
     return MUNIT_SKIP;
 }
