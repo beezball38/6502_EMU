@@ -26,9 +26,101 @@ typedef enum
     POS
 } sign_t;
 
-static void instruction_init(instruction_s ins, word_t starting_addr)
+static byte_t get_test_val(sign_t sign)
 {
-    
+    switch(sign)
+    {
+        case NEG:
+            return 0x80;
+        case ZERO:
+            return 0x00;
+        case POS:
+            return 0x01;
+        default:
+            return 0x00;
+    }
+}
+
+typedef struct
+{
+    cpu_s *cpu;
+    addr_mode_t addr_mode;
+    word_t instruction_addr;
+    byte_t opcode;
+    word_t address;
+    word_t pointer_address; //for indirect addressing modes
+    sign_t sign;
+    byte_t reg_offset;
+} instruction_init_s;
+
+static void instruction_init(instruction_init_s *args)
+{
+    cpu_s *cpu = args->cpu;
+    addr_mode_t addr_mode = args->addr_mode;
+    word_t instruction_addr = args->instruction_addr;
+    switch(addr_mode)
+    {
+        case ADDR_MODE_IMM:
+            cpu->memory[instruction_addr] = args->opcode;
+            cpu->memory[instruction_addr + 1] = get_test_val(args->sign);
+            break; 
+        case ADDR_MODE_ZP0:
+            cpu->memory[instruction_addr] = args->opcode;
+            byte_t zero_page_address = (byte_t)(args->address & 0x00FF);
+            cpu->memory[instruction_addr + 1] = zero_page_address;
+            cpu->memory[zero_page_address] = get_test_val(args->sign); 
+            break;
+        case ADDR_MODE_ZPX:
+            cpu->memory[instruction_addr] = args->opcode;
+            byte_t zero_page_address_x = (byte_t)(args->address & 0x00FF);
+            cpu->memory[instruction_addr + 1] = zero_page_address_x;
+            cpu->X = args->reg_offset;
+            cpu->memory[zero_page_address_x + args->reg_offset] = get_test_val(args->sign);
+            break;
+        case ADDR_MODE_ABS:
+            cpu->memory[instruction_addr] = args->opcode;
+            cpu->memory[instruction_addr + 1] = (byte_t)(args->address & 0x00FF);
+            cpu->memory[instruction_addr + 2] = (byte_t)((args->address & 0xFF00) >> 8);
+            cpu->memory[args->address] = get_test_val(args->sign);
+            break;
+        case ADDR_MODE_ABX:
+            cpu->memory[instruction_addr] = args->opcode;
+            cpu->memory[instruction_addr + 1] = (byte_t)(args->address & 0x00FF);
+            cpu->memory[instruction_addr + 2] = (byte_t)((args->address & 0xFF00) >> 8);
+            cpu->X = args->reg_offset;
+            cpu->memory[args->address + args->reg_offset] = get_test_val(args->sign);
+            break;
+        case ADDR_MODE_ABY:
+            cpu->memory[instruction_addr] = args->opcode;
+            cpu->memory[instruction_addr + 1] = (byte_t)(args->address & 0x00FF);
+            cpu->memory[instruction_addr + 2] = (byte_t)((args->address & 0xFF00) >> 8);
+            cpu->Y = args->reg_offset;
+            cpu->memory[args->address + args->reg_offset] = get_test_val(args->sign);
+            break;
+        case ADDR_MODE_IND:
+            //account for page boundery bug
+            cpu->memory[instruction_addr] = args->opcode;
+            cpu->memory[instruction_addr + 1] = (byte_t)(args->pointer_address & 0x00FF);
+            cpu->memory[instruction_addr + 2] = (byte_t)((args->pointer_address & 0xFF00) >> 8);
+            cpu->memory[args->pointer_address] = (byte_t)(args->address & 0x00FF);
+            cpu->memory[args->pointer_address + 1] = (byte_t)((args->address & 0xFF00) >> 8);
+            //was a page boundery crossed?
+            if ((args->pointer_address & 0xFF00) != ((args->pointer_address + 1) & 0xFF00))
+            {
+                cpu->memory[args->pointer_address] = (byte_t)(args->address & 0x00FF);
+                cpu->memory[args->pointer_address - 0x0100 + 1] = (byte_t)((args->address & 0xFF00) >> 8);
+            }
+            break;
+        case ADDR_MODE_IZX:
+            cpu->memory[instruction_addr] = args->opcode;
+            byte_t zero_page_address_izx = (byte_t)(args->pointer_address & 0x00FF);
+            cpu->memory[instruction_addr + 1] = zero_page_address_izx;
+            cpu->X = args->reg_offset;
+            cpu->memory[zero_page_address_izx + args->reg_offset] = (byte_t)(args->address & 0x00FF);
+            cpu->memory[zero_page_address_izx + args->reg_offset + 1] = (byte_t)((args->address & 0xFF00) >> 8);
+            cpu->memory[args->address] = get_test_val(args->sign);
+            break;
+    }      
 }
 
 cpu_s *cpu_create()
@@ -172,8 +264,6 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
     cpu->memory[program_counter] = opcode;
     instruction_s instruction = cpu->table[opcode];
 
-    //ensure instruction is correct
-
     assert_int(instruction.name, ==, "AND");
     assert_int(instruction.cycles, ==, 2);
     assert_int(instruction.length, ==, 2);
@@ -182,32 +272,36 @@ MunitResult Test_AND_IMM(const MunitParameter params[], void *fixture)
 
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-    
-    reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = 0x80;
-    cpu->A = 0x81;
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_IMM,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .sign = NEG
+    };
 
+    reset(cpu);
+    instruction_init(&args);
+    cpu->A = 0x80;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = 0x00;
+    args.sign = ZERO;
+    instruction_init(&args);
     cpu->A = 0x00;
-
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
     assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = 0x01;
+    args.sign = POS;
+    instruction_init(&args);
     cpu->A = 0x03;
-
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
@@ -236,33 +330,37 @@ MunitResult Test_AND_ZP0(const MunitParameter params[], void *fixture)
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
     
-    reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
-    cpu->A = 0x81;
-    cpu->memory[zero_page_address] = 0x81;
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_ZP0,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .address = zero_page_address,
+        .sign = NEG
+    };
 
+    reset(cpu);
+    instruction_init(&args);
+    cpu->A = 0x81;
     run(cpu, instruction.cycles);
-    assert_int(cpu->A, ==, 0x81);
+    assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
+    args.sign = ZERO;
+    instruction_init(&args);
     cpu->A = 0x00;
-    cpu->memory[zero_page_address] = 0x00;
-
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
     assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
+    args.sign = POS;    
+    instruction_init(&args);
     cpu->A = 0x03;
-    cpu->memory[zero_page_address] = 0x01;
 
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
@@ -292,13 +390,19 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
 
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
-
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_ZPX,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .address = zero_page_address,
+        .reg_offset = x,
+        .sign = NEG
+    };
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
-    cpu->X = x;
+    instruction_init(&args);
     cpu->A = 0x81;
-    cpu->memory[zero_page_address + x] = 0x81;
 
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x81);
@@ -306,11 +410,8 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
-    cpu->X = x;
+    instruction_init(&args);
     cpu->A = 0x00;
-    cpu->memory[zero_page_address + x] = 0x00;
 
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
@@ -318,18 +419,15 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = zero_page_address;
-    cpu->X = x;
+    instruction_init(&args);
     cpu->A = 0x03;
-    cpu->memory[zero_page_address + x] = 0x01;
 
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
-    //test wrap around
+    //test wrap around edge case
     reset(cpu);
     cpu->memory[program_counter] = opcode;
     cpu->memory[program_counter + 1] = 0xFF;
@@ -365,12 +463,19 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_ABS,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .address = address,
+        .sign = NEG
+    };
+
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
+    instruction_init(&args);
     cpu->A = 0x81;
-    cpu->memory[address] = 0x80;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
