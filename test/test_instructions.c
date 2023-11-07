@@ -229,20 +229,20 @@ int main(int argc, char *argv[])
             tear_down,
             MUNIT_TEST_OPTION_NONE,
         },
-        // {
-        //     "/AND IZX",
-        //     Test_AND_IZX,
-        //     setup,
-        //     tear_down,
-        //     MUNIT_TEST_OPTION_NONE,
-        // },
-        // {
-        //     "/AND IZY",
-        //     Test_AND_IZY,
-        //     setup,
-        //     tear_down,
-        //     MUNIT_TEST_OPTION_NONE,
-        // },
+        {
+            "/AND IZX",
+            Test_AND_IZX,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
+        {
+            "/AND IZY",
+            Test_AND_IZY,
+            setup,
+            tear_down,
+            MUNIT_TEST_OPTION_NONE,
+        },
         { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
     };
     MunitSuite suite = {
@@ -405,11 +405,12 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     cpu->A = 0x81;
 
     run(cpu, instruction.cycles);
-    assert_int(cpu->A, ==, 0x81);
+    assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
+    args.sign = ZERO;
     instruction_init(&args);
     cpu->A = 0x00;
 
@@ -419,6 +420,7 @@ MunitResult Test_AND_ZPX(const MunitParameter params[], void *fixture)
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
+    args.sign = POS;
     instruction_init(&args);
     cpu->A = 0x03;
 
@@ -482,22 +484,18 @@ MunitResult Test_AND_ABS(const MunitParameter params[], void *fixture)
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
+    args.sign = ZERO;
+    instruction_init(&args);
     cpu->A = 0x00;
-    cpu->memory[address] = 0x00;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
     assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
+    args.sign = POS;
+    instruction_init(&args);
     cpu->A = 0x03;
-    cpu->memory[address] = 0x01;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
@@ -526,37 +524,37 @@ MunitResult Test_AND_ABX(const MunitParameter params[], void *fixture)
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_ABX,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .address = address,
+        .reg_offset = x,
+        .sign = NEG
+    };
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->X = x;
+    instruction_init(&args);
     cpu->A = 0x81;
-    cpu->memory[address + x] = 0x80;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->X = x;
+    args.sign = ZERO;   
+    instruction_init(&args);
     cpu->A = 0x00;
-    cpu->memory[address + x] = 0x00;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
     assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
     
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->X = x;
+    args.sign = POS;
+    instruction_init(&args);
     cpu->A = 0x03;
-    cpu->memory[address + x] = 0x01;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
@@ -597,42 +595,42 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
     assert_int(instruction.execute, ==, AND);
 
     word_t address = 0x8000;
-    byte_t y = 0x01;
+    byte_t y= 0x01;
 
     cpu->memory[RESET_VECTOR] = (byte_t) (program_counter & 0x00FF);
     cpu->memory[RESET_VECTOR + 1] = (byte_t)((program_counter & 0xFF00) >> 8);
 
+    instruction_init_s args = 
+    {
+        .cpu = cpu,
+        .addr_mode = ADDR_MODE_ABY,
+        .instruction_addr = program_counter,
+        .opcode = opcode,
+        .address = address,
+        .reg_offset = y,
+        .sign = NEG
+    };
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->Y = y;
+    instruction_init(&args);
     cpu->A = 0x81;
-    cpu->memory[address + y] = 0x80;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x80);
     assert_true(check_nz_flags(cpu, NEG, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
 
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->Y = y;
+    args.sign = ZERO;   
+    instruction_init(&args);
     cpu->A = 0x00;
-    cpu->memory[address + y] = 0x00;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x00);
     assert_true(check_nz_flags(cpu, ZERO, cpu->STATUS));
     assert_int(cpu->PC, ==, program_counter + instruction.length);
     
     reset(cpu);
-    cpu->memory[program_counter] = opcode;
-    cpu->memory[program_counter + 1] = (byte_t)(address & 0x00FF);
-    cpu->memory[program_counter + 2] = (byte_t)((address & 0xFF00) >> 8);
-    cpu->Y = y;
+    args.sign = POS;
+    instruction_init(&args);
     cpu->A = 0x03;
-    cpu->memory[address + y] = 0x01;
     run(cpu, instruction.cycles);
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
@@ -655,18 +653,15 @@ MunitResult Test_AND_ABY(const MunitParameter params[], void *fixture)
     assert_int(cpu->A, ==, 0x01);
     assert_true(check_nz_flags(cpu, POS, cpu->STATUS));
     return MUNIT_OK;
+
 }
 
 MunitResult Test_AND_IZX(const MunitParameter params[], void *fixture)
 {
-    //unimplemented
-    assert_true(false);
-    return MUNIT_OK;
+    return MUNIT_SKIP;
 }
 
 MunitResult Test_AND_IZY(const MunitParameter params[], void *fixture)
 {
-    //unimplemented
-    assert_true(false);
-    return MUNIT_OK;
+    return MUNIT_SKIP;
 }
