@@ -17,8 +17,6 @@
     X(AND)                   \
     X(BIT)                   \
     X(ROL)                   \
-    X(ROL_ACC)               \
-    X(LSR_ACC)               \
     X(PLP)                   \
     X(BMI)                   \
     X(SEC)                   \
@@ -236,7 +234,7 @@
 
 typedef uint8_t byte_t;
 typedef uint16_t word_t;
-typedef struct cpu_s cpu_s; // Forward declaration
+typedef struct c6502 cpu_s; // Forward declaration
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 typedef enum 
@@ -244,22 +242,20 @@ typedef enum
     #define X(mode) ADDR_MODE_##mode,
     LIST_OF_ADDR_MODES
     #undef X
-} addr_mode_t;
+} cpu_addr_mode_t;
 
 typedef enum
 {
     #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
     ALL_INSTRUCTIONS
     #undef X
-} instruction_info_t;
+} cpu_ins_t;
 
 #define X(name) byte_t name(cpu_s *cpu);
 LIST_OF_ADDR_MODES
-#undef X
-
-#define X(name) byte_t name(cpu_s *cpu);
 UNIQUE_OPCODES
 #undef X
+
 
 /*
  * Status register flags
@@ -282,7 +278,7 @@ typedef enum
     U = (1 << 5),
     V = (1 << 6),
     N = (1 << 7),
-} status_flag_t;
+} cpu_status_t;
 
 /*
  * Instruction struct
@@ -301,7 +297,17 @@ typedef struct
     byte_t cycles;
     instruction_func_t fetch;
     instruction_func_t execute;
-} instruction_s;
+} cpu_instruction_s;
+
+typedef enum
+{
+    A,
+    X,
+    Y,
+    SP,
+    PC,
+    STATUS
+} cpu_register_t;
 
 /*
     * CPU struct
@@ -316,7 +322,7 @@ typedef struct
     * table: instruction table
     * memory: memory
 */
-struct cpu_s
+struct c6502
 {
     byte_t A;
     byte_t X;
@@ -326,27 +332,30 @@ struct cpu_s
     byte_t STATUS;
 
     size_t cycles;
-    instruction_s *current_instruction;
+    cpu_instruction_s *current_instruction;
     bool pc_changed;
     bool does_need_additional_cycle;
     byte_t *memory;
-    instruction_s table[256];
+    cpu_instruction_s table[256];
 };
 
 void init_instruction_table(cpu_s *cpu);
 void cpu_init(cpu_s *cpu, byte_t *memory);
+//to_string function for addressing modes
+char *addr_mode_to_string(cpu_addr_mode_t mode);
+
 
 /*
     6502 get flag
     Reads flag from status register
 */
-bool get_flag(cpu_s *cpu, status_flag_t flag);
+bool get_flag(cpu_s *cpu, cpu_status_t flag);
 
 /*
     6502 set flag
     Sets flag in status register
 */
-void set_flag(cpu_s *cpu, status_flag_t flag, bool value);
+void set_flag(cpu_s *cpu, cpu_status_t flag, bool value);
 
 /*
     6502 peek
