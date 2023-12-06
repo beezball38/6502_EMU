@@ -3197,7 +3197,7 @@ byte_t LDA(cpu_s *cpu)
     assert(cpu != NULL);
     cpu->A = value;
     set_zn(cpu, cpu->A);
-    return 0;
+    return 1;
 }
 
 /*
