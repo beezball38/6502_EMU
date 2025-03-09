@@ -1,8 +1,8 @@
 #include "cpu.hpp"
 #include <cstdio>
 #include <cstdlib>
-#include <string.h>
-#include <assert.h>
+#include <cstring>
+#include <cassert>
 
 #define UNIMPLEMENTED()                                                                   \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
