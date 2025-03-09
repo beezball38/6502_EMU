@@ -1,6 +1,13 @@
-#ignore files from the bin directory
-#ignore files from the obj directory
-
 bin/*
-.DS_Store
+lib/*
+_deps/*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.a
+*.so
+*.dylib
+*.exe
 *.o
+*.obj

@@ -1,48 +1,22 @@
-#include "cpu.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "cpu.hpp"
+#include <cstdio>
+#include <cstdlib>
 #include <string.h>
-#include <stdbool.h>
 #include <assert.h>
 
 #define UNIMPLEMENTED()                                                                   \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
 
-#define MEM_SIZE 1024 * 1024 * 64
-
-// #define push_addr_to_stack(cpu, addr)              \
-//     push_byte(cpu, ((addr)&0xFF00) >> 8); \
-//     push_byte(cpu, (addr)&0x00FF);
-
+#define MEM_SIZE (1024 * 1024 * 64)
 
 word_t address;                    // used by absolute, zero page, and indirect addressing modes
 byte_t address_rel;                // used only by branch instructions
 byte_t value;                      // holds fetched value, could be immediate value or value from memory
 byte_t current_instruction_length; // used by instructions to determine how many bytes to consume
 
-bool crosses_page(word_t addr1, word_t addr2)
-{
-    return (addr1 & 0xFF00) != (addr2 & 0xFF00);
-}
-
-void set_zn(cpu_s *cpu, byte_t value)
-{
-    set_flag(cpu, Z, value == 0);
-    set_flag(cpu, N, value & 0x80);
-}
-
-word_t assemble_word(byte_t high, byte_t low)
-{
-    return (high << 8) | low;
-}
-
-void push_address(cpu_s *cpu, word_t addr)
-{
-    push_byte(cpu, ((addr) & 0xFF00) >> 8);
-    push_byte(cpu, (addr) & 0x00FF);
-}
-
+/// @brief Function where all instructions for 6502 are defined
+/// @param cpu
 void init_instruction_table(cpu_s *cpu)
 {
     cpu_instruction_s *table = &cpu->table[0];
@@ -2251,9 +2225,32 @@ void init_instruction_table(cpu_s *cpu)
         .fetch = NULL,
         .execute = NULL,
         .cycles = 0,
-        .length = 0 
+        .length = 0
     };
 }
+
+bool crosses_page(word_t addr1, word_t addr2)
+{
+    return (addr1 & 0xFF00) != (addr2 & 0xFF00);
+}
+
+void set_zn(cpu_s *cpu, byte_t value)
+{
+    set_flag(cpu, Z, value == 0);
+    set_flag(cpu, N, value & 0x80);
+}
+
+word_t assemble_word(byte_t high, byte_t low)
+{
+    return (high << 8) | low;
+}
+
+void push_address(cpu_s *cpu, word_t addr)
+{
+    push_byte(cpu, ((addr) & 0xFF00) >> 8);
+    push_byte(cpu, (addr) & 0x00FF);
+}
+
 
 /*
     Zero-out the global variables that are
@@ -2287,7 +2284,7 @@ byte_t branch_pc(cpu_s *cpu)
 {
     word_t old_pc = cpu->PC;
     cpu->PC += address_rel;
-    
+
     if(crosses_page(old_pc, cpu->PC))
     {
         cpu->cycles += 1;
@@ -2342,7 +2339,7 @@ byte_t pop_byte(cpu_s *cpu)
 
 /*
     Internal function
-    "Runs" the instruction by first fetching it's operands 
+    "Runs" the instruction by first fetching it's operands
     and putting them into global variables
     Then, executes the instruction using those operands
     If the instruction needs an additional cycle, returns true
@@ -2363,7 +2360,7 @@ void clock(cpu_s *cpu)
         cpu->does_need_additional_cycle = false;
         return; //noop
     }
-    
+
     if (cpu->current_instruction == NULL)
     {
         cpu->current_instruction = &cpu->table[peek(cpu)];
@@ -2406,7 +2403,7 @@ void reset(cpu_s *cpu)
 {
     cpu_init(cpu, cpu->memory);
     reset_globals();
-    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));  
+    cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->cycles += 8;
     cpu->STATUS = (rand() % 256) | U;
     return;
@@ -2597,7 +2594,7 @@ byte_t ABY(cpu_s *cpu)
  * Checks if the low byte of the ptr is 0xFF
  * Simulate the page boundary hardware bug: if the low byte is 0xFF, the high byte is fetched from the same page
  * Otherwise, the high byte is fetched from ptr + 1
- */ 
+ */
 
 byte_t IND(cpu_s *cpu)
 {
@@ -2609,7 +2606,7 @@ byte_t IND(cpu_s *cpu)
     // simulate page boundary hardware bug
     low_byte = read_from_addr(cpu, ptr);
     high_byte = (ptr & 0x00FF) == 0x00FF ? read_from_addr(cpu, ptr & 0xFF00) : read_from_addr(cpu, ptr + 1);
-    
+
     address = assemble_word(high_byte, low_byte);
     value = read_from_addr(cpu, address);
     return 0;
@@ -2701,7 +2698,7 @@ byte_t ASL(cpu_s *cpu)
 */
 byte_t PHP(cpu_s *cpu)
 {
-    push_byte(cpu, cpu->STATUS | B | U); // pushes the status register with the break and unused bits set 
+    push_byte(cpu, cpu->STATUS | B | U); // pushes the status register with the break and unused bits set
     return 0;
 }
 
@@ -3459,7 +3456,7 @@ byte_t INY(cpu_s *cpu)
 byte_t BEQ(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, Z, 1);
+    const byte_t cycles = branch_on_flag(cpu, Z, 1);
     return cycles;
 }
 
@@ -3480,6 +3477,6 @@ byte_t SED(cpu_s *cpu)
 */
 byte_t NOP(cpu_s *cpu)
 {
-    (void)cpu;
+    assert(cpu != NULL);
     return 0;
 }

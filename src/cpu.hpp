@@ -2,9 +2,9 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
+#include <string>
 
 #define UNIQUE_OPCODES \
     X(BRK)                   \
@@ -291,7 +291,7 @@ typedef enum
  */
 typedef struct
 {
-    char *name;
+    std::string name;
     byte_t opcode;
     byte_t length;
     byte_t cycles;
@@ -425,3 +425,4 @@ void nmi(cpu_s *cpu);
 void reset(cpu_s *cpu);
 
 #endif
+
