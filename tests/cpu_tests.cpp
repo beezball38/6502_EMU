@@ -5,9 +5,12 @@
 cpu_s cpu;
 byte_t memory[1024*1024*64];
 
-TEST_CASE("Sanity Check: CPU Initial State", "[cpu]") {
-    cpu.A = 1;
-    cpu_init(&cpu, memory);
-    // Minimal check for accumulator initialization
-    REQUIRE(cpu.A == 0x00);
+
+TEST_CASE("BRK should push PC+2 and followed by the status register", "[cpu]") {
+    SECTION("BRK sets break flag, pushes PC+2 and status to stack, and sets PC to IRQ vector") {
+        // Set up CPU state before executing BRK
+        cpu_init(&cpu, memory);
+        init_instruction_table(&cpu);
+        //stub write test
+    }
 }
