@@ -24,7 +24,8 @@ cpu_s *get_test_cpu()
 void load_instruction(cpu_s *cpu, std::vector<byte_t> instruction)
 {
     assert(instruction.size() > 0);
-    cpu->current_instruction = &cpu->table[instruction.at(0)];
+    const byte_t op_code = instruction.at(0);
+    cpu->current_instruction = &cpu->table[op_code];
     assert(cpu->current_instruction->length == instruction.size());
     byte_t pc = cpu->PC;
     for(byte_t byte:instruction)
