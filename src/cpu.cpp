@@ -26,2206 +26,2206 @@ void init_instruction_table(cpu_s *cpu)
     {
         .name = "BRK",
         .opcode = 0x00,
+        .cycles = 7,
+        .length = 2, // this is actually 1, but we need to account for the dummy byte
         .fetch = IMP,
         .execute = BRK,
-        .cycles = 7,
-        .length = 2 // this is actually 1, but we need to account for the dummy byte
     };
     table[INSTRUCTION_ORA_IZX] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x01,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = ORA,
-        .cycles = 6,
-        .length = 2
     };
     table[0x02] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x02,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x03] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x03,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x04] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x04,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ORA_ZP0] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x05,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = ORA,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_ASL_ZP0] = (cpu_instruction_s)
     {
         .name = "ASL",
         .opcode = 0x06,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = ASL,
-        .cycles = 5,
-        .length = 2
     };
     table[0x07] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x07,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_PHP_IMP] = (cpu_instruction_s)
     {
         .name = "PHP",
         .opcode = 0x08,
+        .cycles = 3,
+        .length = 1,
         .fetch = IMP,
         .execute = PHP,
-        .cycles = 3,
-        .length = 1
     };
     table[INSTRUCTION_ORA_IMM] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x09,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = ORA,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_ASL_ACC] = (cpu_instruction_s)
     {
         .name = "ASL",
         .opcode = 0x0A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = ASL,
-        .cycles = 2,
-        .length = 1
     };
     table[0x0B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x0C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0C,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ORA_ABS] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x0D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = ORA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ASL_ABS] = (cpu_instruction_s)
     {
         .name = "ASL",
         .opcode = 0x0E,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = ASL,
-        .cycles = 6,
-        .length = 3
     };
     table[0x0F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BPL_REL] = (cpu_instruction_s)
     {
         .name = "BPL",
         .opcode = 0x10,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BPL,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_ORA_IZY] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x11,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = ORA,
-        .cycles = 5,
-        .length = 2
     };
     table[0x12] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x12,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x13] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x13,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x14] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x14,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ORA_ZPX] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x15,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = ORA,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_ASL_ZPX] = (cpu_instruction_s)
     {
         .name = "ASL",
         .opcode = 0x16,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = ASL,
-        .cycles = 6,
-        .length = 2
     };
     table[0x17] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x17,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CLC_IMP] = (cpu_instruction_s)
     {
         .name = "CLC",
         .opcode = 0x18,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = CLC,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_ORA_ABY] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x19,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = ORA,
-        .cycles = 4,
-        .length = 3
     };
     table[0x1A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1A,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x1B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x1C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1C,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ORA_ABX] = (cpu_instruction_s)
     {
         .name = "ORA",
         .opcode = 0x1D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = ORA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ASL_ABX] = (cpu_instruction_s)
     {
         .name = "ASL",
         .opcode = 0x1E,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = ASL,
-        .cycles = 7,
-        .length = 3
     };
     table[0x1F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_JSR_ABS] = (cpu_instruction_s)
     {
         .name = "JSR",
         .opcode = 0x20,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = JSR,
-        .cycles = 6,
-        .length = 3
     };
     table[INSTRUCTION_AND_IZX] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x21,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = AND,
-        .cycles = 6,
-        .length = 2
     };
     table[0x22] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x22,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x23] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x23,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BRK_ZP0] = (cpu_instruction_s)
     {
         .name = "BIT",
         .opcode = 0x24,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = BIT,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_AND_ZP0] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x25,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = AND,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_ROL_ZP0] = (cpu_instruction_s)
     {
         .name = "ROL",
         .opcode = 0x26,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = ROL,
-        .cycles = 5,
-        .length = 2
     };
     table[0x27] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x27,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_PLP_IMP] = (cpu_instruction_s)
     {
         .name = "PLP",
         .opcode = 0x28,
+        .cycles = 4,
+        .length = 1,
         .fetch = IMP,
         .execute = PLP,
-        .cycles = 4,
-        .length = 1
     };
     table[INSTRUCTION_AND_IMM] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x29,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = AND,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_ROL_ACC] = (cpu_instruction_s)
     {
         .name = "ROL",
         .opcode = 0x2A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = ROL,
-        .cycles = 2,
-        .length = 1
     };
     table[0x2B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x2B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BIT_ABS] = (cpu_instruction_s)
     {
         .name = "BIT",
         .opcode = 0x2C,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = BIT,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_AND_ABS] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x2D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = AND,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ROL_ABS] = (cpu_instruction_s)
     {
         .name = "ROL",
         .opcode = 0x2E,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = ROL,
-        .cycles = 6,
-        .length = 3
     };
     table[0x2F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x2F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BMI_REL] = (cpu_instruction_s)
     {
         .name = "BMI",
         .opcode = 0x30,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BMI,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_AND_IZY] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x31,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = AND,
-        .cycles = 5,
-        .length = 2
     };
     table[0x32] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x32,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x33] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x33,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_AND_ZPX] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x35,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = AND,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_ROL_ZPX] = (cpu_instruction_s)
     {
         .name = "ROL",
         .opcode = 0x36,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = ROL,
-        .cycles = 6,
-        .length = 2
     };
     table[0x37] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x37,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_SEC_IMP] = (cpu_instruction_s)
     {
         .name = "SEC",
         .opcode = 0x38,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = SEC,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_AND_ABY] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x39,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = AND,
-        .cycles = 4,
-        .length = 3
     };
     table[0x3A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3A,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x3B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_AND_ABX] = (cpu_instruction_s)
     {
         .name = "AND",
         .opcode = 0x3D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = AND,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ROL_ABX] = (cpu_instruction_s)
     {
         .name = "ROL",
         .opcode = 0x3E,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = ROL,
-        .cycles = 7,
-        .length = 3
     };
     table[0x3F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_RTI_IMP] = (cpu_instruction_s)
     {
         .name = "RTI",
         .opcode = 0x40,
+        .cycles = 6,
+        .length = 1,
         .fetch = IMP,
         .execute = RTI,
-        .cycles = 6,
-        .length = 1
     };
     table[INSTRUCTION_EOR_IZX] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x41,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = EOR,
-        .cycles = 6,
-        .length = 2
     };
     table[0x42] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x42,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x43] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x43,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_EOR_ZP0] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x45,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = EOR,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_LSR_ZP0] = (cpu_instruction_s)
     {
         .name = "LSR",
         .opcode = 0x46,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = LSR,
-        .cycles = 5,
-        .length = 2
     };
     table[0x47] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x47,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_PHA_IMP] = (cpu_instruction_s)
     {
         .name = "PHA",
         .opcode = 0x48,
+        .cycles = 3,
+        .length = 1,
         .fetch = IMP,
         .execute = PHA,
-        .cycles = 3,
-        .length = 1
     };
     table[INSTRUCTION_EOR_IMM] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x49,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = EOR,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_LSR_ACC] = (cpu_instruction_s)
     {
         .name = "LSR",
         .opcode = 0x4A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = LSR,
-        .cycles = 2,
-        .length = 1
     };
     table[0x4B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x4B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_JMP_ABS] = (cpu_instruction_s)
     {
         .name = "JMP",
         .opcode = 0x4C,
+        .cycles = 3,
+        .length = 3,
         .fetch = ABS,
         .execute = JMP,
-        .cycles = 3,
-        .length = 3
     };
     table[INSTRUCTION_EOR_ABS] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x4D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = EOR,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LSR_ABS] = (cpu_instruction_s)
     {
         .name = "LSR",
         .opcode = 0x4E,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = LSR,
-        .cycles = 6,
-        .length = 3
     };
     table[0x4F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x4F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BVC_REL] = (cpu_instruction_s)
     {
         .name = "BVC",
         .opcode = 0x50,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BVC,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_EOR_IZY] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x51,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = EOR,
-        .cycles = 5,
-        .length = 2
     };
     table[0x52] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x52,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x53] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x53,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_EOR_ZPX] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x55,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = EOR,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_LSR_ZPX] = (cpu_instruction_s)
     {
         .name = "LSR",
         .opcode = 0x56,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = LSR,
-        .cycles = 6,
-        .length = 2
     };
     table[0x57] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x57,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CLI_IMP] = (cpu_instruction_s)
     {
         .name = "CLI",
         .opcode = 0x58,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = CLI,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_EOR_ABY] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x59,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = EOR,
-        .cycles = 4,
-        .length = 3
     };
     table[0x5A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5A,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x5B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_EOR_ABX] = (cpu_instruction_s)
     {
         .name = "EOR",
         .opcode = 0x5D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = EOR,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LSR_ABX] = (cpu_instruction_s)
     {
         .name = "LSR",
         .opcode = 0x5E,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = LSR,
-        .cycles = 7,
-        .length = 3
     };
     table[0x5F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_RTS_IMP] = (cpu_instruction_s)
     {
         .name = "RTS",
         .opcode = 0x60,
+        .cycles = 6,
+        .length = 1,
         .fetch = IMP,
         .execute = RTS,
-        .cycles = 6,
-        .length = 1
     };
     table[INSTRUCTION_ADC_IZX] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x61,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = ADC,
-        .cycles = 6,
-        .length = 2
     };
     table[0x62] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x62,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x63] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x63,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x64] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x64,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ADC_ZP0] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x65,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = ADC,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_ROR_ZP0] = (cpu_instruction_s)
     {
         .name = "ROR",
         .opcode = 0x66,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = ROR,
-        .cycles = 5,
-        .length = 2
     };
     table[0x67] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x67,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_PLA_IMP] = (cpu_instruction_s)
     {
         .name = "PLA",
         .opcode = 0x68,
+        .cycles = 4,
+        .length = 1,
         .fetch = IMP,
         .execute = PLA,
-        .cycles = 4,
-        .length = 1
     };
     table[INSTRUCTION_ADC_IMM] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x69,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = ADC,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_ROR_ACC] = (cpu_instruction_s)
     {
         .name = "ROR",
         .opcode = 0x6A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = ROR,
-        .cycles = 2,
-        .length = 1
     };
     table[0x6B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x6B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_JMP_IND] = (cpu_instruction_s)
     {
         .name = "JMP",
         .opcode = 0x6C,
+        .cycles = 5,
+        .length = 3,
         .fetch = IND,
         .execute = JMP,
-        .cycles = 5,
-        .length = 3
     };
     table[INSTRUCTION_ADC_ABS] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x6D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = ADC,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ROR_ABS] = (cpu_instruction_s)
     {
         .name = "ROR",
         .opcode = 0x6E,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = ROR,
-        .cycles = 6,
-        .length = 3
     };
     table[0x6F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x6F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BVS_REL] = (cpu_instruction_s)
     {
         .name = "BVS",
         .opcode = 0x70,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BVS,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_ADC_IZY] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x71,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = ADC,
-        .cycles = 5,
-        .length = 2
     };
     table[0x72] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x72,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x73] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x73,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x74] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x74,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ADC_ZPX] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x75,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = ADC,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_ROR_ZPX] = (cpu_instruction_s)
     {
         .name = "ROR",
         .opcode = 0x76,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = ROR,
-        .cycles = 6,
-        .length = 2
     };
     table[0x77] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x77,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_SEI_IMP] = (cpu_instruction_s)
     {
         .name = "SEI",
         .opcode = 0x78,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = SEI,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_ADC_ABY] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x79,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = ADC,
-        .cycles = 4,
-        .length = 3
     };
     table[0x7A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7A,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x7B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x7C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7C,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_ADC_ABX] = (cpu_instruction_s)
     {
         .name = "ADC",
         .opcode = 0x7D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = ADC,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_ROR_ABX] = (cpu_instruction_s)
     {
         .name = "ROR",
         .opcode = 0x7E,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = ROR,
-        .cycles = 7,
-        .length = 3
     };
     table[0x7F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_STA_IZX] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x81,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = STA,
-        .cycles = 6,
-        .length = 2
     };
     table[0x82] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x82,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_STY_ZP0] = (cpu_instruction_s)
     {
         .name = "STY",
         .opcode = 0x84,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = STY,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_STA_ZP0] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x85,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = STA,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_STX_ZP0] = (cpu_instruction_s)
     {
         .name = "STX",
         .opcode = 0x86,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = STX,
-        .cycles = 3,
-        .length = 2
     };
     table[0x87] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x87,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_DEY_IMP] = (cpu_instruction_s)
     {
         .name = "DEY",
         .opcode = 0x88,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = DEY,
-        .cycles = 2,
-        .length = 1
     };
     table[0x89] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x89,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_TXA_IMP] = (cpu_instruction_s)
     {
         .name = "TXA",
         .opcode = 0x8A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TXA,
-        .cycles = 2,
-        .length = 1
     };
     table[0x8B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x8B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_STY_ABS] = (cpu_instruction_s)
     {
         .name = "STY",
         .opcode = 0x8C,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = STY,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_STA_ABS] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x8D,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = STA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_STX_ABS] = (cpu_instruction_s)
     {
         .name = "STX",
         .opcode = 0x8E,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = STX,
-        .cycles = 4,
-        .length = 3
     };
     table[0x8F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x8F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BCC_REL] = (cpu_instruction_s)
     {
         .name = "BCC",
         .opcode = 0x90,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BCC,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_STA_IZY] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x91,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZY,
         .execute = STA,
-        .cycles = 6,
-        .length = 2
     };
     table[0x92] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x92,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x93] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x93,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_STY_ZPX] = (cpu_instruction_s)
     {
         .name = "STY",
         .opcode = 0x94,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = STY,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_STA_ZPX] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x95,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = STA,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_STX_ZPY] = (cpu_instruction_s)
     {
         .name = "STX",
         .opcode = 0x96,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPY,
         .execute = STX,
-        .cycles = 4,
-        .length = 2
     };
     table[0x97] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x97,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_TYA_IMP] = (cpu_instruction_s)
     {
         .name = "TYA",
         .opcode = 0x98,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TYA,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_STA_ABY] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x99,
+        .cycles = 5,
+        .length = 3,
         .fetch = ABY,
         .execute = STA,
-        .cycles = 5,
-        .length = 3
     };
     table[INSTRUCTION_TXS_IMP] = (cpu_instruction_s)
     {
         .name = "TXS",
         .opcode = 0x9A,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TXS,
-        .cycles = 2,
-        .length = 1
     };
     table[0x9B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9B,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x9C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9C,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_STA_ABX] = (cpu_instruction_s)
     {
         .name = "STA",
         .opcode = 0x9D,
+        .cycles = 5,
+        .length = 3,
         .fetch = ABX,
         .execute = STA,
-        .cycles = 5,
-        .length = 3
     };
     table[0x9E] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9E,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0x9F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9F,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_LDY_IMM] = (cpu_instruction_s)
     {
         .name = "LDY",
         .opcode = 0xA0,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = LDY,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_LDA_IZX] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xA1,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = LDA,
-        .cycles = 6,
-        .length = 2
     };
     table[INSTRUCTION_LDX_IMM] = (cpu_instruction_s)
     {
         .name = "LDX",
         .opcode = 0xA2,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = LDX,
-        .cycles = 2,
-        .length = 2
     };
     table[0xA3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xA3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_LDY_ZP0] = (cpu_instruction_s)
     {
         .name = "LDY",
         .opcode = 0xA4,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = LDY,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_LDA_ZP0] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xA5,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = LDA,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_LDX_ZP0] = (cpu_instruction_s)
     {
         .name = "LDX",
         .opcode = 0xA6,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = LDX,
-        .cycles = 3,
-        .length = 2
     };
     table[0xA7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xA7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_TAY_IMP] = (cpu_instruction_s)
     {
         .name = "TAY",
         .opcode = 0xA8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TAY,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_LDA_IMM] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xA9,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = LDA,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_TAX_IMP] = (cpu_instruction_s)
     {
         .name = "TAX",
         .opcode = 0xAA,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TAX,
-        .cycles = 2,
-        .length = 1
     };
     table[0xAB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xAB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_LDY_ABS] = (cpu_instruction_s)
     {
         .name = "LDY",
         .opcode = 0xAC,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = LDY,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LDA_ABS] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xAD,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = LDA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LDX_ABS] = (cpu_instruction_s)
     {
         .name = "LDX",
         .opcode = 0xAE,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = LDX,
-        .cycles = 4,
-        .length = 3
     };
     table[0xAF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xAF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BCS_REL] = (cpu_instruction_s)
     {
         .name = "BCS",
         .opcode = 0xB0,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BCS,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_LDA_IZY] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xB1,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = LDA,
-        .cycles = 5,
-        .length = 2
     };
     table[0xB2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB2,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xB3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_LDY_ZPX] = (cpu_instruction_s)
     {
         .name = "LDY",
         .opcode = 0xB4,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = LDY,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_LDA_ZPX] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xB5,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = LDA,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_LDX_ZPY] = (cpu_instruction_s)
     {
         .name = "LDX",
         .opcode = 0xB6,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPY,
         .execute = LDX,
-        .cycles = 4,
-        .length = 2
     };
     table[0xB7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CLV_IMP] = (cpu_instruction_s)
     {
         .name = "CLV",
         .opcode = 0xB8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = CLV,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_LDA_ABY] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xB9,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = LDA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_TSX_IMP] = (cpu_instruction_s)
     {
         .name = "TSX",
         .opcode = 0xBA,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = TSX,
-        .cycles = 2,
-        .length = 1
     };
     table[0xBB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xBB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_LDY_ABX] = (cpu_instruction_s)
     {
         .name = "LDY",
         .opcode = 0xBC,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = LDY,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LDA_ABX] = (cpu_instruction_s)
     {
         .name = "LDA",
         .opcode = 0xBD,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = LDA,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_LDX_ABY] = (cpu_instruction_s)
     {
         .name = "LDX",
         .opcode = 0xBE,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = LDX,
-        .cycles = 4,
-        .length = 3
     };
     table[0xBF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xBF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPY_IMM] = (cpu_instruction_s)
     {
         .name = "CPY",
         .opcode = 0xC0,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = CPY,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_CMP_IZX] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xC1,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = CMP,
-        .cycles = 6,
-        .length = 2
     };
     table[0xC2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC2,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xC3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPY_ZP0] = (cpu_instruction_s)
     {
         .name = "CPY",
         .opcode = 0xC4,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = CPY,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_CMP_ZP0] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xC5,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = CMP,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_DEC_ZP0] = (cpu_instruction_s)
     {
         .name = "DEC",
         .opcode = 0xC6,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = DEC,
-        .cycles = 5,
-        .length = 2
     };
     table[0xC7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_INY_IMP] = (cpu_instruction_s)
     {
         .name = "INY",
         .opcode = 0xC8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = INY,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_CMP_IMM] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xC9,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = CMP,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_DEX_IMP] = (cpu_instruction_s)
     {
         .name = "DEX",
         .opcode = 0xCA,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = DEX,
-        .cycles = 2,
-        .length = 1
     };
     table[0xCB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xCB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPY_ABS] = (cpu_instruction_s)
     {
         .name = "CPY",
         .opcode = 0xCC,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = CPY,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_CMP_ABS] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xCD,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = CMP,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_DEC_ABS] = (cpu_instruction_s)
     {
         .name = "DEC",
         .opcode = 0xCE,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = DEC,
-        .cycles = 6,
-        .length = 3
     };
     table[0xCF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xCF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BNE_REL] = (cpu_instruction_s)
     {
         .name = "BNE",
         .opcode = 0xD0,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BNE,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_CMP_IZY] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xD1,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = CMP,
-        .cycles = 5,
-        .length = 2
     };
     table[0xD2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD2,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xD3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CMP_ZPX] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xD5,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = CMP,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_DEC_ZPX] = (cpu_instruction_s)
     {
         .name = "DEC",
         .opcode = 0xD6,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = DEC,
-        .cycles = 6,
-        .length = 2
     };
     table[0xD7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CLD_IMP] = (cpu_instruction_s)
     {
         .name = "CLD",
         .opcode = 0xD8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = CLD,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_CMP_ABY] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xD9,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = CMP,
-        .cycles = 4,
-        .length = 3
     };
     table[0xDA] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDA,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xDB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CMP_ABX] = (cpu_instruction_s)
     {
         .name = "CMP",
         .opcode = 0xDD,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = CMP,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_DEC_ABX] = (cpu_instruction_s)
     {
         .name = "DEC",
         .opcode = 0xDE,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = DEC,
-        .cycles = 7,
-        .length = 3
     };
     table[0xDF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPX_IMM] = (cpu_instruction_s)
     {
         .name = "CPX",
         .opcode = 0xE0,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = CPX,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_SBC_IZX] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xE1,
+        .cycles = 6,
+        .length = 2,
         .fetch = IZX,
         .execute = SBC,
-        .cycles = 6,
-        .length = 2
     };
     table[0xE2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE2,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xE3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPX_ZP0] = (cpu_instruction_s)
     {
         .name = "CPX",
         .opcode = 0xE4,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = CPX,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_SBC_ZP0] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xE5,
+        .cycles = 3,
+        .length = 2,
         .fetch = ZP0,
         .execute = SBC,
-        .cycles = 3,
-        .length = 2
     };
     table[INSTRUCTION_INC_ZP0] = (cpu_instruction_s)
     {
         .name = "INC",
         .opcode = 0xE6,
+        .cycles = 5,
+        .length = 2,
         .fetch = ZP0,
         .execute = INC,
-        .cycles = 5,
-        .length = 2
     };
     table[0xE7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_INX_IMP] = (cpu_instruction_s)
     {
         .name = "INX",
         .opcode = 0xE8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = INX,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_SBC_IMM] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xE9,
+        .cycles = 2,
+        .length = 2,
         .fetch = IMM,
         .execute = SBC,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_NOP_IMP] = (cpu_instruction_s)
     {
         .name = "NOP",
         .opcode = 0xEA,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = NOP,
-        .cycles = 2,
-        .length = 1
     };
     table[0xEB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xEB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_CPX_ABS] = (cpu_instruction_s)
     {
         .name = "CPX",
         .opcode = 0xEC,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = CPX,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_SBC_ABS] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xED,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABS,
         .execute = SBC,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_INC_ABS] = (cpu_instruction_s)
     {
         .name = "INC",
         .opcode = 0xEE,
+        .cycles = 6,
+        .length = 3,
         .fetch = ABS,
         .execute = INC,
-        .cycles = 6,
-        .length = 3
     };
     table[0xEF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xEF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_BEQ_REL] = (cpu_instruction_s)
     {
         .name = "BEQ",
         .opcode = 0xF0,
+        .cycles = 2,
+        .length = 2,
         .fetch = REL,
         .execute = BEQ,
-        .cycles = 2,
-        .length = 2
     };
     table[INSTRUCTION_SBC_IZY] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xF1,
+        .cycles = 5,
+        .length = 2,
         .fetch = IZY,
         .execute = SBC,
-        .cycles = 5,
-        .length = 2
     };
     table[0xF2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF2,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xF3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF3,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_SBC_ZPX] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xF5,
+        .cycles = 4,
+        .length = 2,
         .fetch = ZPX,
         .execute = SBC,
-        .cycles = 4,
-        .length = 2
     };
     table[INSTRUCTION_INC_ZPX] = (cpu_instruction_s)
     {
         .name = "INC",
         .opcode = 0xF6,
+        .cycles = 6,
+        .length = 2,
         .fetch = ZPX,
         .execute = INC,
-        .cycles = 6,
-        .length = 2
     };
     table[0xF7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF7,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_SED_IMP] = (cpu_instruction_s)
     {
         .name = "SED",
         .opcode = 0xF8,
+        .cycles = 2,
+        .length = 1,
         .fetch = IMP,
         .execute = SED,
-        .cycles = 2,
-        .length = 1
     };
     table[INSTRUCTION_SBC_ABY] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xF9,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABY,
         .execute = SBC,
-        .cycles = 4,
-        .length = 3
     };
     table[0xFA] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFA,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[0xFB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFB,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
     table[INSTRUCTION_SBC_ABX] = (cpu_instruction_s)
     {
         .name = "SBC",
         .opcode = 0xFD,
+        .cycles = 4,
+        .length = 3,
         .fetch = ABX,
         .execute = SBC,
-        .cycles = 4,
-        .length = 3
     };
     table[INSTRUCTION_INC_ABX] = (cpu_instruction_s)
     {
         .name = "INC",
         .opcode = 0xFE,
+        .cycles = 7,
+        .length = 3,
         .fetch = ABX,
         .execute = INC,
-        .cycles = 7,
-        .length = 3
     };
     table[0xFF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFF,
+        .cycles = 0,
+        .length = 0,
         .fetch = NULL,
         .execute = NULL,
-        .cycles = 0,
-        .length = 0
     };
 }
 

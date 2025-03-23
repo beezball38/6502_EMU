@@ -294,8 +294,8 @@ typedef struct
 {
     std::string name;
     byte_t opcode;
-    byte_t length;
     byte_t cycles;
+    byte_t length;
     instruction_func_t fetch;
     instruction_func_t execute;
 } cpu_instruction_s;
