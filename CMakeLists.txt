@@ -26,15 +26,18 @@ target_include_directories(emulator_lib
 # Testing configuration
 option(BUILD_TESTS "Build test suite" ON)
 
-if(BUILD_TESTS)
-    include(FetchContent)
-    set(FETCHCONTENT_FULLY_DISCONNECTED ON)
-    FetchContent_Declare(
+if(BUILD_TESTS)# Try to find Catch2 in the system first
+    find_package(Catch2 QUIET)
+    if (NOT Catch2_FOUND)
+        include(FetchContent)
+        set(FETCHCONTENT_FULLY_DISCONNECTED ON)
+        FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG        v3.5.2
-    )
-    FetchContent_MakeAvailable(Catch2)
+        )
+        FetchContent_MakeAvailable(Catch2)
+    endif()
 
     add_subdirectory(tests)
 endif()
