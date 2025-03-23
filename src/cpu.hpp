@@ -66,7 +66,7 @@ XMAC(BEQ)                   \
 XMAC(SED)                   \
 XMAC(NOP)
 
-#define LIST_OF_ADDR_MODES  \
+#define CPU_6502_ADDRESSING_MODES  \
 XMAC(IMP)                  \
 XMAC(IMM)                  \
 XMAC(ZP0)                  \
@@ -241,9 +241,9 @@ typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 typedef enum 
 {
     #define XMAC(mode) ADDR_MODE_##mode,
-    LIST_OF_ADDR_MODES
+    CPU_6502_ADDRESSING_MODES
     #undef XMAC
-} cpu_addr_mode_t;
+} cpu_addr_mode_e;
 
 typedef enum
 {
@@ -253,7 +253,7 @@ typedef enum
 } cpu_ins_t;
 
 #define XMAC(name) byte_t name(cpu_s *cpu);
-LIST_OF_ADDR_MODES
+CPU_6502_ADDRESSING_MODES
 CPU_6592_OPCODES
 #undef XMAC
 
@@ -279,7 +279,7 @@ typedef enum
     U = (1 << 5),
     V = (1 << 6),
     N = (1 << 7),
-} cpu_status_t;
+} cpu_status_e;
 
 /*
  * Instruction struct
@@ -308,7 +308,7 @@ typedef enum
     SP,
     PC,
     STATUS
-} cpu_register_t;
+} cpu_register_e;
 
 /*
     * CPU struct
@@ -343,20 +343,20 @@ struct c6502
 void init_instruction_table(cpu_s *cpu);
 void cpu_init(cpu_s *cpu, byte_t *memory);
 //to_string function for addressing modes
-char *addr_mode_to_string(cpu_addr_mode_t mode);
+char *addr_mode_to_string(cpu_addr_mode_e mode);
 
 
 /*
     6502 get flag
     Reads flag from status register
 */
-bool get_flag(cpu_s *cpu, cpu_status_t flag);
+bool get_flag(cpu_s *cpu, cpu_status_e flag);
 
 /*
     6502 set flag
     Sets flag in status register
 */
-void set_flag(cpu_s *cpu, cpu_status_t flag, bool value);
+void set_flag(cpu_s *cpu, cpu_status_e flag, bool value);
 
 /*
     6502 peek

@@ -9,7 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Main emulator library
 add_library(emulator_lib
     src/cpu.cpp
-    # Add other source files (except cpu_emulator.cpp)
 )
 
 # Main executable
@@ -28,7 +27,6 @@ target_include_directories(emulator_lib
 option(BUILD_TESTS "Build test suite" ON)
 
 if(BUILD_TESTS)
-    # Add Catch2 via FetchContent
     include(FetchContent)
     FetchContent_Declare(
         Catch2
@@ -37,6 +35,5 @@ if(BUILD_TESTS)
     )
     FetchContent_MakeAvailable(Catch2)
 
-    # Add tests subdirectory
     add_subdirectory(tests)
 endif()
