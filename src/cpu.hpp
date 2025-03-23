@@ -250,7 +250,7 @@ typedef enum
     #define XMAC(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
     ALL_INSTRUCTIONS
     #undef XMAC
-} cpu_ins_t;
+} cpu_ins_e;
 
 #define XMAC(name) byte_t name(cpu_s *cpu);
 CPU_6502_ADDRESSING_MODES
