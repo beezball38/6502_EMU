@@ -6,231 +6,232 @@
 #include <cstddef>
 #include <string>
 
+//Using X Macros because they are fun
 #define UNIQUE_OPCODES \
-    X(BRK)                   \
-    X(ORA)                   \
-    X(ASL)                   \
-    X(PHP)                   \
-    X(BPL)                   \
-    X(CLC)                   \
-    X(JSR)                   \
-    X(AND)                   \
-    X(BIT)                   \
-    X(ROL)                   \
-    X(PLP)                   \
-    X(BMI)                   \
-    X(SEC)                   \
-    X(RTI)                   \
-    X(EOR)                   \
-    X(LSR)                   \
-    X(PHA)                   \
-    X(JMP)                   \
-    X(BVC)                   \
-    X(CLI)                   \
-    X(RTS)                   \
-    X(ADC)                   \
-    X(ROR)                   \
-    X(PLA)                   \
-    X(ROR_ACC)               \
-    X(BVS)                   \
-    X(SEI)                   \
-    X(STA)                   \
-    X(STY)                   \
-    X(STX)                   \
-    X(DEY)                   \
-    X(TXA)                   \
-    X(BCC)                   \
-    X(TYA)                   \
-    X(TXS)                   \
-    X(LDY)                   \
-    X(LDA)                   \
-    X(LDX)                   \
-    X(TAY)                   \
-    X(TAX)                   \
-    X(BCS)                   \
-    X(CLV)                   \
-    X(TSX)                   \
-    X(CPY)                   \
-    X(CMP)                   \
-    X(DEC)                   \
-    X(INY)                   \
-    X(DEX)                   \
-    X(BNE)                   \
-    X(CLD)                   \
-    X(CPX)                   \
-    X(SBC)                   \
-    X(INC)                   \
-    X(INX)                   \
-    X(BEQ)                   \
-    X(SED)                   \
-    X(NOP)
+TRANSFORM_FUNCTION(BRK)                   \
+TRANSFORM_FUNCTION(ORA)                   \
+TRANSFORM_FUNCTION(ASL)                   \
+TRANSFORM_FUNCTION(PHP)                   \
+TRANSFORM_FUNCTION(BPL)                   \
+TRANSFORM_FUNCTION(CLC)                   \
+TRANSFORM_FUNCTION(JSR)                   \
+TRANSFORM_FUNCTION(AND)                   \
+TRANSFORM_FUNCTION(BIT)                   \
+TRANSFORM_FUNCTION(ROL)                   \
+TRANSFORM_FUNCTION(PLP)                   \
+TRANSFORM_FUNCTION(BMI)                   \
+TRANSFORM_FUNCTION(SEC)                   \
+TRANSFORM_FUNCTION(RTI)                   \
+TRANSFORM_FUNCTION(EOR)                   \
+TRANSFORM_FUNCTION(LSR)                   \
+TRANSFORM_FUNCTION(PHA)                   \
+TRANSFORM_FUNCTION(JMP)                   \
+TRANSFORM_FUNCTION(BVC)                   \
+TRANSFORM_FUNCTION(CLI)                   \
+TRANSFORM_FUNCTION(RTS)                   \
+TRANSFORM_FUNCTION(ADC)                   \
+TRANSFORM_FUNCTION(ROR)                   \
+TRANSFORM_FUNCTION(PLA)                   \
+TRANSFORM_FUNCTION(ROR_ACC)               \
+TRANSFORM_FUNCTION(BVS)                   \
+TRANSFORM_FUNCTION(SEI)                   \
+TRANSFORM_FUNCTION(STA)                   \
+TRANSFORM_FUNCTION(STY)                   \
+TRANSFORM_FUNCTION(STX)                   \
+TRANSFORM_FUNCTION(DEY)                   \
+TRANSFORM_FUNCTION(TXA)                   \
+TRANSFORM_FUNCTION(BCC)                   \
+TRANSFORM_FUNCTION(TYA)                   \
+TRANSFORM_FUNCTION(TXS)                   \
+TRANSFORM_FUNCTION(LDY)                   \
+TRANSFORM_FUNCTION(LDA)                   \
+TRANSFORM_FUNCTION(LDX)                   \
+TRANSFORM_FUNCTION(TAY)                   \
+TRANSFORM_FUNCTION(TAX)                   \
+TRANSFORM_FUNCTION(BCS)                   \
+TRANSFORM_FUNCTION(CLV)                   \
+TRANSFORM_FUNCTION(TSX)                   \
+TRANSFORM_FUNCTION(CPY)                   \
+TRANSFORM_FUNCTION(CMP)                   \
+TRANSFORM_FUNCTION(DEC)                   \
+TRANSFORM_FUNCTION(INY)                   \
+TRANSFORM_FUNCTION(DEX)                   \
+TRANSFORM_FUNCTION(BNE)                   \
+TRANSFORM_FUNCTION(CLD)                   \
+TRANSFORM_FUNCTION(CPX)                   \
+TRANSFORM_FUNCTION(SBC)                   \
+TRANSFORM_FUNCTION(INC)                   \
+TRANSFORM_FUNCTION(INX)                   \
+TRANSFORM_FUNCTION(BEQ)                   \
+TRANSFORM_FUNCTION(SED)                   \
+TRANSFORM_FUNCTION(NOP)
 
 #define LIST_OF_ADDR_MODES  \
-    X(IMP)                  \
-    X(IMM)                  \
-    X(ZP0)                  \
-    X(ZPX)                  \
-    X(ZPY)                  \
-    X(REL)                  \
-    X(ABS)                  \
-    X(ABX)                  \
-    X(ABY)                  \
-    X(IND)                  \
-    X(IZX)                  \
-    X(IZY)
+TRANSFORM_FUNCTION(IMP)                  \
+TRANSFORM_FUNCTION(IMM)                  \
+TRANSFORM_FUNCTION(ZP0)                  \
+TRANSFORM_FUNCTION(ZPX)                  \
+TRANSFORM_FUNCTION(ZPY)                  \
+TRANSFORM_FUNCTION(REL)                  \
+TRANSFORM_FUNCTION(ABS)                  \
+TRANSFORM_FUNCTION(ABX)                  \
+TRANSFORM_FUNCTION(ABY)                  \
+TRANSFORM_FUNCTION(IND)                  \
+TRANSFORM_FUNCTION(IZX)                  \
+TRANSFORM_FUNCTION(IZY)
 
 #define ALL_INSTRUCTIONS    \
-    X(BRK, IMP, 0x00)       \
-    X(ORA, IZX, 0x01)       \
-    X(ORA, ZP0, 0x05)       \
-    X(ASL, ZP0, 0x06)       \
-    X(PHP, IMP, 0x08)       \
-    X(ORA, IMM, 0x09)       \
-    X(ASL, ACC, 0x0A)       \
-    X(ASL, ABS, 0x0E)       \
-    X(ORA, ABS, 0x0D)       \
-    X(BPL, REL, 0x10)       \
-    X(ORA, IZY, 0x11)       \
-    X(ORA, ZPX, 0x15)       \
-    X(ASL, ZPX, 0x16)       \
-    X(CLC, IMP, 0x18)       \
-    X(ORA, ABY, 0x19)       \
-    X(ORA, ABX, 0x1D)       \
-    X(ASL, ABX, 0x1E)       \
-    X(JSR, ABS, 0x20)       \
-    X(AND, IZX, 0x21)       \
-    X(BRK, ZP0, 0x24)       \
-    X(AND, ZP0, 0x25)       \
-    X(ROL, ZP0, 0x26)       \
-    X(PLP, IMP, 0x28)       \
-    X(AND, IMM, 0x29)       \
-    X(ROL, ACC, 0x2A)       \
-    X(BIT, ABS, 0x2C)       \
-    X(AND, ABS, 0x2D)       \
-    X(ROL, ABS, 0x2E)       \
-    X(BMI, REL, 0x30)       \
-    X(AND, IZY, 0x31)       \
-    X(AND, ZPX, 0x35)       \
-    X(ROL, ZPX, 0x36)       \
-    X(SEC, IMP, 0x38)       \
-    X(AND, ABY, 0x39)       \
-    X(AND, ABX, 0x3D)       \
-    X(ROL, ABX, 0x3E)       \
-    X(RTI, IMP, 0x40)       \
-    X(EOR, IZX, 0x41)       \
-    X(EOR, ZP0, 0x45)       \
-    X(LSR, ZP0, 0x46)       \
-    X(PHA, IMP, 0x48)       \
-    X(EOR, IMM, 0x49)       \
-    X(LSR, ACC, 0x4A)       \
-    X(JMP, ABS, 0x4C)       \
-    X(EOR, ABS, 0x4D)       \
-    X(LSR, ABS, 0x4E)       \
-    X(BVC, REL, 0x50)       \
-    X(EOR, IZY, 0x51)       \
-    X(EOR, ZPX, 0x55)       \
-    X(LSR, ZPX, 0x56)       \
-    X(CLI, IMP, 0x58)       \
-    X(EOR, ABY, 0x59)       \
-    X(EOR, ABX, 0x5D)       \
-    X(LSR, ABX, 0x5E)       \
-    X(RTS, IMP, 0x60)       \
-    X(ADC, IZX, 0x61)       \
-    X(ADC, ZP0, 0x65)       \
-    X(ROR, ZP0, 0x66)       \
-    X(PLA, IMP, 0x68)       \
-    X(ADC, IMM, 0x69)       \
-    X(ROR, ACC, 0x6A)       \
-    X(JMP, IND, 0x6C)       \
-    X(ADC, ABS, 0x6D)       \
-    X(ROR, ABS, 0x6E)       \
-    X(BVS, REL, 0x70)       \
-    X(ADC, IZY, 0x71)       \
-    X(ADC, ZPX, 0x75)       \
-    X(ROR, ZPX, 0x76)       \
-    X(SEI, IMP, 0x78)       \
-    X(ADC, ABY, 0x79)       \
-    X(ADC, ABX, 0x7D)       \
-    X(ROR, ABX, 0x7E)       \
-    X(STA, IZX, 0x81)       \
-    X(STY, ZP0, 0x84)       \
-    X(STA, ZP0, 0x85)       \
-    X(STX, ZP0, 0x86)       \
-    X(DEY, IMP, 0x88)       \
-    X(TXA, IMP, 0x8A)       \
-    X(STY, ABS, 0x8C)       \
-    X(STA, ABS, 0x8D)       \
-    X(STX, ABS, 0x8E)       \
-    X(BCC, REL, 0x90)       \
-    X(STA, IZY, 0x91)       \
-    X(STY, ZPX, 0x94)       \
-    X(STA, ZPX, 0x95)       \
-    X(STX, ZPY, 0x96)       \
-    X(TYA, IMP, 0x98)       \
-    X(STA, ABY, 0x99)       \
-    X(TXS, IMP, 0x9A)       \
-    X(STA, ABX, 0x9D)       \
-    X(LDY, IMM, 0xA0)       \
-    X(LDA, IZX, 0xA1)       \
-    X(LDX, IMM, 0xA2)       \
-    X(LDY, ZP0, 0xA4)       \
-    X(LDA, ZP0, 0xA5)       \
-    X(LDX, ZP0, 0xA6)       \
-    X(TAY, IMP, 0xA8)       \
-    X(LDA, IMM, 0xA9)       \
-    X(TAX, IMP, 0xAA)       \
-    X(LDY, ABS, 0xAC)       \
-    X(LDA, ABS, 0xAD)       \
-    X(LDX, ABS, 0xAE)       \
-    X(BCS, REL, 0xB0)       \
-    X(LDA, IZY, 0xB1)       \
-    X(LDY, ZPX, 0xB4)       \
-    X(LDA, ZPX, 0xB5)       \
-    X(LDX, ZPY, 0xB6)       \
-    X(CLV, IMP, 0xB8)       \
-    X(LDA, ABY, 0xB9)       \
-    X(TSX, IMP, 0xBA)       \
-    X(LDY, ABX, 0xBC)       \
-    X(LDA, ABX, 0xBD)       \
-    X(LDX, ABY, 0xBE)       \
-    X(CPY, IMM, 0xC0)       \
-    X(CMP, IZX, 0xC1)       \
-    X(CPY, ZP0, 0xC4)       \
-    X(CMP, ZP0, 0xC5)       \
-    X(DEC, ZP0, 0xC6)       \
-    X(INY, IMP, 0xC8)       \
-    X(CMP, IMM, 0xC9)       \
-    X(DEX, IMP, 0xCA)       \
-    X(CPY, ABS, 0xCC)       \
-    X(CMP, ABS, 0xCD)       \
-    X(DEC, ABS, 0xCE)       \
-    X(BNE, REL, 0xD0)       \
-    X(CMP, IZY, 0xD1)       \
-    X(CMP, ZPX, 0xD5)       \
-    X(DEC, ZPX, 0xD6)       \
-    X(CLD, IMP, 0xD8)       \
-    X(CMP, ABY, 0xD9)       \
-    X(CMP, ABX, 0xDD)       \
-    X(DEC, ABX, 0xDE)       \
-    X(CPX, IMM, 0xE0)       \
-    X(SBC, IZX, 0xE1)       \
-    X(CPX, ZP0, 0xE4)       \
-    X(SBC, ZP0, 0xE5)       \
-    X(INC, ZP0, 0xE6)       \
-    X(INX, IMP, 0xE8)       \
-    X(SBC, IMM, 0xE9)       \
-    X(NOP, IMP, 0xEA)       \
-    X(CPX, ABS, 0xEC)       \
-    X(SBC, ABS, 0xED)       \
-    X(INC, ABS, 0xEE)       \
-    X(BEQ, REL, 0xF0)       \
-    X(SBC, IZY, 0xF1)       \
-    X(SBC, ZPX, 0xF5)       \
-    X(INC, ZPX, 0xF6)       \
-    X(SED, IMP, 0xF8)       \
-    X(SBC, ABY, 0xF9)       \
-    X(SBC, ABX, 0xFD)       \
-    X(INC, ABX, 0xFE)
+TRANSFORM_FUNCTION(BRK, IMP, 0x00)       \
+TRANSFORM_FUNCTION(ORA, IZX, 0x01)       \
+TRANSFORM_FUNCTION(ORA, ZP0, 0x05)       \
+TRANSFORM_FUNCTION(ASL, ZP0, 0x06)       \
+TRANSFORM_FUNCTION(PHP, IMP, 0x08)       \
+TRANSFORM_FUNCTION(ORA, IMM, 0x09)       \
+TRANSFORM_FUNCTION(ASL, ACC, 0x0A)       \
+TRANSFORM_FUNCTION(ASL, ABS, 0x0E)       \
+TRANSFORM_FUNCTION(ORA, ABS, 0x0D)       \
+TRANSFORM_FUNCTION(BPL, REL, 0x10)       \
+TRANSFORM_FUNCTION(ORA, IZY, 0x11)       \
+TRANSFORM_FUNCTION(ORA, ZPX, 0x15)       \
+TRANSFORM_FUNCTION(ASL, ZPX, 0x16)       \
+TRANSFORM_FUNCTION(CLC, IMP, 0x18)       \
+TRANSFORM_FUNCTION(ORA, ABY, 0x19)       \
+TRANSFORM_FUNCTION(ORA, ABX, 0x1D)       \
+TRANSFORM_FUNCTION(ASL, ABX, 0x1E)       \
+TRANSFORM_FUNCTION(JSR, ABS, 0x20)       \
+TRANSFORM_FUNCTION(AND, IZX, 0x21)       \
+TRANSFORM_FUNCTION(BRK, ZP0, 0x24)       \
+TRANSFORM_FUNCTION(AND, ZP0, 0x25)       \
+TRANSFORM_FUNCTION(ROL, ZP0, 0x26)       \
+TRANSFORM_FUNCTION(PLP, IMP, 0x28)       \
+TRANSFORM_FUNCTION(AND, IMM, 0x29)       \
+TRANSFORM_FUNCTION(ROL, ACC, 0x2A)       \
+TRANSFORM_FUNCTION(BIT, ABS, 0x2C)       \
+TRANSFORM_FUNCTION(AND, ABS, 0x2D)       \
+TRANSFORM_FUNCTION(ROL, ABS, 0x2E)       \
+TRANSFORM_FUNCTION(BMI, REL, 0x30)       \
+TRANSFORM_FUNCTION(AND, IZY, 0x31)       \
+TRANSFORM_FUNCTION(AND, ZPX, 0x35)       \
+TRANSFORM_FUNCTION(ROL, ZPX, 0x36)       \
+TRANSFORM_FUNCTION(SEC, IMP, 0x38)       \
+TRANSFORM_FUNCTION(AND, ABY, 0x39)       \
+TRANSFORM_FUNCTION(AND, ABX, 0x3D)       \
+TRANSFORM_FUNCTION(ROL, ABX, 0x3E)       \
+TRANSFORM_FUNCTION(RTI, IMP, 0x40)       \
+TRANSFORM_FUNCTION(EOR, IZX, 0x41)       \
+TRANSFORM_FUNCTION(EOR, ZP0, 0x45)       \
+TRANSFORM_FUNCTION(LSR, ZP0, 0x46)       \
+TRANSFORM_FUNCTION(PHA, IMP, 0x48)       \
+TRANSFORM_FUNCTION(EOR, IMM, 0x49)       \
+TRANSFORM_FUNCTION(LSR, ACC, 0x4A)       \
+TRANSFORM_FUNCTION(JMP, ABS, 0x4C)       \
+TRANSFORM_FUNCTION(EOR, ABS, 0x4D)       \
+TRANSFORM_FUNCTION(LSR, ABS, 0x4E)       \
+TRANSFORM_FUNCTION(BVC, REL, 0x50)       \
+TRANSFORM_FUNCTION(EOR, IZY, 0x51)       \
+TRANSFORM_FUNCTION(EOR, ZPX, 0x55)       \
+TRANSFORM_FUNCTION(LSR, ZPX, 0x56)       \
+TRANSFORM_FUNCTION(CLI, IMP, 0x58)       \
+TRANSFORM_FUNCTION(EOR, ABY, 0x59)       \
+TRANSFORM_FUNCTION(EOR, ABX, 0x5D)       \
+TRANSFORM_FUNCTION(LSR, ABX, 0x5E)       \
+TRANSFORM_FUNCTION(RTS, IMP, 0x60)       \
+TRANSFORM_FUNCTION(ADC, IZX, 0x61)       \
+TRANSFORM_FUNCTION(ADC, ZP0, 0x65)       \
+TRANSFORM_FUNCTION(ROR, ZP0, 0x66)       \
+TRANSFORM_FUNCTION(PLA, IMP, 0x68)       \
+TRANSFORM_FUNCTION(ADC, IMM, 0x69)       \
+TRANSFORM_FUNCTION(ROR, ACC, 0x6A)       \
+TRANSFORM_FUNCTION(JMP, IND, 0x6C)       \
+TRANSFORM_FUNCTION(ADC, ABS, 0x6D)       \
+TRANSFORM_FUNCTION(ROR, ABS, 0x6E)       \
+TRANSFORM_FUNCTION(BVS, REL, 0x70)       \
+TRANSFORM_FUNCTION(ADC, IZY, 0x71)       \
+TRANSFORM_FUNCTION(ADC, ZPX, 0x75)       \
+TRANSFORM_FUNCTION(ROR, ZPX, 0x76)       \
+TRANSFORM_FUNCTION(SEI, IMP, 0x78)       \
+TRANSFORM_FUNCTION(ADC, ABY, 0x79)       \
+TRANSFORM_FUNCTION(ADC, ABX, 0x7D)       \
+TRANSFORM_FUNCTION(ROR, ABX, 0x7E)       \
+TRANSFORM_FUNCTION(STA, IZX, 0x81)       \
+TRANSFORM_FUNCTION(STY, ZP0, 0x84)       \
+TRANSFORM_FUNCTION(STA, ZP0, 0x85)       \
+TRANSFORM_FUNCTION(STX, ZP0, 0x86)       \
+TRANSFORM_FUNCTION(DEY, IMP, 0x88)       \
+TRANSFORM_FUNCTION(TXA, IMP, 0x8A)       \
+TRANSFORM_FUNCTION(STY, ABS, 0x8C)       \
+TRANSFORM_FUNCTION(STA, ABS, 0x8D)       \
+TRANSFORM_FUNCTION(STX, ABS, 0x8E)       \
+TRANSFORM_FUNCTION(BCC, REL, 0x90)       \
+TRANSFORM_FUNCTION(STA, IZY, 0x91)       \
+TRANSFORM_FUNCTION(STY, ZPX, 0x94)       \
+TRANSFORM_FUNCTION(STA, ZPX, 0x95)       \
+TRANSFORM_FUNCTION(STX, ZPY, 0x96)       \
+TRANSFORM_FUNCTION(TYA, IMP, 0x98)       \
+TRANSFORM_FUNCTION(STA, ABY, 0x99)       \
+TRANSFORM_FUNCTION(TXS, IMP, 0x9A)       \
+TRANSFORM_FUNCTION(STA, ABX, 0x9D)       \
+TRANSFORM_FUNCTION(LDY, IMM, 0xA0)       \
+TRANSFORM_FUNCTION(LDA, IZX, 0xA1)       \
+TRANSFORM_FUNCTION(LDX, IMM, 0xA2)       \
+TRANSFORM_FUNCTION(LDY, ZP0, 0xA4)       \
+TRANSFORM_FUNCTION(LDA, ZP0, 0xA5)       \
+TRANSFORM_FUNCTION(LDX, ZP0, 0xA6)       \
+TRANSFORM_FUNCTION(TAY, IMP, 0xA8)       \
+TRANSFORM_FUNCTION(LDA, IMM, 0xA9)       \
+TRANSFORM_FUNCTION(TAX, IMP, 0xAA)       \
+TRANSFORM_FUNCTION(LDY, ABS, 0xAC)       \
+TRANSFORM_FUNCTION(LDA, ABS, 0xAD)       \
+TRANSFORM_FUNCTION(LDX, ABS, 0xAE)       \
+TRANSFORM_FUNCTION(BCS, REL, 0xB0)       \
+TRANSFORM_FUNCTION(LDA, IZY, 0xB1)       \
+TRANSFORM_FUNCTION(LDY, ZPX, 0xB4)       \
+TRANSFORM_FUNCTION(LDA, ZPX, 0xB5)       \
+TRANSFORM_FUNCTION(LDX, ZPY, 0xB6)       \
+TRANSFORM_FUNCTION(CLV, IMP, 0xB8)       \
+TRANSFORM_FUNCTION(LDA, ABY, 0xB9)       \
+TRANSFORM_FUNCTION(TSX, IMP, 0xBA)       \
+TRANSFORM_FUNCTION(LDY, ABX, 0xBC)       \
+TRANSFORM_FUNCTION(LDA, ABX, 0xBD)       \
+TRANSFORM_FUNCTION(LDX, ABY, 0xBE)       \
+TRANSFORM_FUNCTION(CPY, IMM, 0xC0)       \
+TRANSFORM_FUNCTION(CMP, IZX, 0xC1)       \
+TRANSFORM_FUNCTION(CPY, ZP0, 0xC4)       \
+TRANSFORM_FUNCTION(CMP, ZP0, 0xC5)       \
+TRANSFORM_FUNCTION(DEC, ZP0, 0xC6)       \
+TRANSFORM_FUNCTION(INY, IMP, 0xC8)       \
+TRANSFORM_FUNCTION(CMP, IMM, 0xC9)       \
+TRANSFORM_FUNCTION(DEX, IMP, 0xCA)       \
+TRANSFORM_FUNCTION(CPY, ABS, 0xCC)       \
+TRANSFORM_FUNCTION(CMP, ABS, 0xCD)       \
+TRANSFORM_FUNCTION(DEC, ABS, 0xCE)       \
+TRANSFORM_FUNCTION(BNE, REL, 0xD0)       \
+TRANSFORM_FUNCTION(CMP, IZY, 0xD1)       \
+TRANSFORM_FUNCTION(CMP, ZPX, 0xD5)       \
+TRANSFORM_FUNCTION(DEC, ZPX, 0xD6)       \
+TRANSFORM_FUNCTION(CLD, IMP, 0xD8)       \
+TRANSFORM_FUNCTION(CMP, ABY, 0xD9)       \
+TRANSFORM_FUNCTION(CMP, ABX, 0xDD)       \
+TRANSFORM_FUNCTION(DEC, ABX, 0xDE)       \
+TRANSFORM_FUNCTION(CPX, IMM, 0xE0)       \
+TRANSFORM_FUNCTION(SBC, IZX, 0xE1)       \
+TRANSFORM_FUNCTION(CPX, ZP0, 0xE4)       \
+TRANSFORM_FUNCTION(SBC, ZP0, 0xE5)       \
+TRANSFORM_FUNCTION(INC, ZP0, 0xE6)       \
+TRANSFORM_FUNCTION(INX, IMP, 0xE8)       \
+TRANSFORM_FUNCTION(SBC, IMM, 0xE9)       \
+TRANSFORM_FUNCTION(NOP, IMP, 0xEA)       \
+TRANSFORM_FUNCTION(CPX, ABS, 0xEC)       \
+TRANSFORM_FUNCTION(SBC, ABS, 0xED)       \
+TRANSFORM_FUNCTION(INC, ABS, 0xEE)       \
+TRANSFORM_FUNCTION(BEQ, REL, 0xF0)       \
+TRANSFORM_FUNCTION(SBC, IZY, 0xF1)       \
+TRANSFORM_FUNCTION(SBC, ZPX, 0xF5)       \
+TRANSFORM_FUNCTION(INC, ZPX, 0xF6)       \
+TRANSFORM_FUNCTION(SED, IMP, 0xF8)       \
+TRANSFORM_FUNCTION(SBC, ABY, 0xF9)       \
+TRANSFORM_FUNCTION(SBC, ABX, 0xFD)       \
+TRANSFORM_FUNCTION(INC, ABX, 0xFE)
 
 typedef uint8_t byte_t;
 typedef uint16_t word_t;
@@ -239,22 +240,22 @@ typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 typedef enum 
 {
-    #define X(mode) ADDR_MODE_##mode,
+    #define TRANSFORM_FUNCTION(mode) ADDR_MODE_##mode,
     LIST_OF_ADDR_MODES
-    #undef X
+    #undef TRANSFORM_FUNCTION
 } cpu_addr_mode_t;
 
 typedef enum
 {
-    #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
+    #define TRANSFORM_FUNCTION(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
     ALL_INSTRUCTIONS
-    #undef X
+    #undef TRANSFORM_FUNCTION
 } cpu_ins_t;
 
-#define X(name) byte_t name(cpu_s *cpu);
+#define TRANSFORM_FUNCTION(name) byte_t name(cpu_s *cpu);
 LIST_OF_ADDR_MODES
 UNIQUE_OPCODES
-#undef X
+#undef TRANSFORM_FUNCTION
 
 
 /*
