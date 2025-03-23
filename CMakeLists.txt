@@ -28,6 +28,7 @@ option(BUILD_TESTS "Build test suite" ON)
 
 if(BUILD_TESTS)
     include(FetchContent)
+    set(FETCHCONTENT_FULLY_DISCONNECTED ON)
     FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
