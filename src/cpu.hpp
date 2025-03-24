@@ -8,254 +8,254 @@
 
 //Using X Macros because they are fun
 #define CPU_6592_OPCODES \
-XMAC(BRK)                   \
-XMAC(ORA)                   \
-XMAC(ASL)                   \
-XMAC(PHP)                   \
-XMAC(BPL)                   \
-XMAC(CLC)                   \
-XMAC(JSR)                   \
-XMAC(AND)                   \
-XMAC(BIT)                   \
-XMAC(ROL)                   \
-XMAC(PLP)                   \
-XMAC(BMI)                   \
-XMAC(SEC)                   \
-XMAC(RTI)                   \
-XMAC(EOR)                   \
-XMAC(LSR)                   \
-XMAC(PHA)                   \
-XMAC(JMP)                   \
-XMAC(BVC)                   \
-XMAC(CLI)                   \
-XMAC(RTS)                   \
-XMAC(ADC)                   \
-XMAC(ROR)                   \
-XMAC(PLA)                   \
-XMAC(ROR_ACC)               \
-XMAC(BVS)                   \
-XMAC(SEI)                   \
-XMAC(STA)                   \
-XMAC(STY)                   \
-XMAC(STX)                   \
-XMAC(DEY)                   \
-XMAC(TXA)                   \
-XMAC(BCC)                   \
-XMAC(TYA)                   \
-XMAC(TXS)                   \
-XMAC(LDY)                   \
-XMAC(LDA)                   \
-XMAC(LDX)                   \
-XMAC(TAY)                   \
-XMAC(TAX)                   \
-XMAC(BCS)                   \
-XMAC(CLV)                   \
-XMAC(TSX)                   \
-XMAC(CPY)                   \
-XMAC(CMP)                   \
-XMAC(DEC)                   \
-XMAC(INY)                   \
-XMAC(DEX)                   \
-XMAC(BNE)                   \
-XMAC(CLD)                   \
-XMAC(CPX)                   \
-XMAC(SBC)                   \
-XMAC(INC)                   \
-XMAC(INX)                   \
-XMAC(BEQ)                   \
-XMAC(SED)                   \
-XMAC(NOP)
+FUNC_MAP(BRK)                   \
+FUNC_MAP(ORA)                   \
+FUNC_MAP(ASL)                   \
+FUNC_MAP(PHP)                   \
+FUNC_MAP(BPL)                   \
+FUNC_MAP(CLC)                   \
+FUNC_MAP(JSR)                   \
+FUNC_MAP(AND)                   \
+FUNC_MAP(BIT)                   \
+FUNC_MAP(ROL)                   \
+FUNC_MAP(PLP)                   \
+FUNC_MAP(BMI)                   \
+FUNC_MAP(SEC)                   \
+FUNC_MAP(RTI)                   \
+FUNC_MAP(EOR)                   \
+FUNC_MAP(LSR)                   \
+FUNC_MAP(PHA)                   \
+FUNC_MAP(JMP)                   \
+FUNC_MAP(BVC)                   \
+FUNC_MAP(CLI)                   \
+FUNC_MAP(RTS)                   \
+FUNC_MAP(ADC)                   \
+FUNC_MAP(ROR)                   \
+FUNC_MAP(PLA)                   \
+FUNC_MAP(ROR_ACC)               \
+FUNC_MAP(BVS)                   \
+FUNC_MAP(SEI)                   \
+FUNC_MAP(STA)                   \
+FUNC_MAP(STY)                   \
+FUNC_MAP(STX)                   \
+FUNC_MAP(DEY)                   \
+FUNC_MAP(TXA)                   \
+FUNC_MAP(BCC)                   \
+FUNC_MAP(TYA)                   \
+FUNC_MAP(TXS)                   \
+FUNC_MAP(LDY)                   \
+FUNC_MAP(LDA)                   \
+FUNC_MAP(LDX)                   \
+FUNC_MAP(TAY)                   \
+FUNC_MAP(TAX)                   \
+FUNC_MAP(BCS)                   \
+FUNC_MAP(CLV)                   \
+FUNC_MAP(TSX)                   \
+FUNC_MAP(CPY)                   \
+FUNC_MAP(CMP)                   \
+FUNC_MAP(DEC)                   \
+FUNC_MAP(INY)                   \
+FUNC_MAP(DEX)                   \
+FUNC_MAP(BNE)                   \
+FUNC_MAP(CLD)                   \
+FUNC_MAP(CPX)                   \
+FUNC_MAP(SBC)                   \
+FUNC_MAP(INC)                   \
+FUNC_MAP(INX)                   \
+FUNC_MAP(BEQ)                   \
+FUNC_MAP(SED)                   \
+FUNC_MAP(NOP)
 
 #define CPU_6502_ADDRESSING_MODES  \
-XMAC(IMP)                  \
-XMAC(IMM)                  \
-XMAC(ZP0)                  \
-XMAC(ZPX)                  \
-XMAC(ZPY)                  \
-XMAC(REL)                  \
-XMAC(ABS)                  \
-XMAC(ABX)                  \
-XMAC(ABY)                  \
-XMAC(IND)                  \
-XMAC(IZX)                  \
-XMAC(IZY)
+FUNC_MAP(IMP)                  \
+FUNC_MAP(IMM)                  \
+FUNC_MAP(ZP0)                  \
+FUNC_MAP(ZPX)                  \
+FUNC_MAP(ZPY)                  \
+FUNC_MAP(REL)                  \
+FUNC_MAP(ABS)                  \
+FUNC_MAP(ABX)                  \
+FUNC_MAP(ABY)                  \
+FUNC_MAP(IND)                  \
+FUNC_MAP(IZX)                  \
+FUNC_MAP(IZY)
 
 #define ALL_INSTRUCTIONS    \
-XMAC(BRK, IMP, 0x00)       \
-XMAC(ORA, IZX, 0x01)       \
-XMAC(ORA, ZP0, 0x05)       \
-XMAC(ASL, ZP0, 0x06)       \
-XMAC(PHP, IMP, 0x08)       \
-XMAC(ORA, IMM, 0x09)       \
-XMAC(ASL, ACC, 0x0A)       \
-XMAC(ASL, ABS, 0x0E)       \
-XMAC(ORA, ABS, 0x0D)       \
-XMAC(BPL, REL, 0x10)       \
-XMAC(ORA, IZY, 0x11)       \
-XMAC(ORA, ZPX, 0x15)       \
-XMAC(ASL, ZPX, 0x16)       \
-XMAC(CLC, IMP, 0x18)       \
-XMAC(ORA, ABY, 0x19)       \
-XMAC(ORA, ABX, 0x1D)       \
-XMAC(ASL, ABX, 0x1E)       \
-XMAC(JSR, ABS, 0x20)       \
-XMAC(AND, IZX, 0x21)       \
-XMAC(BRK, ZP0, 0x24)       \
-XMAC(AND, ZP0, 0x25)       \
-XMAC(ROL, ZP0, 0x26)       \
-XMAC(PLP, IMP, 0x28)       \
-XMAC(AND, IMM, 0x29)       \
-XMAC(ROL, ACC, 0x2A)       \
-XMAC(BIT, ABS, 0x2C)       \
-XMAC(AND, ABS, 0x2D)       \
-XMAC(ROL, ABS, 0x2E)       \
-XMAC(BMI, REL, 0x30)       \
-XMAC(AND, IZY, 0x31)       \
-XMAC(AND, ZPX, 0x35)       \
-XMAC(ROL, ZPX, 0x36)       \
-XMAC(SEC, IMP, 0x38)       \
-XMAC(AND, ABY, 0x39)       \
-XMAC(AND, ABX, 0x3D)       \
-XMAC(ROL, ABX, 0x3E)       \
-XMAC(RTI, IMP, 0x40)       \
-XMAC(EOR, IZX, 0x41)       \
-XMAC(EOR, ZP0, 0x45)       \
-XMAC(LSR, ZP0, 0x46)       \
-XMAC(PHA, IMP, 0x48)       \
-XMAC(EOR, IMM, 0x49)       \
-XMAC(LSR, ACC, 0x4A)       \
-XMAC(JMP, ABS, 0x4C)       \
-XMAC(EOR, ABS, 0x4D)       \
-XMAC(LSR, ABS, 0x4E)       \
-XMAC(BVC, REL, 0x50)       \
-XMAC(EOR, IZY, 0x51)       \
-XMAC(EOR, ZPX, 0x55)       \
-XMAC(LSR, ZPX, 0x56)       \
-XMAC(CLI, IMP, 0x58)       \
-XMAC(EOR, ABY, 0x59)       \
-XMAC(EOR, ABX, 0x5D)       \
-XMAC(LSR, ABX, 0x5E)       \
-XMAC(RTS, IMP, 0x60)       \
-XMAC(ADC, IZX, 0x61)       \
-XMAC(ADC, ZP0, 0x65)       \
-XMAC(ROR, ZP0, 0x66)       \
-XMAC(PLA, IMP, 0x68)       \
-XMAC(ADC, IMM, 0x69)       \
-XMAC(ROR, ACC, 0x6A)       \
-XMAC(JMP, IND, 0x6C)       \
-XMAC(ADC, ABS, 0x6D)       \
-XMAC(ROR, ABS, 0x6E)       \
-XMAC(BVS, REL, 0x70)       \
-XMAC(ADC, IZY, 0x71)       \
-XMAC(ADC, ZPX, 0x75)       \
-XMAC(ROR, ZPX, 0x76)       \
-XMAC(SEI, IMP, 0x78)       \
-XMAC(ADC, ABY, 0x79)       \
-XMAC(ADC, ABX, 0x7D)       \
-XMAC(ROR, ABX, 0x7E)       \
-XMAC(STA, IZX, 0x81)       \
-XMAC(STY, ZP0, 0x84)       \
-XMAC(STA, ZP0, 0x85)       \
-XMAC(STX, ZP0, 0x86)       \
-XMAC(DEY, IMP, 0x88)       \
-XMAC(TXA, IMP, 0x8A)       \
-XMAC(STY, ABS, 0x8C)       \
-XMAC(STA, ABS, 0x8D)       \
-XMAC(STX, ABS, 0x8E)       \
-XMAC(BCC, REL, 0x90)       \
-XMAC(STA, IZY, 0x91)       \
-XMAC(STY, ZPX, 0x94)       \
-XMAC(STA, ZPX, 0x95)       \
-XMAC(STX, ZPY, 0x96)       \
-XMAC(TYA, IMP, 0x98)       \
-XMAC(STA, ABY, 0x99)       \
-XMAC(TXS, IMP, 0x9A)       \
-XMAC(STA, ABX, 0x9D)       \
-XMAC(LDY, IMM, 0xA0)       \
-XMAC(LDA, IZX, 0xA1)       \
-XMAC(LDX, IMM, 0xA2)       \
-XMAC(LDY, ZP0, 0xA4)       \
-XMAC(LDA, ZP0, 0xA5)       \
-XMAC(LDX, ZP0, 0xA6)       \
-XMAC(TAY, IMP, 0xA8)       \
-XMAC(LDA, IMM, 0xA9)       \
-XMAC(TAX, IMP, 0xAA)       \
-XMAC(LDY, ABS, 0xAC)       \
-XMAC(LDA, ABS, 0xAD)       \
-XMAC(LDX, ABS, 0xAE)       \
-XMAC(BCS, REL, 0xB0)       \
-XMAC(LDA, IZY, 0xB1)       \
-XMAC(LDY, ZPX, 0xB4)       \
-XMAC(LDA, ZPX, 0xB5)       \
-XMAC(LDX, ZPY, 0xB6)       \
-XMAC(CLV, IMP, 0xB8)       \
-XMAC(LDA, ABY, 0xB9)       \
-XMAC(TSX, IMP, 0xBA)       \
-XMAC(LDY, ABX, 0xBC)       \
-XMAC(LDA, ABX, 0xBD)       \
-XMAC(LDX, ABY, 0xBE)       \
-XMAC(CPY, IMM, 0xC0)       \
-XMAC(CMP, IZX, 0xC1)       \
-XMAC(CPY, ZP0, 0xC4)       \
-XMAC(CMP, ZP0, 0xC5)       \
-XMAC(DEC, ZP0, 0xC6)       \
-XMAC(INY, IMP, 0xC8)       \
-XMAC(CMP, IMM, 0xC9)       \
-XMAC(DEX, IMP, 0xCA)       \
-XMAC(CPY, ABS, 0xCC)       \
-XMAC(CMP, ABS, 0xCD)       \
-XMAC(DEC, ABS, 0xCE)       \
-XMAC(BNE, REL, 0xD0)       \
-XMAC(CMP, IZY, 0xD1)       \
-XMAC(CMP, ZPX, 0xD5)       \
-XMAC(DEC, ZPX, 0xD6)       \
-XMAC(CLD, IMP, 0xD8)       \
-XMAC(CMP, ABY, 0xD9)       \
-XMAC(CMP, ABX, 0xDD)       \
-XMAC(DEC, ABX, 0xDE)       \
-XMAC(CPX, IMM, 0xE0)       \
-XMAC(SBC, IZX, 0xE1)       \
-XMAC(CPX, ZP0, 0xE4)       \
-XMAC(SBC, ZP0, 0xE5)       \
-XMAC(INC, ZP0, 0xE6)       \
-XMAC(INX, IMP, 0xE8)       \
-XMAC(SBC, IMM, 0xE9)       \
-XMAC(NOP, IMP, 0xEA)       \
-XMAC(CPX, ABS, 0xEC)       \
-XMAC(SBC, ABS, 0xED)       \
-XMAC(INC, ABS, 0xEE)       \
-XMAC(BEQ, REL, 0xF0)       \
-XMAC(SBC, IZY, 0xF1)       \
-XMAC(SBC, ZPX, 0xF5)       \
-XMAC(INC, ZPX, 0xF6)       \
-XMAC(SED, IMP, 0xF8)       \
-XMAC(SBC, ABY, 0xF9)       \
-XMAC(SBC, ABX, 0xFD)       \
-XMAC(INC, ABX, 0xFE)
+FUNC_MAP(BRK, IMP, 0x00)       \
+FUNC_MAP(ORA, IZX, 0x01)       \
+FUNC_MAP(ORA, ZP0, 0x05)       \
+FUNC_MAP(ASL, ZP0, 0x06)       \
+FUNC_MAP(PHP, IMP, 0x08)       \
+FUNC_MAP(ORA, IMM, 0x09)       \
+FUNC_MAP(ASL, ACC, 0x0A)       \
+FUNC_MAP(ASL, ABS, 0x0E)       \
+FUNC_MAP(ORA, ABS, 0x0D)       \
+FUNC_MAP(BPL, REL, 0x10)       \
+FUNC_MAP(ORA, IZY, 0x11)       \
+FUNC_MAP(ORA, ZPX, 0x15)       \
+FUNC_MAP(ASL, ZPX, 0x16)       \
+FUNC_MAP(CLC, IMP, 0x18)       \
+FUNC_MAP(ORA, ABY, 0x19)       \
+FUNC_MAP(ORA, ABX, 0x1D)       \
+FUNC_MAP(ASL, ABX, 0x1E)       \
+FUNC_MAP(JSR, ABS, 0x20)       \
+FUNC_MAP(AND, IZX, 0x21)       \
+FUNC_MAP(BRK, ZP0, 0x24)       \
+FUNC_MAP(AND, ZP0, 0x25)       \
+FUNC_MAP(ROL, ZP0, 0x26)       \
+FUNC_MAP(PLP, IMP, 0x28)       \
+FUNC_MAP(AND, IMM, 0x29)       \
+FUNC_MAP(ROL, ACC, 0x2A)       \
+FUNC_MAP(BIT, ABS, 0x2C)       \
+FUNC_MAP(AND, ABS, 0x2D)       \
+FUNC_MAP(ROL, ABS, 0x2E)       \
+FUNC_MAP(BMI, REL, 0x30)       \
+FUNC_MAP(AND, IZY, 0x31)       \
+FUNC_MAP(AND, ZPX, 0x35)       \
+FUNC_MAP(ROL, ZPX, 0x36)       \
+FUNC_MAP(SEC, IMP, 0x38)       \
+FUNC_MAP(AND, ABY, 0x39)       \
+FUNC_MAP(AND, ABX, 0x3D)       \
+FUNC_MAP(ROL, ABX, 0x3E)       \
+FUNC_MAP(RTI, IMP, 0x40)       \
+FUNC_MAP(EOR, IZX, 0x41)       \
+FUNC_MAP(EOR, ZP0, 0x45)       \
+FUNC_MAP(LSR, ZP0, 0x46)       \
+FUNC_MAP(PHA, IMP, 0x48)       \
+FUNC_MAP(EOR, IMM, 0x49)       \
+FUNC_MAP(LSR, ACC, 0x4A)       \
+FUNC_MAP(JMP, ABS, 0x4C)       \
+FUNC_MAP(EOR, ABS, 0x4D)       \
+FUNC_MAP(LSR, ABS, 0x4E)       \
+FUNC_MAP(BVC, REL, 0x50)       \
+FUNC_MAP(EOR, IZY, 0x51)       \
+FUNC_MAP(EOR, ZPX, 0x55)       \
+FUNC_MAP(LSR, ZPX, 0x56)       \
+FUNC_MAP(CLI, IMP, 0x58)       \
+FUNC_MAP(EOR, ABY, 0x59)       \
+FUNC_MAP(EOR, ABX, 0x5D)       \
+FUNC_MAP(LSR, ABX, 0x5E)       \
+FUNC_MAP(RTS, IMP, 0x60)       \
+FUNC_MAP(ADC, IZX, 0x61)       \
+FUNC_MAP(ADC, ZP0, 0x65)       \
+FUNC_MAP(ROR, ZP0, 0x66)       \
+FUNC_MAP(PLA, IMP, 0x68)       \
+FUNC_MAP(ADC, IMM, 0x69)       \
+FUNC_MAP(ROR, ACC, 0x6A)       \
+FUNC_MAP(JMP, IND, 0x6C)       \
+FUNC_MAP(ADC, ABS, 0x6D)       \
+FUNC_MAP(ROR, ABS, 0x6E)       \
+FUNC_MAP(BVS, REL, 0x70)       \
+FUNC_MAP(ADC, IZY, 0x71)       \
+FUNC_MAP(ADC, ZPX, 0x75)       \
+FUNC_MAP(ROR, ZPX, 0x76)       \
+FUNC_MAP(SEI, IMP, 0x78)       \
+FUNC_MAP(ADC, ABY, 0x79)       \
+FUNC_MAP(ADC, ABX, 0x7D)       \
+FUNC_MAP(ROR, ABX, 0x7E)       \
+FUNC_MAP(STA, IZX, 0x81)       \
+FUNC_MAP(STY, ZP0, 0x84)       \
+FUNC_MAP(STA, ZP0, 0x85)       \
+FUNC_MAP(STX, ZP0, 0x86)       \
+FUNC_MAP(DEY, IMP, 0x88)       \
+FUNC_MAP(TXA, IMP, 0x8A)       \
+FUNC_MAP(STY, ABS, 0x8C)       \
+FUNC_MAP(STA, ABS, 0x8D)       \
+FUNC_MAP(STX, ABS, 0x8E)       \
+FUNC_MAP(BCC, REL, 0x90)       \
+FUNC_MAP(STA, IZY, 0x91)       \
+FUNC_MAP(STY, ZPX, 0x94)       \
+FUNC_MAP(STA, ZPX, 0x95)       \
+FUNC_MAP(STX, ZPY, 0x96)       \
+FUNC_MAP(TYA, IMP, 0x98)       \
+FUNC_MAP(STA, ABY, 0x99)       \
+FUNC_MAP(TXS, IMP, 0x9A)       \
+FUNC_MAP(STA, ABX, 0x9D)       \
+FUNC_MAP(LDY, IMM, 0xA0)       \
+FUNC_MAP(LDA, IZX, 0xA1)       \
+FUNC_MAP(LDX, IMM, 0xA2)       \
+FUNC_MAP(LDY, ZP0, 0xA4)       \
+FUNC_MAP(LDA, ZP0, 0xA5)       \
+FUNC_MAP(LDX, ZP0, 0xA6)       \
+FUNC_MAP(TAY, IMP, 0xA8)       \
+FUNC_MAP(LDA, IMM, 0xA9)       \
+FUNC_MAP(TAX, IMP, 0xAA)       \
+FUNC_MAP(LDY, ABS, 0xAC)       \
+FUNC_MAP(LDA, ABS, 0xAD)       \
+FUNC_MAP(LDX, ABS, 0xAE)       \
+FUNC_MAP(BCS, REL, 0xB0)       \
+FUNC_MAP(LDA, IZY, 0xB1)       \
+FUNC_MAP(LDY, ZPX, 0xB4)       \
+FUNC_MAP(LDA, ZPX, 0xB5)       \
+FUNC_MAP(LDX, ZPY, 0xB6)       \
+FUNC_MAP(CLV, IMP, 0xB8)       \
+FUNC_MAP(LDA, ABY, 0xB9)       \
+FUNC_MAP(TSX, IMP, 0xBA)       \
+FUNC_MAP(LDY, ABX, 0xBC)       \
+FUNC_MAP(LDA, ABX, 0xBD)       \
+FUNC_MAP(LDX, ABY, 0xBE)       \
+FUNC_MAP(CPY, IMM, 0xC0)       \
+FUNC_MAP(CMP, IZX, 0xC1)       \
+FUNC_MAP(CPY, ZP0, 0xC4)       \
+FUNC_MAP(CMP, ZP0, 0xC5)       \
+FUNC_MAP(DEC, ZP0, 0xC6)       \
+FUNC_MAP(INY, IMP, 0xC8)       \
+FUNC_MAP(CMP, IMM, 0xC9)       \
+FUNC_MAP(DEX, IMP, 0xCA)       \
+FUNC_MAP(CPY, ABS, 0xCC)       \
+FUNC_MAP(CMP, ABS, 0xCD)       \
+FUNC_MAP(DEC, ABS, 0xCE)       \
+FUNC_MAP(BNE, REL, 0xD0)       \
+FUNC_MAP(CMP, IZY, 0xD1)       \
+FUNC_MAP(CMP, ZPX, 0xD5)       \
+FUNC_MAP(DEC, ZPX, 0xD6)       \
+FUNC_MAP(CLD, IMP, 0xD8)       \
+FUNC_MAP(CMP, ABY, 0xD9)       \
+FUNC_MAP(CMP, ABX, 0xDD)       \
+FUNC_MAP(DEC, ABX, 0xDE)       \
+FUNC_MAP(CPX, IMM, 0xE0)       \
+FUNC_MAP(SBC, IZX, 0xE1)       \
+FUNC_MAP(CPX, ZP0, 0xE4)       \
+FUNC_MAP(SBC, ZP0, 0xE5)       \
+FUNC_MAP(INC, ZP0, 0xE6)       \
+FUNC_MAP(INX, IMP, 0xE8)       \
+FUNC_MAP(SBC, IMM, 0xE9)       \
+FUNC_MAP(NOP, IMP, 0xEA)       \
+FUNC_MAP(CPX, ABS, 0xEC)       \
+FUNC_MAP(SBC, ABS, 0xED)       \
+FUNC_MAP(INC, ABS, 0xEE)       \
+FUNC_MAP(BEQ, REL, 0xF0)       \
+FUNC_MAP(SBC, IZY, 0xF1)       \
+FUNC_MAP(SBC, ZPX, 0xF5)       \
+FUNC_MAP(INC, ZPX, 0xF6)       \
+FUNC_MAP(SED, IMP, 0xF8)       \
+FUNC_MAP(SBC, ABY, 0xF9)       \
+FUNC_MAP(SBC, ABX, 0xFD)       \
+FUNC_MAP(INC, ABX, 0xFE)
 
 typedef uint8_t byte_t;
-typedef uint16_t word_t;
+typedef uint16_t word_t; //used for addresses
 typedef struct c6502 cpu_s; // Forward declaration
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 typedef enum 
 {
-    #define XMAC(mode) ADDR_MODE_##mode,
+    #define FUNC_MAP(mode) ADDR_MODE_##mode,
     CPU_6502_ADDRESSING_MODES
-    #undef XMAC
+    #undef FUNC_MAP
 } cpu_addr_mode_e;
 
 typedef enum
 {
-    #define XMAC(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
+    #define FUNC_MAP(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
     ALL_INSTRUCTIONS
-    #undef XMAC
+    #undef FUNC_MAP
 } cpu_ins_e;
 
-#define XMAC(name) byte_t name(cpu_s *cpu);
+#define FUNC_MAP(name) byte_t name(cpu_s *cpu);
 CPU_6502_ADDRESSING_MODES
 CPU_6592_OPCODES
-#undef XMAC
+#undef FUNC_MAP
 
 
 /*
@@ -279,7 +279,7 @@ typedef enum
     U = (1 << 5),
     V = (1 << 6),
     N = (1 << 7),
-} cpu_status_e;
+} cpu_status_flag_e;
 
 /*
  * Instruction struct
@@ -350,13 +350,13 @@ char *addr_mode_to_string(cpu_addr_mode_e mode);
     6502 get flag
     Reads flag from status register
 */
-bool get_flag(cpu_s *cpu, cpu_status_e flag);
+bool get_flag(cpu_s *cpu, cpu_status_flag_e flag);
 
 /*
     6502 set flag
     Sets flag in status register
 */
-void set_flag(cpu_s *cpu, cpu_status_e flag, bool value);
+void set_flag(cpu_s *cpu, cpu_status_flag_e flag, bool value);
 
 /*
     6502 peek
