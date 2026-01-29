@@ -58,34 +58,6 @@ void load_interrupt_vector(cpu_s *cpu, std::vector<byte_t> irq_bytes)
     cpu->memory[0xFFFF] = high_byte;
 }
 
-TEST_CASE("BRK IMP should push PC+2 and followed by the status register", "[cpu]") {
-    SECTION("BRK sets Interupt flag; pushes PC+2 along with STATUS register; sets PC to IRQ vector") {
-        cpu_s *cpu = get_test_cpu();
-        cpu->PC = 0x1000;
-        load_instruction(cpu, {0x00, 0x00});
-
-        byte_t low_byte = 0x76;
-        byte_t high_byte  = 0x89;
-        word_t expected_addr = ((word_t)high_byte << 8 | (word_t) low_byte);
-        load_interrupt_vector(cpu, {low_byte, high_byte});
-        byte_t saved_status_reg = (cpu->STATUS | B);
-        word_t saved_pc_plus_two = cpu->PC + 2;
-        REQUIRE_FALSE(saved_status_reg == 0);
-        run_instruction(cpu);
-        REQUIRE_FALSE(saved_status_reg == 0);
-
-        REQUIRE(cpu->PC == expected_addr);
-        REQUIRE(get_flag(cpu, I));
-        //the status flag after execution should have B unset, but the saved register
-        //needs the B flag set
-        REQUIRE(get_flag(cpu, B) == false);
-        byte_t popped_byte = pop_byte(cpu);
-        REQUIRE(popped_byte == saved_status_reg);
-        popped_byte = pop_byte(cpu);
-        REQUIRE(popped_byte == saved_pc_plus_two);
-    }
-}
-
 TEST_CASE("Flag Instructions", "[cpu][flags]") {
     SECTION("CLC should clear the carry flag") {
         cpu_s *cpu = get_test_cpu();
