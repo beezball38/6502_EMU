@@ -58,81 +58,90 @@ void load_interrupt_vector(cpu_s *cpu, std::vector<byte_t> irq_bytes)
     cpu->memory[0xFFFF] = high_byte;
 }
 
-TEST_CASE("Flag Instructions", "[cpu][flags]") {
-    SECTION("CLC should clear the carry flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, C, true);
-        REQUIRE(get_flag(cpu, C) == true);
-        
-        load_instruction(cpu, {INSTRUCTION_CLC_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, C) == false);
-    }
-    
-    SECTION("SEC should set the carry flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, C, false);
-        REQUIRE(get_flag(cpu, C) == false);
-        
-        load_instruction(cpu, {INSTRUCTION_SEC_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, C) == true);
-    }
-    
-    SECTION("CLI should clear the interrupt flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, I, true);
-        REQUIRE(get_flag(cpu, I) == true);
-        
-        load_instruction(cpu, {INSTRUCTION_CLI_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, I) == false);
-    }
-    
-    SECTION("SEI should set the interrupt flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, I, false);
-        REQUIRE(get_flag(cpu, I) == false);
-        
-        load_instruction(cpu, {INSTRUCTION_SEI_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, I) == true);
-    }
-    
-    SECTION("CLV should clear the overflow flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, V, true);
-        REQUIRE(get_flag(cpu, V) == true);
-        
-        load_instruction(cpu, {INSTRUCTION_CLV_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, V) == false);
-    }
-    
-    SECTION("CLD should clear the decimal flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, D, true);
-        REQUIRE(get_flag(cpu, D) == true);
-        
-        load_instruction(cpu, {INSTRUCTION_CLD_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, D) == false);
-    }
-    
-    SECTION("SED should set the decimal flag") {
-        cpu_s *cpu = get_test_cpu();
-        set_flag(cpu, D, false);
-        REQUIRE(get_flag(cpu, D) == false);
-        
-        load_instruction(cpu, {INSTRUCTION_SED_IMP});
-        run_instruction(cpu);
-        
-        REQUIRE(get_flag(cpu, D) == true);
-    }
+// =============================================================================
+// Tests ordered by opcode (ascending)
+// =============================================================================
+
+// 0x18 - CLC (Clear Carry Flag)
+TEST_CASE("0x18 CLC", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, C, true);
+    REQUIRE(get_flag(cpu, C) == true);
+
+    load_instruction(cpu, {INSTRUCTION_CLC_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, C) == false);
+}
+
+// 0x38 - SEC (Set Carry Flag)
+TEST_CASE("0x38 SEC", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, C, false);
+    REQUIRE(get_flag(cpu, C) == false);
+
+    load_instruction(cpu, {INSTRUCTION_SEC_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, C) == true);
+}
+
+// 0x58 - CLI (Clear Interrupt Disable Flag)
+TEST_CASE("0x58 CLI", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, I, true);
+    REQUIRE(get_flag(cpu, I) == true);
+
+    load_instruction(cpu, {INSTRUCTION_CLI_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, I) == false);
+}
+
+// 0x78 - SEI (Set Interrupt Disable Flag)
+TEST_CASE("0x78 SEI", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, I, false);
+    REQUIRE(get_flag(cpu, I) == false);
+
+    load_instruction(cpu, {INSTRUCTION_SEI_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, I) == true);
+}
+
+// 0xB8 - CLV (Clear Overflow Flag)
+TEST_CASE("0xB8 CLV", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, V, true);
+    REQUIRE(get_flag(cpu, V) == true);
+
+    load_instruction(cpu, {INSTRUCTION_CLV_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, V) == false);
+}
+
+// 0xD8 - CLD (Clear Decimal Flag)
+TEST_CASE("0xD8 CLD", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, D, true);
+    REQUIRE(get_flag(cpu, D) == true);
+
+    load_instruction(cpu, {INSTRUCTION_CLD_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, D) == false);
+}
+
+// 0xF8 - SED (Set Decimal Flag)
+TEST_CASE("0xF8 SED", "[cpu][flags]") {
+    cpu_s *cpu = get_test_cpu();
+    set_flag(cpu, D, false);
+    REQUIRE(get_flag(cpu, D) == false);
+
+    load_instruction(cpu, {INSTRUCTION_SED_IMP});
+    run_instruction(cpu);
+
+    REQUIRE(get_flag(cpu, D) == true);
 }
