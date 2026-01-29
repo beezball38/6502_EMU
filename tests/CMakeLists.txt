@@ -1,13 +1,13 @@
 # Create test executable
 add_executable(emulator_tests
-    cpu_tests.cpp
+    cpu_tests.c
 )
 
-# Link with main library and Catch2
+# Link with main library and Unity
 target_link_libraries(emulator_tests
     PRIVATE
         emulator_lib
-        Catch2::Catch2WithMain
+        unity
 )
 
 # Set test executable output directory
@@ -16,7 +16,6 @@ set_target_properties(emulator_tests
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
 )
 
-# Enable test discovery
+# Enable CTest
 include(CTest)
-include(Catch)
-catch_discover_tests(emulator_tests)
+add_test(NAME emulator_tests COMMAND emulator_tests)

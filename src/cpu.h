@@ -2,9 +2,9 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include <cstdint>
-#include <cstddef>
-#include <string>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 //Using X Macros because they are fun
 #define CPU_6592_OPCODES \
@@ -292,7 +292,7 @@ typedef enum
  */
 typedef struct
 {
-    std::string name;
+    const char *name;
     byte_t opcode;
     byte_t cycles;
     byte_t length;

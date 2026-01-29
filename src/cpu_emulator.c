@@ -1,5 +1,5 @@
-#include <cstdio>
-#include "cpu.hpp"
+#include <stdio.h>
+#include "cpu.h"
 // 64 kb macro
 #define MEM_SIZE 1024 * 64
 
