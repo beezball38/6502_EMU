@@ -6,289 +6,394 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-//Using X Macros because they are fun
-#define CPU_6592_OPCODES \
-FUNC_MAP(BRK)                   \
-FUNC_MAP(ORA)                   \
-FUNC_MAP(ASL)                   \
-FUNC_MAP(PHP)                   \
-FUNC_MAP(BPL)                   \
-FUNC_MAP(CLC)                   \
-FUNC_MAP(JSR)                   \
-FUNC_MAP(AND)                   \
-FUNC_MAP(BIT)                   \
-FUNC_MAP(ROL)                   \
-FUNC_MAP(PLP)                   \
-FUNC_MAP(BMI)                   \
-FUNC_MAP(SEC)                   \
-FUNC_MAP(RTI)                   \
-FUNC_MAP(EOR)                   \
-FUNC_MAP(LSR)                   \
-FUNC_MAP(PHA)                   \
-FUNC_MAP(JMP)                   \
-FUNC_MAP(BVC)                   \
-FUNC_MAP(CLI)                   \
-FUNC_MAP(RTS)                   \
-FUNC_MAP(ADC)                   \
-FUNC_MAP(ROR)                   \
-FUNC_MAP(PLA)                   \
-FUNC_MAP(ROR_ACC)               \
-FUNC_MAP(BVS)                   \
-FUNC_MAP(SEI)                   \
-FUNC_MAP(STA)                   \
-FUNC_MAP(STY)                   \
-FUNC_MAP(STX)                   \
-FUNC_MAP(DEY)                   \
-FUNC_MAP(TXA)                   \
-FUNC_MAP(BCC)                   \
-FUNC_MAP(TYA)                   \
-FUNC_MAP(TXS)                   \
-FUNC_MAP(LDY)                   \
-FUNC_MAP(LDA)                   \
-FUNC_MAP(LDX)                   \
-FUNC_MAP(TAY)                   \
-FUNC_MAP(TAX)                   \
-FUNC_MAP(BCS)                   \
-FUNC_MAP(CLV)                   \
-FUNC_MAP(TSX)                   \
-FUNC_MAP(CPY)                   \
-FUNC_MAP(CMP)                   \
-FUNC_MAP(DEC)                   \
-FUNC_MAP(INY)                   \
-FUNC_MAP(DEX)                   \
-FUNC_MAP(BNE)                   \
-FUNC_MAP(CLD)                   \
-FUNC_MAP(CPX)                   \
-FUNC_MAP(SBC)                   \
-FUNC_MAP(INC)                   \
-FUNC_MAP(INX)                   \
-FUNC_MAP(BEQ)                   \
-FUNC_MAP(SED)                   \
-FUNC_MAP(NOP)
+/*
+ * X-Macro: OPCODE_MNEMONICS
+ * Lists all 6502 instruction mnemonics (operation names).
+ * Used to generate function declarations and other mnemonic-based constructs.
+ *
+ * Example expansions:
+ *   #define X(name) byte_t name(cpu_s *cpu);
+ *   OPCODE_MNEMONICS
+ *   #undef X
+ *   ->  byte_t BRK(cpu_s *cpu);
+ *       byte_t ORA(cpu_s *cpu);
+ *       ...
+ */
+#define OPCODE_MNEMONICS \
+X(BRK)                   \
+X(ORA)                   \
+X(ASL)                   \
+X(PHP)                   \
+X(BPL)                   \
+X(CLC)                   \
+X(JSR)                   \
+X(AND)                   \
+X(BIT)                   \
+X(ROL)                   \
+X(PLP)                   \
+X(BMI)                   \
+X(SEC)                   \
+X(RTI)                   \
+X(EOR)                   \
+X(LSR)                   \
+X(PHA)                   \
+X(JMP)                   \
+X(BVC)                   \
+X(CLI)                   \
+X(RTS)                   \
+X(ADC)                   \
+X(ROR)                   \
+X(PLA)                   \
+X(ROR_ACC)               \
+X(BVS)                   \
+X(SEI)                   \
+X(STA)                   \
+X(STY)                   \
+X(STX)                   \
+X(DEY)                   \
+X(TXA)                   \
+X(BCC)                   \
+X(TYA)                   \
+X(TXS)                   \
+X(LDY)                   \
+X(LDA)                   \
+X(LDX)                   \
+X(TAY)                   \
+X(TAX)                   \
+X(BCS)                   \
+X(CLV)                   \
+X(TSX)                   \
+X(CPY)                   \
+X(CMP)                   \
+X(DEC)                   \
+X(INY)                   \
+X(DEX)                   \
+X(BNE)                   \
+X(CLD)                   \
+X(CPX)                   \
+X(SBC)                   \
+X(INC)                   \
+X(INX)                   \
+X(BEQ)                   \
+X(SED)                   \
+X(NOP)
 
-#define CPU_6502_ADDRESSING_MODES  \
-FUNC_MAP(IMP)                  \
-FUNC_MAP(IMM)                  \
-FUNC_MAP(ZP0)                  \
-FUNC_MAP(ZPX)                  \
-FUNC_MAP(ZPY)                  \
-FUNC_MAP(REL)                  \
-FUNC_MAP(ABS)                  \
-FUNC_MAP(ABX)                  \
-FUNC_MAP(ABY)                  \
-FUNC_MAP(IND)                  \
-FUNC_MAP(IZX)                  \
-FUNC_MAP(IZY)
+/*
+ * X-Macro: ADDRESSING_MODE_LIST
+ * Lists all 6502 addressing modes.
+ * Used to generate enum values, function declarations, and string conversions.
+ *
+ * Example expansions:
+ *   #define X(mode) ADDR_MODE_##mode,
+ *   ADDRESSING_MODE_LIST
+ *   #undef X
+ *   ->  ADDR_MODE_IMP,
+ *       ADDR_MODE_IMM,
+ *       ...
+ */
+#define ADDRESSING_MODE_LIST  \
+X(IMP)                  \
+X(IMM)                  \
+X(ZP0)                  \
+X(ZPX)                  \
+X(ZPY)                  \
+X(REL)                  \
+X(ABS)                  \
+X(ABX)                  \
+X(ABY)                  \
+X(IND)                  \
+X(IZX)                  \
+X(IZY)
 
-#define ALL_INSTRUCTIONS    \
-FUNC_MAP(BRK, IMP, 0x00)       \
-FUNC_MAP(ORA, IZX, 0x01)       \
-FUNC_MAP(ORA, ZP0, 0x05)       \
-FUNC_MAP(ASL, ZP0, 0x06)       \
-FUNC_MAP(PHP, IMP, 0x08)       \
-FUNC_MAP(ORA, IMM, 0x09)       \
-FUNC_MAP(ASL, ACC, 0x0A)       \
-FUNC_MAP(ASL, ABS, 0x0E)       \
-FUNC_MAP(ORA, ABS, 0x0D)       \
-FUNC_MAP(BPL, REL, 0x10)       \
-FUNC_MAP(ORA, IZY, 0x11)       \
-FUNC_MAP(ORA, ZPX, 0x15)       \
-FUNC_MAP(ASL, ZPX, 0x16)       \
-FUNC_MAP(CLC, IMP, 0x18)       \
-FUNC_MAP(ORA, ABY, 0x19)       \
-FUNC_MAP(ORA, ABX, 0x1D)       \
-FUNC_MAP(ASL, ABX, 0x1E)       \
-FUNC_MAP(JSR, ABS, 0x20)       \
-FUNC_MAP(AND, IZX, 0x21)       \
-FUNC_MAP(BRK, ZP0, 0x24)       \
-FUNC_MAP(AND, ZP0, 0x25)       \
-FUNC_MAP(ROL, ZP0, 0x26)       \
-FUNC_MAP(PLP, IMP, 0x28)       \
-FUNC_MAP(AND, IMM, 0x29)       \
-FUNC_MAP(ROL, ACC, 0x2A)       \
-FUNC_MAP(BIT, ABS, 0x2C)       \
-FUNC_MAP(AND, ABS, 0x2D)       \
-FUNC_MAP(ROL, ABS, 0x2E)       \
-FUNC_MAP(BMI, REL, 0x30)       \
-FUNC_MAP(AND, IZY, 0x31)       \
-FUNC_MAP(AND, ZPX, 0x35)       \
-FUNC_MAP(ROL, ZPX, 0x36)       \
-FUNC_MAP(SEC, IMP, 0x38)       \
-FUNC_MAP(AND, ABY, 0x39)       \
-FUNC_MAP(AND, ABX, 0x3D)       \
-FUNC_MAP(ROL, ABX, 0x3E)       \
-FUNC_MAP(RTI, IMP, 0x40)       \
-FUNC_MAP(EOR, IZX, 0x41)       \
-FUNC_MAP(EOR, ZP0, 0x45)       \
-FUNC_MAP(LSR, ZP0, 0x46)       \
-FUNC_MAP(PHA, IMP, 0x48)       \
-FUNC_MAP(EOR, IMM, 0x49)       \
-FUNC_MAP(LSR, ACC, 0x4A)       \
-FUNC_MAP(JMP, ABS, 0x4C)       \
-FUNC_MAP(EOR, ABS, 0x4D)       \
-FUNC_MAP(LSR, ABS, 0x4E)       \
-FUNC_MAP(BVC, REL, 0x50)       \
-FUNC_MAP(EOR, IZY, 0x51)       \
-FUNC_MAP(EOR, ZPX, 0x55)       \
-FUNC_MAP(LSR, ZPX, 0x56)       \
-FUNC_MAP(CLI, IMP, 0x58)       \
-FUNC_MAP(EOR, ABY, 0x59)       \
-FUNC_MAP(EOR, ABX, 0x5D)       \
-FUNC_MAP(LSR, ABX, 0x5E)       \
-FUNC_MAP(RTS, IMP, 0x60)       \
-FUNC_MAP(ADC, IZX, 0x61)       \
-FUNC_MAP(ADC, ZP0, 0x65)       \
-FUNC_MAP(ROR, ZP0, 0x66)       \
-FUNC_MAP(PLA, IMP, 0x68)       \
-FUNC_MAP(ADC, IMM, 0x69)       \
-FUNC_MAP(ROR, ACC, 0x6A)       \
-FUNC_MAP(JMP, IND, 0x6C)       \
-FUNC_MAP(ADC, ABS, 0x6D)       \
-FUNC_MAP(ROR, ABS, 0x6E)       \
-FUNC_MAP(BVS, REL, 0x70)       \
-FUNC_MAP(ADC, IZY, 0x71)       \
-FUNC_MAP(ADC, ZPX, 0x75)       \
-FUNC_MAP(ROR, ZPX, 0x76)       \
-FUNC_MAP(SEI, IMP, 0x78)       \
-FUNC_MAP(ADC, ABY, 0x79)       \
-FUNC_MAP(ADC, ABX, 0x7D)       \
-FUNC_MAP(ROR, ABX, 0x7E)       \
-FUNC_MAP(STA, IZX, 0x81)       \
-FUNC_MAP(STY, ZP0, 0x84)       \
-FUNC_MAP(STA, ZP0, 0x85)       \
-FUNC_MAP(STX, ZP0, 0x86)       \
-FUNC_MAP(DEY, IMP, 0x88)       \
-FUNC_MAP(TXA, IMP, 0x8A)       \
-FUNC_MAP(STY, ABS, 0x8C)       \
-FUNC_MAP(STA, ABS, 0x8D)       \
-FUNC_MAP(STX, ABS, 0x8E)       \
-FUNC_MAP(BCC, REL, 0x90)       \
-FUNC_MAP(STA, IZY, 0x91)       \
-FUNC_MAP(STY, ZPX, 0x94)       \
-FUNC_MAP(STA, ZPX, 0x95)       \
-FUNC_MAP(STX, ZPY, 0x96)       \
-FUNC_MAP(TYA, IMP, 0x98)       \
-FUNC_MAP(STA, ABY, 0x99)       \
-FUNC_MAP(TXS, IMP, 0x9A)       \
-FUNC_MAP(STA, ABX, 0x9D)       \
-FUNC_MAP(LDY, IMM, 0xA0)       \
-FUNC_MAP(LDA, IZX, 0xA1)       \
-FUNC_MAP(LDX, IMM, 0xA2)       \
-FUNC_MAP(LDY, ZP0, 0xA4)       \
-FUNC_MAP(LDA, ZP0, 0xA5)       \
-FUNC_MAP(LDX, ZP0, 0xA6)       \
-FUNC_MAP(TAY, IMP, 0xA8)       \
-FUNC_MAP(LDA, IMM, 0xA9)       \
-FUNC_MAP(TAX, IMP, 0xAA)       \
-FUNC_MAP(LDY, ABS, 0xAC)       \
-FUNC_MAP(LDA, ABS, 0xAD)       \
-FUNC_MAP(LDX, ABS, 0xAE)       \
-FUNC_MAP(BCS, REL, 0xB0)       \
-FUNC_MAP(LDA, IZY, 0xB1)       \
-FUNC_MAP(LDY, ZPX, 0xB4)       \
-FUNC_MAP(LDA, ZPX, 0xB5)       \
-FUNC_MAP(LDX, ZPY, 0xB6)       \
-FUNC_MAP(CLV, IMP, 0xB8)       \
-FUNC_MAP(LDA, ABY, 0xB9)       \
-FUNC_MAP(TSX, IMP, 0xBA)       \
-FUNC_MAP(LDY, ABX, 0xBC)       \
-FUNC_MAP(LDA, ABX, 0xBD)       \
-FUNC_MAP(LDX, ABY, 0xBE)       \
-FUNC_MAP(CPY, IMM, 0xC0)       \
-FUNC_MAP(CMP, IZX, 0xC1)       \
-FUNC_MAP(CPY, ZP0, 0xC4)       \
-FUNC_MAP(CMP, ZP0, 0xC5)       \
-FUNC_MAP(DEC, ZP0, 0xC6)       \
-FUNC_MAP(INY, IMP, 0xC8)       \
-FUNC_MAP(CMP, IMM, 0xC9)       \
-FUNC_MAP(DEX, IMP, 0xCA)       \
-FUNC_MAP(CPY, ABS, 0xCC)       \
-FUNC_MAP(CMP, ABS, 0xCD)       \
-FUNC_MAP(DEC, ABS, 0xCE)       \
-FUNC_MAP(BNE, REL, 0xD0)       \
-FUNC_MAP(CMP, IZY, 0xD1)       \
-FUNC_MAP(CMP, ZPX, 0xD5)       \
-FUNC_MAP(DEC, ZPX, 0xD6)       \
-FUNC_MAP(CLD, IMP, 0xD8)       \
-FUNC_MAP(CMP, ABY, 0xD9)       \
-FUNC_MAP(CMP, ABX, 0xDD)       \
-FUNC_MAP(DEC, ABX, 0xDE)       \
-FUNC_MAP(CPX, IMM, 0xE0)       \
-FUNC_MAP(SBC, IZX, 0xE1)       \
-FUNC_MAP(CPX, ZP0, 0xE4)       \
-FUNC_MAP(SBC, ZP0, 0xE5)       \
-FUNC_MAP(INC, ZP0, 0xE6)       \
-FUNC_MAP(INX, IMP, 0xE8)       \
-FUNC_MAP(SBC, IMM, 0xE9)       \
-FUNC_MAP(NOP, IMP, 0xEA)       \
-FUNC_MAP(CPX, ABS, 0xEC)       \
-FUNC_MAP(SBC, ABS, 0xED)       \
-FUNC_MAP(INC, ABS, 0xEE)       \
-FUNC_MAP(BEQ, REL, 0xF0)       \
-FUNC_MAP(SBC, IZY, 0xF1)       \
-FUNC_MAP(SBC, ZPX, 0xF5)       \
-FUNC_MAP(INC, ZPX, 0xF6)       \
-FUNC_MAP(SED, IMP, 0xF8)       \
-FUNC_MAP(SBC, ABY, 0xF9)       \
-FUNC_MAP(SBC, ABX, 0xFD)       \
-FUNC_MAP(INC, ABX, 0xFE)
+/*
+ * X-Macro: INSTRUCTION_OPCODE_TABLE
+ * Maps each valid 6502 instruction to its mnemonic, addressing mode, and opcode.
+ * Used to generate enum values for instruction lookup by opcode.
+ *
+ * Example expansions:
+ *   #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
+ *   INSTRUCTION_OPCODE_TABLE
+ *   #undef X
+ *   ->  INSTRUCTION_BRK_IMP = 0x00,
+ *       INSTRUCTION_ORA_IZX = 0x01,
+ *       ...
+ */
+#define INSTRUCTION_OPCODE_TABLE    \
+X(BRK, IMP, 0x00)       \
+X(ORA, IZX, 0x01)       \
+X(ORA, ZP0, 0x05)       \
+X(ASL, ZP0, 0x06)       \
+X(PHP, IMP, 0x08)       \
+X(ORA, IMM, 0x09)       \
+X(ASL, ACC, 0x0A)       \
+X(ASL, ABS, 0x0E)       \
+X(ORA, ABS, 0x0D)       \
+X(BPL, REL, 0x10)       \
+X(ORA, IZY, 0x11)       \
+X(ORA, ZPX, 0x15)       \
+X(ASL, ZPX, 0x16)       \
+X(CLC, IMP, 0x18)       \
+X(ORA, ABY, 0x19)       \
+X(ORA, ABX, 0x1D)       \
+X(ASL, ABX, 0x1E)       \
+X(JSR, ABS, 0x20)       \
+X(AND, IZX, 0x21)       \
+X(BIT, ZP0, 0x24)       \
+X(AND, ZP0, 0x25)       \
+X(ROL, ZP0, 0x26)       \
+X(PLP, IMP, 0x28)       \
+X(AND, IMM, 0x29)       \
+X(ROL, ACC, 0x2A)       \
+X(BIT, ABS, 0x2C)       \
+X(AND, ABS, 0x2D)       \
+X(ROL, ABS, 0x2E)       \
+X(BMI, REL, 0x30)       \
+X(AND, IZY, 0x31)       \
+X(AND, ZPX, 0x35)       \
+X(ROL, ZPX, 0x36)       \
+X(SEC, IMP, 0x38)       \
+X(AND, ABY, 0x39)       \
+X(AND, ABX, 0x3D)       \
+X(ROL, ABX, 0x3E)       \
+X(RTI, IMP, 0x40)       \
+X(EOR, IZX, 0x41)       \
+X(EOR, ZP0, 0x45)       \
+X(LSR, ZP0, 0x46)       \
+X(PHA, IMP, 0x48)       \
+X(EOR, IMM, 0x49)       \
+X(LSR, ACC, 0x4A)       \
+X(JMP, ABS, 0x4C)       \
+X(EOR, ABS, 0x4D)       \
+X(LSR, ABS, 0x4E)       \
+X(BVC, REL, 0x50)       \
+X(EOR, IZY, 0x51)       \
+X(EOR, ZPX, 0x55)       \
+X(LSR, ZPX, 0x56)       \
+X(CLI, IMP, 0x58)       \
+X(EOR, ABY, 0x59)       \
+X(EOR, ABX, 0x5D)       \
+X(LSR, ABX, 0x5E)       \
+X(RTS, IMP, 0x60)       \
+X(ADC, IZX, 0x61)       \
+X(ADC, ZP0, 0x65)       \
+X(ROR, ZP0, 0x66)       \
+X(PLA, IMP, 0x68)       \
+X(ADC, IMM, 0x69)       \
+X(ROR, ACC, 0x6A)       \
+X(JMP, IND, 0x6C)       \
+X(ADC, ABS, 0x6D)       \
+X(ROR, ABS, 0x6E)       \
+X(BVS, REL, 0x70)       \
+X(ADC, IZY, 0x71)       \
+X(ADC, ZPX, 0x75)       \
+X(ROR, ZPX, 0x76)       \
+X(SEI, IMP, 0x78)       \
+X(ADC, ABY, 0x79)       \
+X(ADC, ABX, 0x7D)       \
+X(ROR, ABX, 0x7E)       \
+X(STA, IZX, 0x81)       \
+X(STY, ZP0, 0x84)       \
+X(STA, ZP0, 0x85)       \
+X(STX, ZP0, 0x86)       \
+X(DEY, IMP, 0x88)       \
+X(TXA, IMP, 0x8A)       \
+X(STY, ABS, 0x8C)       \
+X(STA, ABS, 0x8D)       \
+X(STX, ABS, 0x8E)       \
+X(BCC, REL, 0x90)       \
+X(STA, IZY, 0x91)       \
+X(STY, ZPX, 0x94)       \
+X(STA, ZPX, 0x95)       \
+X(STX, ZPY, 0x96)       \
+X(TYA, IMP, 0x98)       \
+X(STA, ABY, 0x99)       \
+X(TXS, IMP, 0x9A)       \
+X(STA, ABX, 0x9D)       \
+X(LDY, IMM, 0xA0)       \
+X(LDA, IZX, 0xA1)       \
+X(LDX, IMM, 0xA2)       \
+X(LDY, ZP0, 0xA4)       \
+X(LDA, ZP0, 0xA5)       \
+X(LDX, ZP0, 0xA6)       \
+X(TAY, IMP, 0xA8)       \
+X(LDA, IMM, 0xA9)       \
+X(TAX, IMP, 0xAA)       \
+X(LDY, ABS, 0xAC)       \
+X(LDA, ABS, 0xAD)       \
+X(LDX, ABS, 0xAE)       \
+X(BCS, REL, 0xB0)       \
+X(LDA, IZY, 0xB1)       \
+X(LDY, ZPX, 0xB4)       \
+X(LDA, ZPX, 0xB5)       \
+X(LDX, ZPY, 0xB6)       \
+X(CLV, IMP, 0xB8)       \
+X(LDA, ABY, 0xB9)       \
+X(TSX, IMP, 0xBA)       \
+X(LDY, ABX, 0xBC)       \
+X(LDA, ABX, 0xBD)       \
+X(LDX, ABY, 0xBE)       \
+X(CPY, IMM, 0xC0)       \
+X(CMP, IZX, 0xC1)       \
+X(CPY, ZP0, 0xC4)       \
+X(CMP, ZP0, 0xC5)       \
+X(DEC, ZP0, 0xC6)       \
+X(INY, IMP, 0xC8)       \
+X(CMP, IMM, 0xC9)       \
+X(DEX, IMP, 0xCA)       \
+X(CPY, ABS, 0xCC)       \
+X(CMP, ABS, 0xCD)       \
+X(DEC, ABS, 0xCE)       \
+X(BNE, REL, 0xD0)       \
+X(CMP, IZY, 0xD1)       \
+X(CMP, ZPX, 0xD5)       \
+X(DEC, ZPX, 0xD6)       \
+X(CLD, IMP, 0xD8)       \
+X(CMP, ABY, 0xD9)       \
+X(CMP, ABX, 0xDD)       \
+X(DEC, ABX, 0xDE)       \
+X(CPX, IMM, 0xE0)       \
+X(SBC, IZX, 0xE1)       \
+X(CPX, ZP0, 0xE4)       \
+X(SBC, ZP0, 0xE5)       \
+X(INC, ZP0, 0xE6)       \
+X(INX, IMP, 0xE8)       \
+X(SBC, IMM, 0xE9)       \
+X(NOP, IMP, 0xEA)       \
+X(CPX, ABS, 0xEC)       \
+X(SBC, ABS, 0xED)       \
+X(INC, ABS, 0xEE)       \
+X(BEQ, REL, 0xF0)       \
+X(SBC, IZY, 0xF1)       \
+X(SBC, ZPX, 0xF5)       \
+X(INC, ZPX, 0xF6)       \
+X(SED, IMP, 0xF8)       \
+X(SBC, ABY, 0xF9)       \
+X(SBC, ABX, 0xFD)       \
+X(INC, ABX, 0xFE)
+
+/*
+ * X-Macro: UNDEFINED_OPCODES
+ * Lists all undefined/illegal 6502 opcodes (not implemented in this emulator).
+ * These are opcodes that have no official instruction on the 6502.
+ * Marked for future implementation of illegal/undocumented opcodes.
+ *
+ * Example expansions:
+ *   #define X(opcode) OPCODE_UNDEFINED_##opcode = opcode,
+ *   UNDEFINED_OPCODES
+ *   #undef X
+ *   ->  OPCODE_UNDEFINED_0x02 = 0x02,
+ *       OPCODE_UNDEFINED_0x03 = 0x03,
+ *       ...
+ */
+#define UNDEFINED_OPCODES \
+X(0x02) X(0x03) X(0x04) X(0x07) X(0x0B) X(0x0C) X(0x0F) \
+X(0x12) X(0x13) X(0x14) X(0x17) X(0x1A) X(0x1B) X(0x1C) X(0x1F) \
+X(0x22) X(0x23) X(0x27) X(0x2B) X(0x2F) \
+X(0x32) X(0x33) X(0x34) X(0x37) X(0x3A) X(0x3B) X(0x3C) X(0x3F) \
+X(0x42) X(0x43) X(0x44) X(0x47) X(0x4B) X(0x4F) \
+X(0x52) X(0x53) X(0x54) X(0x57) X(0x5A) X(0x5B) X(0x5C) X(0x5F) \
+X(0x62) X(0x63) X(0x64) X(0x67) X(0x6B) X(0x6F) \
+X(0x72) X(0x73) X(0x74) X(0x77) X(0x7A) X(0x7B) X(0x7C) X(0x7F) \
+X(0x80) X(0x82) X(0x83) X(0x87) X(0x89) X(0x8B) X(0x8F) \
+X(0x92) X(0x93) X(0x97) X(0x9B) X(0x9C) X(0x9E) X(0x9F) \
+X(0xA3) X(0xA7) X(0xAB) X(0xAF) \
+X(0xB2) X(0xB3) X(0xB7) X(0xBB) X(0xBF) \
+X(0xC2) X(0xC3) X(0xC7) X(0xCB) X(0xCF) \
+X(0xD2) X(0xD3) X(0xD4) X(0xD7) X(0xDA) X(0xDB) X(0xDC) X(0xDF) \
+X(0xE2) X(0xE3) X(0xE7) X(0xEB) X(0xEF) \
+X(0xF2) X(0xF3) X(0xF4) X(0xF7) X(0xFA) X(0xFB) X(0xFC) X(0xFF)
 
 typedef uint8_t byte_t;
 typedef uint16_t word_t; //used for addresses
 typedef struct c6502 cpu_s; // Forward declaration
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
-typedef enum 
-{
-    #define FUNC_MAP(mode) ADDR_MODE_##mode,
-    CPU_6502_ADDRESSING_MODES
-    #undef FUNC_MAP
-} cpu_addr_mode_e;
-
-typedef enum
-{
-    #define FUNC_MAP(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
-    ALL_INSTRUCTIONS
-    #undef FUNC_MAP
-} cpu_ins_e;
-
-#define FUNC_MAP(name) byte_t name(cpu_s *cpu);
-CPU_6502_ADDRESSING_MODES
-CPU_6592_OPCODES
-#undef FUNC_MAP
-
-
 /*
- * Status register flags
- * C: Carry
- * Z: Zero
- * I: Interrupt disable
- * D: Decimal mode
- * B: Break
- * U: Unused
- * V: Overflow
- * N: Negative
+ * Addressing mode enum
+ * Generated from ADDRESSING_MODE_LIST X-Macro
  */
 typedef enum
 {
-    C = (1 << 0),
-    Z = (1 << 1),
-    I = (1 << 2),
-    D = (1 << 3),
-    B = (1 << 4),
-    U = (1 << 5),
-    V = (1 << 6),
-    N = (1 << 7),
+    #define X(mode) ADDR_MODE_##mode,
+    ADDRESSING_MODE_LIST
+    #undef X
+} cpu_addr_mode_e;
+
+/*
+ * Instruction opcode enum
+ * Generated from INSTRUCTION_OPCODE_TABLE X-Macro
+ * Each enum value equals its opcode for direct table indexing
+ */
+typedef enum
+{
+    #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
+    INSTRUCTION_OPCODE_TABLE
+    #undef X
+} cpu_ins_e;
+
+/*
+ * Undefined opcode enum
+ * Generated from UNDEFINED_OPCODES X-Macro
+ * Used for table indexing of unimplemented opcodes
+ */
+typedef enum
+{
+    #define X(opcode) OPCODE_UNDEFINED_##opcode = opcode,
+    UNDEFINED_OPCODES
+    #undef X
+} cpu_undefined_opcode_e;
+
+/* Generate function declarations for addressing modes */
+#define X(name) byte_t name(cpu_s *cpu);
+ADDRESSING_MODE_LIST
+#undef X
+
+/* Generate function declarations for instruction handlers */
+#define X(name) byte_t name(cpu_s *cpu);
+OPCODE_MNEMONICS
+#undef X
+
+
+/*
+ * Status register flags (bit positions in STATUS byte)
+ * Bit 0: C - Carry flag
+ * Bit 1: Z - Zero flag
+ * Bit 2: I - Interrupt disable
+ * Bit 3: D - Decimal mode
+ * Bit 4: B - Break command
+ * Bit 5: U - Unused (always 1)
+ * Bit 6: V - Overflow flag
+ * Bit 7: N - Negative flag
+ */
+typedef enum
+{
+    STATUS_FLAG_C = (1 << 0),
+    STATUS_FLAG_Z = (1 << 1),
+    STATUS_FLAG_I = (1 << 2),
+    STATUS_FLAG_D = (1 << 3),
+    STATUS_FLAG_B = (1 << 4),
+    STATUS_FLAG_U = (1 << 5),
+    STATUS_FLAG_V = (1 << 6),
+    STATUS_FLAG_N = (1 << 7),
 } cpu_status_flag_e;
 
 /*
- * Instruction struct
- * name: name of instruction
- * opcode: opcode of instruction
- * length: length of instruction in bytes
- * cycles: number of cycles instruction takes
- * execute: function pointer to execute instruction
- * fetch: function pointer to function to fetch operand
+ * Instruction descriptor struct
+ * +--------+--------+--------+--------+
+ * | name   | opcode | cycles | length |
+ * | (ptr)  | (1B)   | (1B)   | (1B)   |
+ * +--------+--------+--------+--------+
+ * | data_fetch (function pointer)     |
+ * +-----------------------------------+
+ * | execute    (function pointer)     |
+ * +-----------------------------------+
+ *
+ * name:       Mnemonic string (e.g., "LDA", "STA")
+ * opcode:     The 8-bit opcode value
+ * cycles:     Base cycle count for this instruction
+ * length:     Instruction length in bytes (1-3)
+ * data_fetch: Addressing mode handler - fetches operand
+ * execute:    Instruction handler - performs the operation
  */
 typedef struct
 {
@@ -296,33 +401,54 @@ typedef struct
     byte_t opcode;
     byte_t cycles;
     byte_t length;
-    instruction_func_t fetch;
+    instruction_func_t data_fetch;
     instruction_func_t execute;
 } cpu_instruction_s;
 
+/*
+ * CPU register identifiers
+ * Used for register-based operations and debugging
+ */
 typedef enum
 {
-    A,
-    X,
-    Y,
-    SP,
-    PC,
-    STATUS
+    REG_A,
+    REG_X,
+    REG_Y,
+    REG_SP,
+    REG_PC,
+    REG_STATUS
 } cpu_register_e;
 
 /*
-    * CPU struct
-    * A: accumulator
-    * X: index register X
-    * Y: index register Y
-    * SP: stack pointer
-    * PC: program counter
-    * STATUS: status register
-    * additional_cycles: additional cycles to add to instruction
-    * pc_changed: flag to indicate if PC changed
-    * table: instruction table
-    * memory: memory
-*/
+ * 6502 CPU state struct
+ * +-------+-------+-------+-------+
+ * |   A   |   X   |   Y   |  SP   |  <- 8-bit registers (1 byte each)
+ * +-------+-------+-------+-------+
+ * |      PC       |    STATUS     |  <- PC is 16-bit, STATUS is 8-bit
+ * +---------------+---------------+
+ * |           cycles              |  <- Cycle counter (size_t)
+ * +-------------------------------+
+ * | current_opcode | flags...     |  <- Current instruction state
+ * +-------------------------------+
+ * |           memory*             |  <- Pointer to 64KB address space
+ * +-------------------------------+
+ * |        table[256]             |  <- Instruction lookup table
+ * +-------------------------------+
+ *
+ * A:                       Accumulator register
+ * X:                       Index register X
+ * Y:                       Index register Y
+ * SP:                      Stack pointer (points within page $01xx)
+ * PC:                      Program counter (16-bit address)
+ * STATUS:                  Processor status flags (NV-BDIZC)
+ * cycles:                  Remaining cycles for current instruction
+ * current_opcode:          Opcode being executed
+ * instruction_pending:     True if mid-instruction (cycle counting)
+ * pc_changed:              True if instruction modified PC (branches/jumps)
+ * does_need_additional_cycle: True if page boundary crossed
+ * memory:                  Pointer to 64KB memory array
+ * table:                   256-entry instruction lookup table
+ */
 struct c6502
 {
     byte_t A;
@@ -437,4 +563,3 @@ void nmi(cpu_s *cpu);
 void reset(cpu_s *cpu);
 
 #endif
-

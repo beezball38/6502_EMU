@@ -28,7 +28,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x00,
         .cycles = 7,
         .length = 2, // this is actually 1, but we need to account for the dummy byte
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = BRK,
     };
     table[INSTRUCTION_ORA_IZX] = (cpu_instruction_s)
@@ -37,34 +37,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x01,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = ORA,
     };
-    table[0x02] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x02] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x02,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x03] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x03] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x03,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x04] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x04] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x04,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ORA_ZP0] = (cpu_instruction_s)
@@ -73,7 +73,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x05,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = ORA,
     };
     table[INSTRUCTION_ASL_ZP0] = (cpu_instruction_s)
@@ -82,16 +82,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x06,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = ASL,
     };
-    table[0x07] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x07] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x07,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_PHP_IMP] = (cpu_instruction_s)
@@ -100,7 +100,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x08,
         .cycles = 3,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = PHP,
     };
     table[INSTRUCTION_ORA_IMM] = (cpu_instruction_s)
@@ -109,7 +109,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x09,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = ORA,
     };
     table[INSTRUCTION_ASL_ACC] = (cpu_instruction_s)
@@ -118,25 +118,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x0A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = ASL,
     };
-    table[0x0B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x0B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x0C] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x0C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0C,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ORA_ABS] = (cpu_instruction_s)
@@ -145,7 +145,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x0D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = ORA,
     };
     table[INSTRUCTION_ASL_ABS] = (cpu_instruction_s)
@@ -154,16 +154,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x0E,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = ASL,
     };
-    table[0x0F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x0F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x0F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BPL_REL] = (cpu_instruction_s)
@@ -172,7 +172,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x10,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BPL,
     };
     table[INSTRUCTION_ORA_IZY] = (cpu_instruction_s)
@@ -181,34 +181,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x11,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = ORA,
     };
-    table[0x12] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x12] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x12,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x13] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x13] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x13,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x14] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x14] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x14,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ORA_ZPX] = (cpu_instruction_s)
@@ -217,7 +217,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x15,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = ORA,
     };
     table[INSTRUCTION_ASL_ZPX] = (cpu_instruction_s)
@@ -226,16 +226,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x16,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = ASL,
     };
-    table[0x17] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x17] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x17,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CLC_IMP] = (cpu_instruction_s)
@@ -244,7 +244,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x18,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = CLC,
     };
     table[INSTRUCTION_ORA_ABY] = (cpu_instruction_s)
@@ -253,34 +253,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x19,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = ORA,
     };
-    table[0x1A] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x1A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1A,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x1B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x1B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x1C] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x1C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1C,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ORA_ABX] = (cpu_instruction_s)
@@ -289,7 +289,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x1D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = ORA,
     };
     table[INSTRUCTION_ASL_ABX] = (cpu_instruction_s)
@@ -298,16 +298,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x1E,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = ASL,
     };
-    table[0x1F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x1F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x1F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_JSR_ABS] = (cpu_instruction_s)
@@ -316,7 +316,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x20,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = JSR,
     };
     table[INSTRUCTION_AND_IZX] = (cpu_instruction_s)
@@ -325,34 +325,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x21,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = AND,
     };
-    table[0x22] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x22] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x22,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x23] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x23] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x23,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[INSTRUCTION_BRK_ZP0] = (cpu_instruction_s)
+    table[INSTRUCTION_BIT_ZP0] = (cpu_instruction_s)
     {
         .name = "BIT",
         .opcode = 0x24,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = BIT,
     };
     table[INSTRUCTION_AND_ZP0] = (cpu_instruction_s)
@@ -361,7 +361,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x25,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = AND,
     };
     table[INSTRUCTION_ROL_ZP0] = (cpu_instruction_s)
@@ -370,16 +370,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x26,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = ROL,
     };
-    table[0x27] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x27] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x27,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_PLP_IMP] = (cpu_instruction_s)
@@ -388,7 +388,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x28,
         .cycles = 4,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = PLP,
     };
     table[INSTRUCTION_AND_IMM] = (cpu_instruction_s)
@@ -397,7 +397,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x29,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = AND,
     };
     table[INSTRUCTION_ROL_ACC] = (cpu_instruction_s)
@@ -406,16 +406,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x2A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = ROL,
     };
-    table[0x2B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x2B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x2B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BIT_ABS] = (cpu_instruction_s)
@@ -424,7 +424,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x2C,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = BIT,
     };
     table[INSTRUCTION_AND_ABS] = (cpu_instruction_s)
@@ -433,7 +433,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x2D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = AND,
     };
     table[INSTRUCTION_ROL_ABS] = (cpu_instruction_s)
@@ -442,16 +442,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x2E,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = ROL,
     };
-    table[0x2F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x2F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x2F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BMI_REL] = (cpu_instruction_s)
@@ -460,7 +460,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x30,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BMI,
     };
     table[INSTRUCTION_AND_IZY] = (cpu_instruction_s)
@@ -469,25 +469,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x31,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = AND,
     };
-    table[0x32] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x32] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x32,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x33] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x33] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x33,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_AND_ZPX] = (cpu_instruction_s)
@@ -496,7 +496,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x35,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = AND,
     };
     table[INSTRUCTION_ROL_ZPX] = (cpu_instruction_s)
@@ -505,16 +505,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x36,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = ROL,
     };
-    table[0x37] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x37] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x37,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_SEC_IMP] = (cpu_instruction_s)
@@ -523,7 +523,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x38,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = SEC,
     };
     table[INSTRUCTION_AND_ABY] = (cpu_instruction_s)
@@ -532,25 +532,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x39,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = AND,
     };
-    table[0x3A] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x3A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3A,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x3B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x3B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_AND_ABX] = (cpu_instruction_s)
@@ -559,7 +559,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x3D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = AND,
     };
     table[INSTRUCTION_ROL_ABX] = (cpu_instruction_s)
@@ -568,16 +568,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x3E,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = ROL,
     };
-    table[0x3F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x3F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x3F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_RTI_IMP] = (cpu_instruction_s)
@@ -586,7 +586,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x40,
         .cycles = 6,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = RTI,
     };
     table[INSTRUCTION_EOR_IZX] = (cpu_instruction_s)
@@ -595,25 +595,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x41,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = EOR,
     };
-    table[0x42] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x42] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x42,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x43] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x43] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x43,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_EOR_ZP0] = (cpu_instruction_s)
@@ -622,7 +622,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x45,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = EOR,
     };
     table[INSTRUCTION_LSR_ZP0] = (cpu_instruction_s)
@@ -631,16 +631,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x46,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = LSR,
     };
-    table[0x47] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x47] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x47,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_PHA_IMP] = (cpu_instruction_s)
@@ -649,7 +649,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x48,
         .cycles = 3,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = PHA,
     };
     table[INSTRUCTION_EOR_IMM] = (cpu_instruction_s)
@@ -658,7 +658,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x49,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = EOR,
     };
     table[INSTRUCTION_LSR_ACC] = (cpu_instruction_s)
@@ -667,16 +667,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x4A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = LSR,
     };
-    table[0x4B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x4B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x4B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_JMP_ABS] = (cpu_instruction_s)
@@ -685,7 +685,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x4C,
         .cycles = 3,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = JMP,
     };
     table[INSTRUCTION_EOR_ABS] = (cpu_instruction_s)
@@ -694,7 +694,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x4D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = EOR,
     };
     table[INSTRUCTION_LSR_ABS] = (cpu_instruction_s)
@@ -703,16 +703,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x4E,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = LSR,
     };
-    table[0x4F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x4F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x4F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BVC_REL] = (cpu_instruction_s)
@@ -721,7 +721,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x50,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BVC,
     };
     table[INSTRUCTION_EOR_IZY] = (cpu_instruction_s)
@@ -730,25 +730,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x51,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = EOR,
     };
-    table[0x52] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x52] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x52,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x53] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x53] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x53,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_EOR_ZPX] = (cpu_instruction_s)
@@ -757,7 +757,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x55,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = EOR,
     };
     table[INSTRUCTION_LSR_ZPX] = (cpu_instruction_s)
@@ -766,16 +766,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x56,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = LSR,
     };
-    table[0x57] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x57] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x57,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CLI_IMP] = (cpu_instruction_s)
@@ -784,7 +784,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x58,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = CLI,
     };
     table[INSTRUCTION_EOR_ABY] = (cpu_instruction_s)
@@ -793,25 +793,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x59,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = EOR,
     };
-    table[0x5A] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x5A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5A,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x5B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x5B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_EOR_ABX] = (cpu_instruction_s)
@@ -820,7 +820,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x5D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = EOR,
     };
     table[INSTRUCTION_LSR_ABX] = (cpu_instruction_s)
@@ -829,16 +829,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x5E,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = LSR,
     };
-    table[0x5F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x5F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x5F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_RTS_IMP] = (cpu_instruction_s)
@@ -847,7 +847,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x60,
         .cycles = 6,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = RTS,
     };
     table[INSTRUCTION_ADC_IZX] = (cpu_instruction_s)
@@ -856,34 +856,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x61,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = ADC,
     };
-    table[0x62] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x62] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x62,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x63] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x63] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x63,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x64] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x64] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x64,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ADC_ZP0] = (cpu_instruction_s)
@@ -892,7 +892,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x65,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = ADC,
     };
     table[INSTRUCTION_ROR_ZP0] = (cpu_instruction_s)
@@ -901,16 +901,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x66,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = ROR,
     };
-    table[0x67] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x67] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x67,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_PLA_IMP] = (cpu_instruction_s)
@@ -919,7 +919,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x68,
         .cycles = 4,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = PLA,
     };
     table[INSTRUCTION_ADC_IMM] = (cpu_instruction_s)
@@ -928,7 +928,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x69,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = ADC,
     };
     table[INSTRUCTION_ROR_ACC] = (cpu_instruction_s)
@@ -937,16 +937,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x6A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = ROR,
     };
-    table[0x6B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x6B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x6B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_JMP_IND] = (cpu_instruction_s)
@@ -955,7 +955,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x6C,
         .cycles = 5,
         .length = 3,
-        .fetch = IND,
+        .data_fetch = IND,
         .execute = JMP,
     };
     table[INSTRUCTION_ADC_ABS] = (cpu_instruction_s)
@@ -964,7 +964,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x6D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = ADC,
     };
     table[INSTRUCTION_ROR_ABS] = (cpu_instruction_s)
@@ -973,16 +973,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x6E,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = ROR,
     };
-    table[0x6F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x6F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x6F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BVS_REL] = (cpu_instruction_s)
@@ -991,7 +991,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x70,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BVS,
     };
     table[INSTRUCTION_ADC_IZY] = (cpu_instruction_s)
@@ -1000,34 +1000,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x71,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = ADC,
     };
-    table[0x72] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x72] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x72,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x73] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x73] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x73,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x74] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x74] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x74,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ADC_ZPX] = (cpu_instruction_s)
@@ -1036,7 +1036,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x75,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = ADC,
     };
     table[INSTRUCTION_ROR_ZPX] = (cpu_instruction_s)
@@ -1045,16 +1045,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x76,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = ROR,
     };
-    table[0x77] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x77] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x77,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_SEI_IMP] = (cpu_instruction_s)
@@ -1063,7 +1063,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x78,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = SEI,
     };
     table[INSTRUCTION_ADC_ABY] = (cpu_instruction_s)
@@ -1072,34 +1072,34 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x79,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = ADC,
     };
-    table[0x7A] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x7A] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7A,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x7B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x7B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x7C] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x7C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7C,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_ADC_ABX] = (cpu_instruction_s)
@@ -1108,7 +1108,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x7D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = ADC,
     };
     table[INSTRUCTION_ROR_ABX] = (cpu_instruction_s)
@@ -1117,16 +1117,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x7E,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = ROR,
     };
-    table[0x7F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x7F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x7F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_STA_IZX] = (cpu_instruction_s)
@@ -1135,16 +1135,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x81,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = STA,
     };
-    table[0x82] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x82] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x82,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_STY_ZP0] = (cpu_instruction_s)
@@ -1153,7 +1153,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x84,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = STY,
     };
     table[INSTRUCTION_STA_ZP0] = (cpu_instruction_s)
@@ -1162,7 +1162,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x85,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = STA,
     };
     table[INSTRUCTION_STX_ZP0] = (cpu_instruction_s)
@@ -1171,16 +1171,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x86,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = STX,
     };
-    table[0x87] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x87] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x87,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_DEY_IMP] = (cpu_instruction_s)
@@ -1189,16 +1189,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x88,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = DEY,
     };
-    table[0x89] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x89] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x89,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_TXA_IMP] = (cpu_instruction_s)
@@ -1207,16 +1207,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x8A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TXA,
     };
-    table[0x8B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x8B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x8B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_STY_ABS] = (cpu_instruction_s)
@@ -1225,7 +1225,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x8C,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = STY,
     };
     table[INSTRUCTION_STA_ABS] = (cpu_instruction_s)
@@ -1234,7 +1234,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x8D,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = STA,
     };
     table[INSTRUCTION_STX_ABS] = (cpu_instruction_s)
@@ -1243,16 +1243,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x8E,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = STX,
     };
-    table[0x8F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x8F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x8F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BCC_REL] = (cpu_instruction_s)
@@ -1261,7 +1261,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x90,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BCC,
     };
     table[INSTRUCTION_STA_IZY] = (cpu_instruction_s)
@@ -1270,25 +1270,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x91,
         .cycles = 6,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = STA,
     };
-    table[0x92] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x92] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x92,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x93] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x93] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x93,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_STY_ZPX] = (cpu_instruction_s)
@@ -1297,7 +1297,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x94,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = STY,
     };
     table[INSTRUCTION_STA_ZPX] = (cpu_instruction_s)
@@ -1306,7 +1306,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x95,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = STA,
     };
     table[INSTRUCTION_STX_ZPY] = (cpu_instruction_s)
@@ -1315,16 +1315,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x96,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPY,
+        .data_fetch = ZPY,
         .execute = STX,
     };
-    table[0x97] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x97] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x97,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_TYA_IMP] = (cpu_instruction_s)
@@ -1333,7 +1333,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x98,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TYA,
     };
     table[INSTRUCTION_STA_ABY] = (cpu_instruction_s)
@@ -1342,7 +1342,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x99,
         .cycles = 5,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = STA,
     };
     table[INSTRUCTION_TXS_IMP] = (cpu_instruction_s)
@@ -1351,25 +1351,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x9A,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TXS,
     };
-    table[0x9B] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x9B] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9B,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x9C] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x9C] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9C,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_STA_ABX] = (cpu_instruction_s)
@@ -1378,25 +1378,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x9D,
         .cycles = 5,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = STA,
     };
-    table[0x9E] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x9E] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9E,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0x9F] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0x9F] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0x9F,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_LDY_IMM] = (cpu_instruction_s)
@@ -1405,7 +1405,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA0,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = LDY,
     };
     table[INSTRUCTION_LDA_IZX] = (cpu_instruction_s)
@@ -1414,7 +1414,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA1,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = LDA,
     };
     table[INSTRUCTION_LDX_IMM] = (cpu_instruction_s)
@@ -1423,16 +1423,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA2,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = LDX,
     };
-    table[0xA3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xA3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xA3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_LDY_ZP0] = (cpu_instruction_s)
@@ -1441,7 +1441,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA4,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = LDY,
     };
     table[INSTRUCTION_LDA_ZP0] = (cpu_instruction_s)
@@ -1450,7 +1450,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA5,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = LDA,
     };
     table[INSTRUCTION_LDX_ZP0] = (cpu_instruction_s)
@@ -1459,16 +1459,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA6,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = LDX,
     };
-    table[0xA7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xA7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xA7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_TAY_IMP] = (cpu_instruction_s)
@@ -1477,7 +1477,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TAY,
     };
     table[INSTRUCTION_LDA_IMM] = (cpu_instruction_s)
@@ -1486,7 +1486,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xA9,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = LDA,
     };
     table[INSTRUCTION_TAX_IMP] = (cpu_instruction_s)
@@ -1495,16 +1495,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xAA,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TAX,
     };
-    table[0xAB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xAB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xAB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_LDY_ABS] = (cpu_instruction_s)
@@ -1513,7 +1513,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xAC,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = LDY,
     };
     table[INSTRUCTION_LDA_ABS] = (cpu_instruction_s)
@@ -1522,7 +1522,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xAD,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = LDA,
     };
     table[INSTRUCTION_LDX_ABS] = (cpu_instruction_s)
@@ -1531,16 +1531,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xAE,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = LDX,
     };
-    table[0xAF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xAF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xAF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BCS_REL] = (cpu_instruction_s)
@@ -1549,7 +1549,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB0,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BCS,
     };
     table[INSTRUCTION_LDA_IZY] = (cpu_instruction_s)
@@ -1558,25 +1558,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB1,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = LDA,
     };
-    table[0xB2] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xB2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB2,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xB3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xB3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_LDY_ZPX] = (cpu_instruction_s)
@@ -1585,7 +1585,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB4,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = LDY,
     };
     table[INSTRUCTION_LDA_ZPX] = (cpu_instruction_s)
@@ -1594,7 +1594,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB5,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = LDA,
     };
     table[INSTRUCTION_LDX_ZPY] = (cpu_instruction_s)
@@ -1603,16 +1603,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB6,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPY,
+        .data_fetch = ZPY,
         .execute = LDX,
     };
-    table[0xB7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xB7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xB7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CLV_IMP] = (cpu_instruction_s)
@@ -1621,7 +1621,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = CLV,
     };
     table[INSTRUCTION_LDA_ABY] = (cpu_instruction_s)
@@ -1630,7 +1630,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xB9,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = LDA,
     };
     table[INSTRUCTION_TSX_IMP] = (cpu_instruction_s)
@@ -1639,16 +1639,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xBA,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = TSX,
     };
-    table[0xBB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xBB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xBB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_LDY_ABX] = (cpu_instruction_s)
@@ -1657,7 +1657,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xBC,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = LDY,
     };
     table[INSTRUCTION_LDA_ABX] = (cpu_instruction_s)
@@ -1666,7 +1666,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xBD,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = LDA,
     };
     table[INSTRUCTION_LDX_ABY] = (cpu_instruction_s)
@@ -1675,16 +1675,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xBE,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = LDX,
     };
-    table[0xBF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xBF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xBF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPY_IMM] = (cpu_instruction_s)
@@ -1693,7 +1693,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC0,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = CPY,
     };
     table[INSTRUCTION_CMP_IZX] = (cpu_instruction_s)
@@ -1702,25 +1702,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC1,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = CMP,
     };
-    table[0xC2] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xC2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC2,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xC3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xC3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPY_ZP0] = (cpu_instruction_s)
@@ -1729,7 +1729,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC4,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = CPY,
     };
     table[INSTRUCTION_CMP_ZP0] = (cpu_instruction_s)
@@ -1738,7 +1738,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC5,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = CMP,
     };
     table[INSTRUCTION_DEC_ZP0] = (cpu_instruction_s)
@@ -1747,16 +1747,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC6,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = DEC,
     };
-    table[0xC7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xC7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xC7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_INY_IMP] = (cpu_instruction_s)
@@ -1765,7 +1765,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = INY,
     };
     table[INSTRUCTION_CMP_IMM] = (cpu_instruction_s)
@@ -1774,7 +1774,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xC9,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = CMP,
     };
     table[INSTRUCTION_DEX_IMP] = (cpu_instruction_s)
@@ -1783,16 +1783,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xCA,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = DEX,
     };
-    table[0xCB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xCB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xCB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPY_ABS] = (cpu_instruction_s)
@@ -1801,7 +1801,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xCC,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = CPY,
     };
     table[INSTRUCTION_CMP_ABS] = (cpu_instruction_s)
@@ -1810,7 +1810,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xCD,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = CMP,
     };
     table[INSTRUCTION_DEC_ABS] = (cpu_instruction_s)
@@ -1819,16 +1819,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xCE,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = DEC,
     };
-    table[0xCF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xCF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xCF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BNE_REL] = (cpu_instruction_s)
@@ -1837,7 +1837,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD0,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BNE,
     };
     table[INSTRUCTION_CMP_IZY] = (cpu_instruction_s)
@@ -1846,25 +1846,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD1,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = CMP,
     };
-    table[0xD2] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xD2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD2,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xD3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xD3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CMP_ZPX] = (cpu_instruction_s)
@@ -1873,7 +1873,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD5,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = CMP,
     };
     table[INSTRUCTION_DEC_ZPX] = (cpu_instruction_s)
@@ -1882,16 +1882,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD6,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = DEC,
     };
-    table[0xD7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xD7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xD7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CLD_IMP] = (cpu_instruction_s)
@@ -1900,7 +1900,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = CLD,
     };
     table[INSTRUCTION_CMP_ABY] = (cpu_instruction_s)
@@ -1909,25 +1909,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xD9,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = CMP,
     };
-    table[0xDA] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xDA] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDA,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xDB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xDB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CMP_ABX] = (cpu_instruction_s)
@@ -1936,7 +1936,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xDD,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = CMP,
     };
     table[INSTRUCTION_DEC_ABX] = (cpu_instruction_s)
@@ -1945,16 +1945,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xDE,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = DEC,
     };
-    table[0xDF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xDF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xDF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPX_IMM] = (cpu_instruction_s)
@@ -1963,7 +1963,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE0,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = CPX,
     };
     table[INSTRUCTION_SBC_IZX] = (cpu_instruction_s)
@@ -1972,25 +1972,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE1,
         .cycles = 6,
         .length = 2,
-        .fetch = IZX,
+        .data_fetch = IZX,
         .execute = SBC,
     };
-    table[0xE2] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xE2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE2,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xE3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xE3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPX_ZP0] = (cpu_instruction_s)
@@ -1999,7 +1999,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE4,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = CPX,
     };
     table[INSTRUCTION_SBC_ZP0] = (cpu_instruction_s)
@@ -2008,7 +2008,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE5,
         .cycles = 3,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = SBC,
     };
     table[INSTRUCTION_INC_ZP0] = (cpu_instruction_s)
@@ -2017,16 +2017,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE6,
         .cycles = 5,
         .length = 2,
-        .fetch = ZP0,
+        .data_fetch = ZP0,
         .execute = INC,
     };
-    table[0xE7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xE7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xE7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_INX_IMP] = (cpu_instruction_s)
@@ -2035,7 +2035,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = INX,
     };
     table[INSTRUCTION_SBC_IMM] = (cpu_instruction_s)
@@ -2044,7 +2044,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xE9,
         .cycles = 2,
         .length = 2,
-        .fetch = IMM,
+        .data_fetch = IMM,
         .execute = SBC,
     };
     table[INSTRUCTION_NOP_IMP] = (cpu_instruction_s)
@@ -2053,16 +2053,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xEA,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = NOP,
     };
-    table[0xEB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xEB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xEB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_CPX_ABS] = (cpu_instruction_s)
@@ -2071,7 +2071,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xEC,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = CPX,
     };
     table[INSTRUCTION_SBC_ABS] = (cpu_instruction_s)
@@ -2080,7 +2080,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xED,
         .cycles = 4,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = SBC,
     };
     table[INSTRUCTION_INC_ABS] = (cpu_instruction_s)
@@ -2089,16 +2089,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xEE,
         .cycles = 6,
         .length = 3,
-        .fetch = ABS,
+        .data_fetch = ABS,
         .execute = INC,
     };
-    table[0xEF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xEF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xEF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_BEQ_REL] = (cpu_instruction_s)
@@ -2107,7 +2107,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF0,
         .cycles = 2,
         .length = 2,
-        .fetch = REL,
+        .data_fetch = REL,
         .execute = BEQ,
     };
     table[INSTRUCTION_SBC_IZY] = (cpu_instruction_s)
@@ -2116,25 +2116,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF1,
         .cycles = 5,
         .length = 2,
-        .fetch = IZY,
+        .data_fetch = IZY,
         .execute = SBC,
     };
-    table[0xF2] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xF2] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF2,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xF3] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xF3] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF3,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_SBC_ZPX] = (cpu_instruction_s)
@@ -2143,7 +2143,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF5,
         .cycles = 4,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = SBC,
     };
     table[INSTRUCTION_INC_ZPX] = (cpu_instruction_s)
@@ -2152,16 +2152,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF6,
         .cycles = 6,
         .length = 2,
-        .fetch = ZPX,
+        .data_fetch = ZPX,
         .execute = INC,
     };
-    table[0xF7] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xF7] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xF7,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_SED_IMP] = (cpu_instruction_s)
@@ -2170,7 +2170,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF8,
         .cycles = 2,
         .length = 1,
-        .fetch = IMP,
+        .data_fetch = IMP,
         .execute = SED,
     };
     table[INSTRUCTION_SBC_ABY] = (cpu_instruction_s)
@@ -2179,25 +2179,25 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xF9,
         .cycles = 4,
         .length = 3,
-        .fetch = ABY,
+        .data_fetch = ABY,
         .execute = SBC,
     };
-    table[0xFA] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xFA] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFA,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
-    table[0xFB] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xFB] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFB,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
     table[INSTRUCTION_SBC_ABX] = (cpu_instruction_s)
@@ -2206,7 +2206,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xFD,
         .cycles = 4,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = SBC,
     };
     table[INSTRUCTION_INC_ABX] = (cpu_instruction_s)
@@ -2215,16 +2215,16 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0xFE,
         .cycles = 7,
         .length = 3,
-        .fetch = ABX,
+        .data_fetch = ABX,
         .execute = INC,
     };
-    table[0xFF] = (cpu_instruction_s)
+    table[OPCODE_UNDEFINED_0xFF] = (cpu_instruction_s)
     {
         .name = "???",
         .opcode = 0xFF,
         .cycles = 0,
         .length = 0,
-        .fetch = NULL,
+        .data_fetch = NULL,
         .execute = NULL,
     };
 }
@@ -2236,8 +2236,8 @@ bool crosses_page(word_t addr1, word_t addr2)
 
 void set_zn(cpu_s *cpu, byte_t value)
 {
-    set_flag(cpu, Z, value == 0);
-    set_flag(cpu, N, value & 0x80);
+    set_flag(cpu, STATUS_FLAG_Z, value == 0);
+    set_flag(cpu, STATUS_FLAG_N, value & 0x80);
 }
 
 word_t assemble_word(byte_t high, byte_t low)
@@ -2348,7 +2348,7 @@ bool fetch_and_execute(cpu_s *cpu)
 {
     assert(cpu != NULL && cpu->instruction_pending);
     cpu_instruction_s *instruction = get_current_instruction(cpu);
-    bool result = instruction->fetch(cpu);
+    bool result = instruction->data_fetch(cpu);
     result = instruction->execute(cpu) && result;
     return result;
 }
@@ -2391,7 +2391,7 @@ void cpu_init(cpu_s *cpu, byte_t *memory)
     cpu->X = 0x00;
     cpu->Y = 0x00;
     cpu->SP = 0xFD;
-    cpu->STATUS = 0x00 | U;
+    cpu->STATUS = 0x00 | STATUS_FLAG_U;
     cpu->PC = 0x0000;
     cpu->does_need_additional_cycle = false;
     cpu->current_opcode = 0x00;
@@ -2411,19 +2411,19 @@ void reset(cpu_s *cpu)
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->cycles += 8;
-    cpu->STATUS = (rand() % 256) | U;
+    cpu->STATUS = (rand() % 256) | STATUS_FLAG_U;
     return;
 }
 
 void irq(cpu_s *cpu)
 {
-    if (get_flag(cpu, I))
+    if (get_flag(cpu, STATUS_FLAG_I))
     {
         return;
     }
     push_address(cpu, cpu->PC);
     push_byte(cpu, cpu->STATUS);
-    set_flag(cpu, I, true);
+    set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     cpu->cycles += 7;
     return;
@@ -2433,7 +2433,7 @@ void nmi(cpu_s *cpu)
 {
     push_address(cpu, cpu->PC);
     push_byte(cpu, cpu->STATUS);
-    set_flag(cpu, I, 1);
+    set_flag(cpu, STATUS_FLAG_I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->cycles += 8;
     return;
@@ -2676,13 +2676,13 @@ byte_t IZY(cpu_s *cpu)
 byte_t BRK(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, true);
+    set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC++;
     // pushes the next instruction address onto the stack
     push_address(cpu, cpu->PC);
-    set_flag(cpu, B, true); // sets the break flag because this is a software interrupt
+    set_flag(cpu, STATUS_FLAG_B, true); // sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
-    set_flag(cpu, B, false); // clears the break flag
+    set_flag(cpu, STATUS_FLAG_B, false); // clears the break flag
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
     return 0;
 }
@@ -2703,7 +2703,7 @@ byte_t ORA(cpu_s *cpu)
 
 byte_t ASL(cpu_s *cpu)
 {
-    set_flag(cpu, C, value & 0x80);
+    set_flag(cpu, STATUS_FLAG_C, value & 0x80);
     value <<= 1;
     set_zn(cpu, value);
     return 0;
@@ -2714,7 +2714,7 @@ byte_t ASL(cpu_s *cpu)
 */
 byte_t PHP(cpu_s *cpu)
 {
-    push_byte(cpu, cpu->STATUS | B | U); // pushes the status register with the break and unused bits set
+    push_byte(cpu, cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U); // pushes the status register with the break and unused bits set
     return 0;
 }
 
@@ -2747,7 +2747,7 @@ byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
 byte_t BPL(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, N, 0);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_N, 0);
     return cycles;
 }
 
@@ -2758,7 +2758,7 @@ byte_t BPL(cpu_s *cpu)
 byte_t CLC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     return 0;
 }
 
@@ -2803,10 +2803,10 @@ byte_t BIT(cpu_s *cpu)
     assert(cpu != NULL);
     byte_t result = cpu->A & value;
     // this flag is set based on the result of the AND
-    set_flag(cpu, Z, result == 0x00);
+    set_flag(cpu, STATUS_FLAG_Z, result == 0x00);
     // these 2 flags are set to the 6th and 7th bits of the value
-    set_flag(cpu, N, value & 0x80);
-    set_flag(cpu, V, value & 0x40);
+    set_flag(cpu, STATUS_FLAG_N, value & 0x80);
+    set_flag(cpu, STATUS_FLAG_V, value & 0x40);
     return 0;
 }
 
@@ -2822,7 +2822,7 @@ byte_t ROL(cpu_s *cpu)
 {
     // assume address and value are set
     assert(cpu != NULL);
-    set_flag(cpu, C, value & 0x80);
+    set_flag(cpu, STATUS_FLAG_C, value & 0x80);
     value <<= 1;
     set_zn(cpu, value);
     write_to_addr(cpu, address, value);
@@ -2838,8 +2838,8 @@ byte_t PLP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->STATUS = pop_byte(cpu);
-    set_flag(cpu, U, true);
-    set_flag(cpu, B, false);
+    set_flag(cpu, STATUS_FLAG_U, true);
+    set_flag(cpu, STATUS_FLAG_B, false);
     return 0;
 }
 
@@ -2851,7 +2851,7 @@ byte_t PLP(cpu_s *cpu)
 byte_t BMI(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, N, 1);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_N, 1);
     return cycles;
 }
 
@@ -2862,7 +2862,7 @@ byte_t BMI(cpu_s *cpu)
 byte_t SEC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     return 0;
 }
 
@@ -2879,8 +2879,8 @@ byte_t RTI(cpu_s *cpu)
     byte_t low = pop_byte(cpu);
     byte_t high = pop_byte(cpu);
     cpu->PC = assemble_word(high, low);
-    set_flag(cpu, U, true); // this is always logical 1
-    set_flag(cpu, B, false); // B flag is only 1 when BRK is executed
+    set_flag(cpu, STATUS_FLAG_U, true); // this is always logical 1
+    set_flag(cpu, STATUS_FLAG_B, false); // B flag is only 1 when BRK is executed
     return 0;
 }
 
@@ -2910,10 +2910,10 @@ byte_t EOR(cpu_s *cpu)
 byte_t LSR(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, C, value & 0x01);
+    set_flag(cpu, STATUS_FLAG_C, value & 0x01);
     value >>= 1;
-    set_flag(cpu, Z, value == 0x00);
-    set_flag(cpu, N, value & 0x80);
+    set_flag(cpu, STATUS_FLAG_Z, value == 0x00);
+    set_flag(cpu, STATUS_FLAG_N, value & 0x80);
     write_to_addr(cpu, address, value);
     return 0;
 }
@@ -2952,7 +2952,7 @@ byte_t JMP(cpu_s *cpu)
 byte_t BVC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, V, 0);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_V, 0);
     return cycles;
 }
 
@@ -2963,7 +2963,7 @@ byte_t BVC(cpu_s *cpu)
 byte_t CLI(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, false);
+    set_flag(cpu, STATUS_FLAG_I, false);
     return 0;
 }
 
@@ -2994,16 +2994,16 @@ byte_t RTS(cpu_s *cpu)
 byte_t ADC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    word_t result = cpu->A + value + get_flag(cpu, C);
-    set_flag(cpu, C, result > 0xFF);
-    set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
-    set_flag(cpu, N, result & 0x0080);
+    word_t result = cpu->A + value + get_flag(cpu, STATUS_FLAG_C);
+    set_flag(cpu, STATUS_FLAG_C, result > 0xFF);
+    set_flag(cpu, STATUS_FLAG_Z, (result & 0x00FF) == 0x0000);
+    set_flag(cpu, STATUS_FLAG_N, result & 0x0080);
     // overflow flag is set if the sign of the result is different from the sign of the accumulator
     byte_t accumulator_msb = cpu->A & 0x80;
     byte_t value_msb = value & 0x80;
     byte_t result_msb = result & 0x80;
     byte_t overflow = ((accumulator_msb ^ value_msb) == 0) && ((accumulator_msb ^ result_msb) != 0);
-    set_flag(cpu, V, overflow);
+    set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
     return 0;
 }
@@ -3019,9 +3019,9 @@ byte_t ADC(cpu_s *cpu)
 byte_t ROR(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t carry = (byte_t) get_flag(cpu, C);
+    byte_t carry = (byte_t) get_flag(cpu, STATUS_FLAG_C);
     // set the carry flag to the 0th bit of the value
-    set_flag(cpu, C, value & 0x01);
+    set_flag(cpu, STATUS_FLAG_C, value & 0x01);
     // shift the value right by 1 bit
     value >>= 1;
     // set the 7th bit to the carry flag
@@ -3055,8 +3055,8 @@ byte_t PLA(cpu_s *cpu)
 byte_t ROR_ACC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t carry = (byte_t) get_flag(cpu, C);
-    set_flag(cpu, C, cpu->A & 0x01);
+    byte_t carry = (byte_t) get_flag(cpu, STATUS_FLAG_C);
+    set_flag(cpu, STATUS_FLAG_C, cpu->A & 0x01);
     cpu->A >>= 1;
     cpu->A |= (carry << 7);
     set_zn(cpu, cpu->A);
@@ -3071,7 +3071,7 @@ byte_t ROR_ACC(cpu_s *cpu)
 byte_t BVS(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, V, 1);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_V, 1);
     return cycles;
 }
 
@@ -3082,7 +3082,7 @@ byte_t BVS(cpu_s *cpu)
 byte_t SEI(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, I, true);
+    set_flag(cpu, STATUS_FLAG_I, true);
     return 0;
 }
 
@@ -3156,7 +3156,7 @@ byte_t TXA(cpu_s *cpu)
 byte_t BCC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, C, 0);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_C, 0);
     return cycles;
 }
 
@@ -3263,7 +3263,7 @@ byte_t TAX(cpu_s *cpu)
 byte_t BCS(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, C, 1);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_C, 1);
     return cycles;
 }
 
@@ -3274,7 +3274,7 @@ byte_t BCS(cpu_s *cpu)
 byte_t CLV(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, V, false);
+    set_flag(cpu, STATUS_FLAG_V, false);
     return 0;
 }
 
@@ -3303,7 +3303,7 @@ byte_t CPY(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t result = cpu->Y - value;
-    set_flag(cpu, C, cpu->Y >= value);
+    set_flag(cpu, STATUS_FLAG_C, cpu->Y >= value);
     set_zn(cpu, result);
     return 0;
 }
@@ -3319,7 +3319,7 @@ byte_t CMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t result = cpu->A - value;
-    set_flag(cpu, C, cpu->A >= value);
+    set_flag(cpu, STATUS_FLAG_C, cpu->A >= value);
     set_zn(cpu, result);
     return 0;
 }
@@ -3362,7 +3362,7 @@ byte_t DEX(cpu_s *cpu)
 byte_t BNE(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t cycles = branch_on_flag(cpu, Z, 0);
+    byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_Z, 0);
     return cycles;
 }
 
@@ -3373,7 +3373,7 @@ byte_t BNE(cpu_s *cpu)
 byte_t CLD(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, D, false);
+    set_flag(cpu, STATUS_FLAG_D, false);
     return 0;
 }
 
@@ -3388,7 +3388,7 @@ byte_t CPX(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t result = cpu->X - value;
-    set_flag(cpu, C, cpu->X >= value);
+    set_flag(cpu, STATUS_FLAG_C, cpu->X >= value);
     set_zn(cpu, result);
     return 0;
 }
@@ -3405,16 +3405,16 @@ byte_t CPX(cpu_s *cpu)
 byte_t SBC(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    word_t result = cpu->A - value - (1 - ((byte_t) get_flag(cpu, C)));
-    set_flag(cpu, C, result < 0x100);
-    set_flag(cpu, Z, (result & 0x00FF) == 0x0000);
-    set_flag(cpu, N, result & 0x0080);
+    word_t result = cpu->A - value - (1 - ((byte_t) get_flag(cpu, STATUS_FLAG_C)));
+    set_flag(cpu, STATUS_FLAG_C, result < 0x100);
+    set_flag(cpu, STATUS_FLAG_Z, (result & 0x00FF) == 0x0000);
+    set_flag(cpu, STATUS_FLAG_N, result & 0x0080);
     // overflow flag is set if the sign of the result is different from the sign of the accumulator
     byte_t accumulator_msb = cpu->A & 0x80;
     byte_t value_msb = value & 0x80;
     byte_t result_msb = result & 0x80;
     byte_t overflow = ((accumulator_msb ^ value_msb) != 0) && ((accumulator_msb ^ result_msb) != 0);
-    set_flag(cpu, V, overflow);
+    set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
     return 0;
 }
@@ -3459,8 +3459,8 @@ byte_t INY(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->Y++;
-    set_flag(cpu, Z, cpu->Y == 0x00);
-    set_flag(cpu, N, cpu->Y & 0x80);
+    set_flag(cpu, STATUS_FLAG_Z, cpu->Y == 0x00);
+    set_flag(cpu, STATUS_FLAG_N, cpu->Y & 0x80);
     return 0;
 }
 
@@ -3472,7 +3472,7 @@ byte_t INY(cpu_s *cpu)
 byte_t BEQ(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    const byte_t cycles = branch_on_flag(cpu, Z, 1);
+    const byte_t cycles = branch_on_flag(cpu, STATUS_FLAG_Z, 1);
     return cycles;
 }
 
@@ -3483,7 +3483,7 @@ byte_t BEQ(cpu_s *cpu)
 byte_t SED(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, D, true);
+    set_flag(cpu, STATUS_FLAG_D, true);
     return 0;
 }
 

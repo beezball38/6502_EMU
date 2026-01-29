@@ -45,8 +45,8 @@ void load_instruction(cpu_s *cpu, const byte_t *instruction, size_t len) {
 
 void run_instruction(cpu_s *cpu) {
     cpu_instruction_s *current_instruction = get_current_instruction(cpu);
-    if (current_instruction->fetch != NULL) {
-        current_instruction->fetch(cpu);
+    if (current_instruction->data_fetch != NULL) {
+        current_instruction->data_fetch(cpu);
     }
     if (current_instruction->execute != NULL) {
         current_instruction->execute(cpu);
@@ -70,13 +70,13 @@ void test_0x00_BRK(void) {
     load_instruction(cpu, instr, sizeof(instr));
     load_interrupt_vector(cpu, 0x34, 0x12);
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, I));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I));
     TEST_ASSERT_EQUAL_HEX16(0x1234, cpu->PC);
     TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x01FC]);
     TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x01FD]);
     byte_t pushed_status = cpu->memory[0x01FB];
-    TEST_ASSERT_TRUE((pushed_status & I) != 0);
-    TEST_ASSERT_TRUE((pushed_status & B) != 0);
+    TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_I) != 0);
+    TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_B) != 0);
 }
 
 // 0x01 - ORA IZX
@@ -111,19 +111,19 @@ void test_0x06_ASL_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_ASL_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
-    TEST_ASSERT_FALSE(get_flag(cpu, Z));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x08 - PHP
 void test_0x08_PHP(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, N, true);
+    set_flag(cpu, STATUS_FLAG_N, true);
     byte_t instr[] = {INSTRUCTION_PHP_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8((cpu->STATUS | B | U), cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX8((cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U), cpu->memory[0x01FD]);
 }
 
 // 0x09 - ORA IMM
@@ -143,8 +143,8 @@ void test_0x0A_ASL_ACC(void) {
     byte_t instr[] = {INSTRUCTION_ASL_ACC};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x0D - ORA ABS
@@ -165,15 +165,15 @@ void test_0x0E_ASL_ABS(void) {
     byte_t instr[] = {INSTRUCTION_ASL_ABS, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x10 - BPL
 void test_0x10_BPL(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0200;
-    set_flag(cpu, N, false);
+    set_flag(cpu, STATUS_FLAG_N, false);
     byte_t instr[] = {INSTRUCTION_BPL_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -214,19 +214,19 @@ void test_0x16_ASL_ZPX(void) {
     byte_t instr[] = {INSTRUCTION_ASL_ZPX, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x18 - CLC
 void test_0x18_CLC(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    set_flag(cpu, STATUS_FLAG_C, true);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
     byte_t instr[] = {INSTRUCTION_CLC_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x19 - ORA ABY
@@ -261,8 +261,8 @@ void test_0x1E_ASL_ABX(void) {
     byte_t instr[] = {INSTRUCTION_ASL_ABX, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x20 - JSR
@@ -296,11 +296,11 @@ void test_0x24_BIT_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->memory[0x40] = 0x80;
-    byte_t instr[] = {INSTRUCTION_BRK_ZP0, 0x40};
+    byte_t instr[] = {INSTRUCTION_BIT_ZP0, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, Z));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x25 - AND ZP0
@@ -322,8 +322,8 @@ void test_0x26_ROL_ZP0(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x60]);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0x28 - PLP
@@ -334,7 +334,7 @@ void test_0x28_PLP(void) {
     byte_t instr[] = {INSTRUCTION_PLP_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x29 - AND IMM
@@ -355,8 +355,8 @@ void test_0x2A_ROL_ACC(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0x2C - BIT ABS
@@ -367,8 +367,8 @@ void test_0x2C_BIT_ABS(void) {
     byte_t instr[] = {INSTRUCTION_BIT_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
-    TEST_ASSERT_TRUE(get_flag(cpu, V));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
 }
 
 // 0x2D - AND ABS
@@ -390,14 +390,14 @@ void test_0x2E_ROL_ABS(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x0500]);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x30 - BMI
 void test_0x30_BMI(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0300;
-    set_flag(cpu, N, true);
+    set_flag(cpu, STATUS_FLAG_N, true);
     byte_t instr[] = {INSTRUCTION_BMI_REL, 0x02};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -439,18 +439,18 @@ void test_0x36_ROL_ZPX(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x51]);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x38 - SEC
 void test_0x38_SEC(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, false);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
+    set_flag(cpu, STATUS_FLAG_C, false);
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
     byte_t instr[] = {INSTRUCTION_SEC_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x39 - AND ABY
@@ -486,7 +486,7 @@ void test_0x3E_ROL_ABX(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x0500]);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x40 - RTI
@@ -535,7 +535,7 @@ void test_0x46_LSR_ZP0(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x30]);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x48 - PHA
@@ -566,7 +566,7 @@ void test_0x4A_LSR_ACC(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x02, cpu->A);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x4C - JMP ABS
@@ -603,7 +603,7 @@ void test_0x4E_LSR_ABS(void) {
 void test_0x50_BVC(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0400;
-    set_flag(cpu, V, false);
+    set_flag(cpu, STATUS_FLAG_V, false);
     byte_t instr[] = {INSTRUCTION_BVC_REL, 0x06};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -650,12 +650,12 @@ void test_0x56_LSR_ZPX(void) {
 // 0x58 - CLI
 void test_0x58_CLI(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, I, true);
-    TEST_ASSERT_TRUE(get_flag(cpu, I));
+    set_flag(cpu, STATUS_FLAG_I, true);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I));
     byte_t instr[] = {INSTRUCTION_CLI_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, I));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_I));
 }
 
 // 0x59 - EOR ABY
@@ -709,7 +709,7 @@ void test_0x60_RTS(void) {
 void test_0x61_ADC_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0;
     cpu->memory[0x10] = 0x00;
     cpu->memory[0x11] = 0x03;
@@ -724,7 +724,7 @@ void test_0x61_ADC_IZX(void) {
 void test_0x65_ADC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->memory[0x20] = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
@@ -735,13 +735,13 @@ void test_0x65_ADC_ZP0(void) {
 // 0x66 - ROR ZP0
 void test_0x66_ROR_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->memory[0x30] = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x80, cpu->memory[0x30]);
-    TEST_ASSERT_FALSE(get_flag(cpu, C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x68 - PLA
@@ -759,7 +759,7 @@ void test_0x68_PLA(void) {
 void test_0x69_ADC_IMM(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     byte_t instr[] = {INSTRUCTION_ADC_IMM, 0x02};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -769,14 +769,14 @@ void test_0x69_ADC_IMM(void) {
 // 0x6A - ROR ACC
 void test_0x6A_ROR_ACC(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->A = 0x01;
     byte_t instr[] = {INSTRUCTION_ROR_ACC};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x80, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, N));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
 }
 
 // 0x6C - JMP IND
@@ -794,7 +794,7 @@ void test_0x6C_JMP_IND(void) {
 void test_0x6D_ADC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
@@ -805,7 +805,7 @@ void test_0x6D_ADC_ABS(void) {
 // 0x6E - ROR ABS
 void test_0x6E_ROR_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->memory[0x0500] = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
@@ -817,7 +817,7 @@ void test_0x6E_ROR_ABS(void) {
 void test_0x70_BVS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0500;
-    set_flag(cpu, V, true);
+    set_flag(cpu, STATUS_FLAG_V, true);
     byte_t instr[] = {INSTRUCTION_BVS_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -828,7 +828,7 @@ void test_0x70_BVS(void) {
 void test_0x71_ADC_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->Y = 0;
     cpu->memory[0x30] = 0x00;
     cpu->memory[0x31] = 0x03;
@@ -843,7 +843,7 @@ void test_0x71_ADC_IZY(void) {
 void test_0x75_ADC_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0x01;
     cpu->memory[0x41] = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ZPX, 0x40};
@@ -855,7 +855,7 @@ void test_0x75_ADC_ZPX(void) {
 // 0x76 - ROR ZPX
 void test_0x76_ROR_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0x01;
     cpu->memory[0x51] = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ZPX, 0x50};
@@ -867,19 +867,19 @@ void test_0x76_ROR_ZPX(void) {
 // 0x78 - SEI
 void test_0x78_SEI(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, I, false);
-    TEST_ASSERT_FALSE(get_flag(cpu, I));
+    set_flag(cpu, STATUS_FLAG_I, false);
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_I));
     byte_t instr[] = {INSTRUCTION_SEI_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, I));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I));
 }
 
 // 0x79 - ADC ABY
 void test_0x79_ADC_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->Y = 0;
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABY, 0x00, 0x05};
@@ -892,7 +892,7 @@ void test_0x79_ADC_ABY(void) {
 void test_0x7D_ADC_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0;
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABX, 0x00, 0x05};
@@ -904,7 +904,7 @@ void test_0x7D_ADC_ABX(void) {
 // 0x7E - ROR ABX
 void test_0x7E_ROR_ABX(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
     cpu->memory[0x0500] = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ABX, 0x00, 0x05};
@@ -964,7 +964,7 @@ void test_0x88_DEY(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->Y);
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0x8A - TXA
@@ -1011,7 +1011,7 @@ void test_0x8E_STX_ABS(void) {
 void test_0x90_BCC(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0600;
-    set_flag(cpu, C, false);
+    set_flag(cpu, STATUS_FLAG_C, false);
     byte_t instr[] = {INSTRUCTION_BCC_REL, 0x08};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1230,7 +1230,7 @@ void test_0xAE_LDX_ABS(void) {
 void test_0xB0_BCS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0700;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     byte_t instr[] = {INSTRUCTION_BCS_REL, 0x0A};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1286,12 +1286,12 @@ void test_0xB6_LDX_ZPY(void) {
 // 0xB8 - CLV
 void test_0xB8_CLV(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, V, true);
-    TEST_ASSERT_TRUE(get_flag(cpu, V));
+    set_flag(cpu, STATUS_FLAG_V, true);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
     byte_t instr[] = {INSTRUCTION_CLV_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, V));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_V));
 }
 
 // 0xB9 - LDA ABY
@@ -1355,8 +1355,8 @@ void test_0xC0_CPY_IMM(void) {
     byte_t instr[] = {INSTRUCTION_CPY_IMM, 0x03};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_FALSE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xC1 - CMP IZX
@@ -1370,8 +1370,8 @@ void test_0xC1_CMP_IZX(void) {
     byte_t instr[] = {INSTRUCTION_CMP_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_FALSE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xC4 - CPY ZP0
@@ -1382,8 +1382,8 @@ void test_0xC4_CPY_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_CPY_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xC5 - CMP ZP0
@@ -1394,8 +1394,8 @@ void test_0xC5_CMP_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_CMP_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xC6 - DEC ZP0
@@ -1406,7 +1406,7 @@ void test_0xC6_DEC_ZP0(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x30]);
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xC8 - INY
@@ -1426,8 +1426,8 @@ void test_0xC9_CMP_IMM(void) {
     byte_t instr[] = {INSTRUCTION_CMP_IMM, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
-    TEST_ASSERT_FALSE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xCA - DEX
@@ -1438,7 +1438,7 @@ void test_0xCA_DEX(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX8(0x00, cpu->X);
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xCC - CPY ABS
@@ -1449,7 +1449,7 @@ void test_0xCC_CPY_ABS(void) {
     byte_t instr[] = {INSTRUCTION_CPY_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xCD - CMP ABS
@@ -1460,7 +1460,7 @@ void test_0xCD_CMP_ABS(void) {
     byte_t instr[] = {INSTRUCTION_CMP_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xCE - DEC ABS
@@ -1477,7 +1477,7 @@ void test_0xCE_DEC_ABS(void) {
 void test_0xD0_BNE(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0800;
-    set_flag(cpu, Z, false);
+    set_flag(cpu, STATUS_FLAG_Z, false);
     byte_t instr[] = {INSTRUCTION_BNE_REL, 0x06};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1495,7 +1495,7 @@ void test_0xD1_CMP_IZY(void) {
     byte_t instr[] = {INSTRUCTION_CMP_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xD5 - CMP ZPX
@@ -1507,7 +1507,7 @@ void test_0xD5_CMP_ZPX(void) {
     byte_t instr[] = {INSTRUCTION_CMP_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xD6 - DEC ZPX
@@ -1524,12 +1524,12 @@ void test_0xD6_DEC_ZPX(void) {
 // 0xD8 - CLD
 void test_0xD8_CLD(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, D, true);
-    TEST_ASSERT_TRUE(get_flag(cpu, D));
+    set_flag(cpu, STATUS_FLAG_D, true);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_D));
     byte_t instr[] = {INSTRUCTION_CLD_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_FALSE(get_flag(cpu, D));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_D));
 }
 
 // 0xD9 - CMP ABY
@@ -1541,7 +1541,7 @@ void test_0xD9_CMP_ABY(void) {
     byte_t instr[] = {INSTRUCTION_CMP_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xDD - CMP ABX
@@ -1553,7 +1553,7 @@ void test_0xDD_CMP_ABX(void) {
     byte_t instr[] = {INSTRUCTION_CMP_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xDE - DEC ABX
@@ -1574,14 +1574,14 @@ void test_0xE0_CPX_IMM(void) {
     byte_t instr[] = {INSTRUCTION_CPX_IMM, 0x03};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xE1 - SBC IZX
 void test_0xE1_SBC_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
     cpu->memory[0x10] = 0x00;
     cpu->memory[0x11] = 0x03;
@@ -1600,14 +1600,14 @@ void test_0xE4_CPX_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_CPX_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, Z));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
 // 0xE5 - SBC ZP0
 void test_0xE5_SBC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->memory[0x20] = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
@@ -1639,7 +1639,7 @@ void test_0xE8_INX(void) {
 void test_0xE9_SBC_IMM(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     byte_t instr[] = {INSTRUCTION_SBC_IMM, 0x02};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1664,14 +1664,14 @@ void test_0xEC_CPX_ABS(void) {
     byte_t instr[] = {INSTRUCTION_CPX_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, C));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0xED - SBC ABS
 void test_0xED_SBC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
@@ -1693,7 +1693,7 @@ void test_0xEE_INC_ABS(void) {
 void test_0xF0_BEQ(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->PC = 0x0900;
-    set_flag(cpu, Z, true);
+    set_flag(cpu, STATUS_FLAG_Z, true);
     byte_t instr[] = {INSTRUCTION_BEQ_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1704,7 +1704,7 @@ void test_0xF0_BEQ(void) {
 void test_0xF1_SBC_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->Y = 0;
     cpu->memory[0x30] = 0x00;
     cpu->memory[0x31] = 0x03;
@@ -1719,7 +1719,7 @@ void test_0xF1_SBC_IZY(void) {
 void test_0xF5_SBC_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0x01;
     cpu->memory[0x41] = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ZPX, 0x40};
@@ -1742,19 +1742,19 @@ void test_0xF6_INC_ZPX(void) {
 // 0xF8 - SED
 void test_0xF8_SED(void) {
     cpu_s *cpu = get_test_cpu();
-    set_flag(cpu, D, false);
-    TEST_ASSERT_FALSE(get_flag(cpu, D));
+    set_flag(cpu, STATUS_FLAG_D, false);
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_D));
     byte_t instr[] = {INSTRUCTION_SED_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, D));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_D));
 }
 
 // 0xF9 - SBC ABY
 void test_0xF9_SBC_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->Y = 0;
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABY, 0x00, 0x05};
@@ -1767,7 +1767,7 @@ void test_0xF9_SBC_ABY(void) {
 void test_0xFD_SBC_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    set_flag(cpu, C, true);
+    set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
     cpu->memory[0x0500] = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABX, 0x00, 0x05};
