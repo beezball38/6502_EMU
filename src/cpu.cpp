@@ -2346,9 +2346,10 @@ byte_t pop_byte(cpu_s *cpu)
 */
 bool fetch_and_execute(cpu_s *cpu)
 {
-    assert(cpu != NULL && cpu->current_instruction != NULL);
-    bool result = cpu->current_instruction->fetch(cpu);
-    result = cpu->current_instruction->execute(cpu) && result;
+    assert(cpu != NULL && cpu->instruction_pending);
+    cpu_instruction_s *instruction = get_current_instruction(cpu);
+    bool result = instruction->fetch(cpu);
+    result = instruction->execute(cpu) && result;
     return result;
 }
 
@@ -2361,10 +2362,12 @@ void clock(cpu_s *cpu)
         return; //noop
     }
 
-    if (cpu->current_instruction == NULL)
+    if (!cpu->instruction_pending)
     {
-        cpu->current_instruction = &cpu->table[peek(cpu)];
-        cpu->cycles = cpu->current_instruction->cycles - 1; //takes one cycle to fetch
+        cpu->current_opcode = peek(cpu);
+        cpu->instruction_pending = true;
+        cpu_instruction_s *instruction = get_current_instruction(cpu);
+        cpu->cycles = instruction->cycles - 1; //takes one cycle to fetch
     }
     else
     {
@@ -2373,9 +2376,10 @@ void clock(cpu_s *cpu)
 
     if (cpu->cycles == 0)
     {
+        cpu_instruction_s *instruction = get_current_instruction(cpu);
         cpu->does_need_additional_cycle = fetch_and_execute(cpu);
-        adjust_pc(cpu, cpu->current_instruction->length);
-        cpu->current_instruction = NULL;
+        adjust_pc(cpu, instruction->length);
+        cpu->instruction_pending = false;
     }
 }
 
@@ -2390,6 +2394,8 @@ void cpu_init(cpu_s *cpu, byte_t *memory)
     cpu->STATUS = 0x00 | U;
     cpu->PC = 0x0000;
     cpu->does_need_additional_cycle = false;
+    cpu->current_opcode = 0x00;
+    cpu->instruction_pending = false;
 
     cpu->memory = memory;
     init_instruction_table(cpu);
@@ -2437,6 +2443,16 @@ void adjust_pc(cpu_s *cpu, byte_t length)
 {
     cpu->PC += length;
     return;
+}
+
+cpu_instruction_s* get_instruction(cpu_s *cpu, byte_t opcode)
+{
+    return &cpu->table[opcode];
+}
+
+cpu_instruction_s* get_current_instruction(cpu_s *cpu)
+{
+    return get_instruction(cpu, cpu->current_opcode);
 }
 
 

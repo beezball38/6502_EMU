@@ -333,7 +333,8 @@ struct c6502
     byte_t STATUS;
 
     size_t cycles;
-    cpu_instruction_s *current_instruction;
+    byte_t current_opcode;
+    bool instruction_pending;
     bool pc_changed;
     bool does_need_additional_cycle;
     byte_t *memory;
@@ -342,6 +343,16 @@ struct c6502
 
 void init_instruction_table(cpu_s *cpu);
 void cpu_init(cpu_s *cpu, byte_t *memory);
+
+/*
+    Get instruction from table by opcode
+*/
+cpu_instruction_s* get_instruction(cpu_s *cpu, byte_t opcode);
+
+/*
+    Get the current instruction based on CPU state
+*/
+cpu_instruction_s* get_current_instruction(cpu_s *cpu);
 //to_string function for addressing modes
 char *addr_mode_to_string(cpu_addr_mode_e mode);
 

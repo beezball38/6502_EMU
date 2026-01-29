@@ -25,8 +25,10 @@ void load_instruction(cpu_s *cpu, std::vector<byte_t> instruction)
 {
     assert(instruction.size() > 0);
     const byte_t op_code = instruction.at(0);
-    cpu->current_instruction = &cpu->table[op_code];
-    assert(cpu->current_instruction->length == instruction.size());
+    cpu->current_opcode = op_code;
+    cpu->instruction_pending = true;
+    cpu_instruction_s *current_instruction = get_current_instruction(cpu);
+    assert(current_instruction->length == instruction.size());
     byte_t pc = cpu->PC;
     for(byte_t byte:instruction)
     {
@@ -36,14 +38,15 @@ void load_instruction(cpu_s *cpu, std::vector<byte_t> instruction)
 
 void run_instruction(cpu_s *cpu)
 {
-        if(cpu->current_instruction->fetch != NULL)
+        cpu_instruction_s *current_instruction = get_current_instruction(cpu);
+        if(current_instruction->fetch != NULL)
         {
-            cpu->current_instruction->fetch(cpu);
+            current_instruction->fetch(cpu);
         }
 
-        if(cpu->current_instruction->execute != NULL)
+        if(current_instruction->execute != NULL)
         {
-            cpu->current_instruction->execute(cpu);
+            current_instruction->execute(cpu);
         }
 }
 
