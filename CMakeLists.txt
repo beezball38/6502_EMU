@@ -18,11 +18,11 @@ add_executable(emulator_main
 )
 target_link_libraries(emulator_main PRIVATE emulator_lib)
 
-# nestest runner
-add_executable(nestest_runner
-    src/nestest_runner.c
+# CPU trace tool
+add_executable(cpu_trace
+    tools/cpu_trace.c
 )
-target_link_libraries(nestest_runner PRIVATE emulator_lib)
+target_link_libraries(cpu_trace PRIVATE emulator_lib)
 
 # Include directories
 target_include_directories(emulator_lib

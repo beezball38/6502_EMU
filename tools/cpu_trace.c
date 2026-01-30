@@ -1,0 +1,549 @@
+// CPU trace tool - outputs execution logs for any ROM
+// Can optionally compare against a reference log (like nestest)
+//
+// Usage: cpu_trace <rom.nes> [options]
+//        cpu_trace --nestest   (auto-finds roms/nestest.nes and logs/nestest.log)
+//
+// Options:
+//   -c, --compare <log>   Compare against reference log
+//   -n, --max <count>     Max instructions to execute (default: 10000)
+//   --pc <addr>           Override start PC (hex, e.g. C000)
+//   --nestest             Use nestest automation mode (auto-finds nestest files)
+//   -o, --output <file>   Write trace to file instead of stdout
+//   -q, --quiet           Suppress trace output (useful with --compare)
+//
+// Examples:
+//   cpu_trace roms/game.nes
+//   cpu_trace roms/game.nes --pc 8000
+//   cpu_trace --nestest
+//   cpu_trace roms/game.nes -o logs/trace.log
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include "cpu.h"
+#include "ines.h"
+
+#define MEMORY_SIZE (64 * 1024)
+#define DEFAULT_MAX_INSTRUCTIONS 10000
+#define NESTEST_START_PC 0xC000
+#define NESTEST_INITIAL_SP 0xFD
+#define NESTEST_INITIAL_STATUS 0x24
+#define NESTEST_OFFICIAL_OPCODES_END 5003  // Unofficial opcodes start after this line
+#define TRACE_LINE_SIZE 128
+
+// Directory structure
+#define ROMS_DIR "roms/"
+#define LOGS_DIR "logs/"
+#define NESTEST_ROM_PATH ROMS_DIR "nestest.nes"
+#define NESTEST_LOG_PATH LOGS_DIR "nestest.log"
+#define NESTEST_TRACE_OUTPUT LOGS_DIR "nestest_cpu_trace.log"
+
+// Command line options
+typedef struct {
+    const char *rom_path;
+    const char *compare_path;
+    const char *output_path;
+    int max_instructions;
+    int start_pc;           // -1 means use reset vector
+    bool nestest_mode;
+    bool quiet;
+} options_t;
+
+// Log entry for comparison
+typedef struct {
+    word_t pc;
+    byte_t a;
+    byte_t x;
+    byte_t y;
+    byte_t p;
+    byte_t sp;
+} log_entry_t;
+
+// Check if a file exists
+static bool file_exists(const char *path) {
+    FILE *f = fopen(path, "r");
+    if (f) {
+        fclose(f);
+        return true;
+    }
+    return false;
+}
+
+static void print_usage(const char *program_name) {
+    printf("CPU trace tool - outputs execution logs for any ROM\n\n");
+    printf("Usage: %s <rom.nes> [options]\n", program_name);
+    printf("       %s --nestest   (auto-finds nestest files)\n\n", program_name);
+    printf("Options:\n");
+    printf("  -c, --compare <log>   Compare against reference log\n");
+    printf("  -n, --max <count>     Max instructions to execute (default: %d)\n", DEFAULT_MAX_INSTRUCTIONS);
+    printf("  --pc <addr>           Override start PC (hex, e.g. C000)\n");
+    printf("  --nestest             Use nestest automation mode (uses %s and %s)\n", NESTEST_ROM_PATH, NESTEST_LOG_PATH);
+    printf("  -o, --output <file>   Write trace to file instead of stdout\n");
+    printf("  -q, --quiet           Suppress trace output (useful with --compare)\n");
+    printf("\nExamples:\n");
+    printf("  %s roms/game.nes\n", program_name);
+    printf("  %s roms/game.nes --pc 8000\n", program_name);
+    printf("  %s --nestest\n", program_name);
+    printf("  %s roms/game.nes -o logs/trace.log\n", program_name);
+}
+
+static bool parse_args(int argc, char *argv[], options_t *opts) {
+    // Initialize defaults
+    opts->rom_path = NULL;
+    opts->compare_path = NULL;
+    opts->output_path = NULL;
+    opts->max_instructions = DEFAULT_MAX_INSTRUCTIONS;
+    opts->start_pc = -1;  // Use reset vector by default
+    opts->nestest_mode = false;
+    opts->quiet = false;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--compare") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
+                return false;
+            }
+            opts->compare_path = argv[++i];
+        } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--max") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
+                return false;
+            }
+            opts->max_instructions = atoi(argv[++i]);
+            if (opts->max_instructions <= 0) {
+                fprintf(stderr, "Error: Invalid max instruction count\n");
+                return false;
+            }
+        } else if (strcmp(argv[i], "--pc") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: --pc requires an argument\n");
+                return false;
+            }
+            unsigned int pc;
+            if (sscanf(argv[++i], "%x", &pc) != 1) {
+                fprintf(stderr, "Error: Invalid PC address (expected hex)\n");
+                return false;
+            }
+            opts->start_pc = (int)pc;
+        } else if (strcmp(argv[i], "--nestest") == 0) {
+            opts->nestest_mode = true;
+        } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
+                return false;
+            }
+            opts->output_path = argv[++i];
+        } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
+            opts->quiet = true;
+        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage(argv[0]);
+            exit(0);
+        } else if (argv[i][0] == '-') {
+            fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
+            return false;
+        } else if (opts->rom_path == NULL) {
+            opts->rom_path = argv[i];
+        } else {
+            fprintf(stderr, "Error: Unexpected argument: %s\n", argv[i]);
+            return false;
+        }
+    }
+
+    // Handle --nestest mode: auto-find ROM and log files
+    if (opts->nestest_mode) {
+        // Use default paths if not specified
+        if (opts->rom_path == NULL) {
+            opts->rom_path = NESTEST_ROM_PATH;
+        }
+        if (opts->compare_path == NULL) {
+            opts->compare_path = NESTEST_LOG_PATH;
+        }
+
+        // Verify required files exist
+        if (!file_exists(opts->rom_path)) {
+            fprintf(stderr, "Error: nestest ROM not found: %s\n", opts->rom_path);
+            return false;
+        }
+        if (!file_exists(opts->compare_path)) {
+            fprintf(stderr, "Error: nestest log not found: %s\n", opts->compare_path);
+            return false;
+        }
+    } else if (opts->rom_path == NULL) {
+        fprintf(stderr, "Error: ROM path required\n\n");
+        print_usage(argv[0]);
+        return false;
+    }
+
+    return true;
+}
+
+// Format current CPU state as nestest log line
+static void format_log_line(cpu_s *cpu, char *buffer, size_t size) {
+    cpu_instruction_s *instr = get_instruction(cpu, cpu->memory[cpu->PC]);
+
+    // Read instruction bytes
+    byte_t bytes[3] = {0};
+    bytes[0] = cpu->memory[cpu->PC];
+    if (instr->length > 1) bytes[1] = cpu->memory[cpu->PC + 1];
+    if (instr->length > 2) bytes[2] = cpu->memory[cpu->PC + 2];
+
+    // Format: PC  BYTES  MNEMONIC  A:XX X:XX Y:XX P:XX SP:XX
+    char byte_str[12];
+    switch (instr->length) {
+        case 1:
+            snprintf(byte_str, sizeof(byte_str), "%02X      ", bytes[0]);
+            break;
+        case 2:
+            snprintf(byte_str, sizeof(byte_str), "%02X %02X   ", bytes[0], bytes[1]);
+            break;
+        case 3:
+            snprintf(byte_str, sizeof(byte_str), "%02X %02X %02X", bytes[0], bytes[1], bytes[2]);
+            break;
+        default:
+            snprintf(byte_str, sizeof(byte_str), "??      ");
+            break;
+    }
+
+    snprintf(buffer, size,
+             "%04X  %s  %-4s  A:%02X X:%02X Y:%02X P:%02X SP:%02X",
+             cpu->PC, byte_str, instr->name ? instr->name : "???",
+             cpu->A, cpu->X, cpu->Y, cpu->STATUS, cpu->SP);
+}
+
+// Parse a reference log line to extract CPU state
+static bool parse_log_line(const char *line, log_entry_t *entry) {
+    // Format: C000  4C F5 C5  JMP $C5F5                       A:00 X:00 Y:00 P:24 SP:FD ...
+    unsigned int pc, a, x, y, p, sp;
+
+    // Find register values by looking for "A:" pattern
+    const char *a_pos = strstr(line, "A:");
+    if (!a_pos) return false;
+
+    if (sscanf(line, "%04X", &pc) != 1) return false;
+    if (sscanf(a_pos, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", &a, &x, &y, &p, &sp) != 5) {
+        return false;
+    }
+
+    entry->pc = (word_t)pc;
+    entry->a = (byte_t)a;
+    entry->x = (byte_t)x;
+    entry->y = (byte_t)y;
+    entry->p = (byte_t)p;
+    entry->sp = (byte_t)sp;
+
+    return true;
+}
+
+// Compare CPU state against expected log entry
+static bool compare_state(cpu_s *cpu, const log_entry_t *expected, int line_num) {
+    bool match = true;
+
+    if (cpu->PC != expected->pc) {
+        printf("Line %d: PC mismatch - expected %04X, got %04X\n",
+               line_num, expected->pc, cpu->PC);
+        match = false;
+    }
+    if (cpu->A != expected->a) {
+        printf("Line %d: A mismatch - expected %02X, got %02X\n",
+               line_num, expected->a, cpu->A);
+        match = false;
+    }
+    if (cpu->X != expected->x) {
+        printf("Line %d: X mismatch - expected %02X, got %02X\n",
+               line_num, expected->x, cpu->X);
+        match = false;
+    }
+    if (cpu->Y != expected->y) {
+        printf("Line %d: Y mismatch - expected %02X, got %02X\n",
+               line_num, expected->y, cpu->Y);
+        match = false;
+    }
+    if (cpu->STATUS != expected->p) {
+        printf("Line %d: P mismatch - expected %02X, got %02X\n",
+               line_num, expected->p, cpu->STATUS);
+        match = false;
+    }
+    if (cpu->SP != expected->sp) {
+        printf("Line %d: SP mismatch - expected %02X, got %02X\n",
+               line_num, expected->sp, cpu->SP);
+        match = false;
+    }
+
+    return match;
+}
+
+// Run a single instruction (fetch, decode, execute)
+static void run_instruction(cpu_s *cpu) {
+    cpu->current_opcode = cpu->memory[cpu->PC];
+    cpu->instruction_pending = true;
+    cpu->pc_changed = false;
+
+    cpu_instruction_s *instr = get_current_instruction(cpu);
+
+    // Fetch operand
+    if (instr->data_fetch) {
+        instr->data_fetch(cpu);
+    }
+
+    // Execute
+    if (instr->execute) {
+        instr->execute(cpu);
+    }
+
+    // Advance PC if instruction didn't modify it
+    if (!cpu->pc_changed) {
+        cpu->PC += instr->length;
+    }
+
+    cpu->instruction_pending = false;
+}
+
+int main(int argc, char *argv[]) {
+    options_t opts;
+    if (!parse_args(argc, argv, &opts)) {
+        return 1;
+    }
+
+    // Load ROM
+    ines_rom_t rom;
+    if (!ines_load(opts.rom_path, &rom)) {
+        fprintf(stderr, "Failed to load ROM: %s\n", opts.rom_path);
+        return 1;
+    }
+
+    if (!opts.quiet) {
+        ines_print_info(&rom);
+    }
+
+    // Initialize memory and CPU
+    byte_t *memory = malloc(MEMORY_SIZE);
+    if (!memory) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        ines_free(&rom);
+        return 1;
+    }
+
+    cpu_s cpu;
+    cpu_init(&cpu, memory);
+    init_instruction_table(&cpu);
+
+    // Load PRG ROM into memory
+    ines_load_prg_into_memory(&rom, memory);
+
+    // Set initial CPU state
+    if (opts.nestest_mode) {
+        // nestest automation mode
+        cpu.PC = NESTEST_START_PC;
+        cpu.SP = NESTEST_INITIAL_SP;
+        cpu.STATUS = NESTEST_INITIAL_STATUS;
+        if (!opts.quiet) {
+            printf("\nNestest mode: PC=$%04X, SP=$%02X, P=$%02X\n",
+                   cpu.PC, cpu.SP, cpu.STATUS);
+        }
+    } else if (opts.start_pc >= 0) {
+        // Custom start PC
+        cpu.PC = (word_t)opts.start_pc;
+        if (!opts.quiet) {
+            printf("\nStarting at PC=$%04X (custom)\n", cpu.PC);
+        }
+    } else {
+        // Use reset vector
+        word_t reset_vector = memory[0xFFFC] | (memory[0xFFFD] << 8);
+        cpu.PC = reset_vector;
+        if (!opts.quiet) {
+            printf("\nStarting at PC=$%04X (reset vector)\n", cpu.PC);
+        }
+    }
+
+    // Open output file if specified
+    FILE *output_file = stdout;
+    if (opts.output_path) {
+        output_file = fopen(opts.output_path, "w");
+        if (!output_file) {
+            fprintf(stderr, "Failed to open output file: %s\n", opts.output_path);
+            free(memory);
+            ines_free(&rom);
+            return 1;
+        }
+    }
+
+    // Open comparison log file if specified
+    FILE *compare_file = NULL;
+    if (opts.compare_path) {
+        compare_file = fopen(opts.compare_path, "r");
+        if (!compare_file) {
+            fprintf(stderr, "Warning: Could not open comparison log: %s\n", opts.compare_path);
+            fprintf(stderr, "Running without comparison.\n\n");
+        }
+    }
+
+    // Allocate trace buffer for nestest comparison mode
+    char **trace_buffer = NULL;
+    int trace_capacity = 0;
+    int trace_count = 0;
+
+    if (opts.nestest_mode && compare_file) {
+        trace_capacity = opts.max_instructions;
+        trace_buffer = malloc(trace_capacity * sizeof(char *));
+        if (!trace_buffer) {
+            fprintf(stderr, "Failed to allocate trace buffer\n");
+            if (compare_file) fclose(compare_file);
+            if (output_file != stdout) fclose(output_file);
+            free(memory);
+            ines_free(&rom);
+            return 1;
+        }
+    }
+
+    // Run instructions
+    char line_buffer[256];
+    char cpu_log[256];
+    int instruction_count = 0;
+    int mismatches = 0;
+    int first_mismatch_line = 0;  // Track where first mismatch occurred
+    bool running = true;
+    int exit_code = 0;
+
+    while (running && instruction_count < opts.max_instructions) {
+        // Format current state before execution
+        format_log_line(&cpu, cpu_log, sizeof(cpu_log));
+
+        // Store trace line in buffer if in nestest comparison mode
+        if (trace_buffer && trace_count < trace_capacity) {
+            trace_buffer[trace_count] = strdup(cpu_log);
+            trace_count++;
+        }
+
+        // Compare against log file if available
+        if (compare_file && fgets(line_buffer, sizeof(line_buffer), compare_file)) {
+            log_entry_t expected;
+            if (parse_log_line(line_buffer, &expected)) {
+                if (!compare_state(&cpu, &expected, instruction_count + 1)) {
+                    printf("CPU: %s\n", cpu_log);
+                    printf("Expected: %s", line_buffer);
+                    mismatches++;
+
+                    if (first_mismatch_line == 0) {
+                        first_mismatch_line = instruction_count + 1;
+                    }
+
+                    if (mismatches >= 10) {
+                        printf("\nToo many mismatches, stopping.\n");
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Output trace line (unless quiet mode)
+        if (!opts.quiet && !compare_file) {
+            fprintf(output_file, "%s\n", cpu_log);
+        }
+
+        // Execute instruction
+        run_instruction(&cpu);
+        instruction_count++;
+
+        // Check for end conditions in nestest mode
+        if (opts.nestest_mode) {
+            // nestest writes results to $02 and $03
+            // Official test ends around instruction 8991
+            if (instruction_count > 8991) {
+                running = false;
+            }
+
+            // Stop if we hit BRK at certain addresses (error conditions)
+            if (cpu.memory[cpu.PC] == 0x00 && cpu.PC < 0xC000) {
+                if (!opts.quiet) {
+                    printf("\nHit BRK at $%04X, stopping.\n", cpu.PC);
+                }
+                running = false;
+            }
+        }
+    }
+
+    // Print results
+    if (!opts.quiet) {
+        printf("\n=== Results ===\n");
+        printf("Instructions executed: %d\n", instruction_count);
+        printf("Final PC: $%04X\n", cpu.PC);
+    }
+
+    // Check nestest result codes
+    if (opts.nestest_mode) {
+        if (!opts.quiet) {
+            printf("Error code at $02: $%02X\n", memory[0x0002]);
+            printf("Error code at $03: $%02X\n", memory[0x0003]);
+        }
+
+        if (memory[0x0002] == 0x00 && memory[0x0003] == 0x00) {
+            if (!opts.quiet) {
+                printf("\n*** ALL TESTS PASSED ***\n");
+            }
+        } else {
+            if (!opts.quiet) {
+                printf("\n*** TESTS FAILED ***\n");
+                printf("Check nestest.txt for error code meanings.\n");
+            }
+            exit_code = 1;
+        }
+    }
+
+    if (compare_file) {
+        if (!opts.quiet) {
+            printf("Mismatches with log: %d\n", mismatches);
+        }
+
+        // Report official vs unofficial opcode status for nestest
+        if (opts.nestest_mode && !opts.quiet) {
+            if (mismatches == 0) {
+                printf("\n*** ALL OFFICIAL AND UNOFFICIAL OPCODES PASSED ***\n");
+            } else if (first_mismatch_line > NESTEST_OFFICIAL_OPCODES_END) {
+                printf("\n*** ALL OFFICIAL OPCODES PASSED ***\n");
+                printf("Unofficial opcodes: FAILED (first mismatch at line %d)\n", first_mismatch_line);
+                // Don't fail exit code for unofficial opcodes
+                exit_code = 0;
+
+                // Dump trace to file for manual comparison
+                if (trace_buffer) {
+                    FILE *trace_file = fopen(NESTEST_TRACE_OUTPUT, "w");
+                    if (trace_file) {
+                        for (int i = 0; i < trace_count; i++) {
+                            fprintf(trace_file, "%s\n", trace_buffer[i]);
+                        }
+                        fclose(trace_file);
+                        printf("Trace written to: %s\n", NESTEST_TRACE_OUTPUT);
+                    } else {
+                        fprintf(stderr, "Warning: Could not write trace file: %s\n", NESTEST_TRACE_OUTPUT);
+                    }
+                }
+            } else {
+                printf("\n*** OFFICIAL OPCODES FAILED ***\n");
+                printf("First mismatch at line %d (official opcodes end at line %d)\n",
+                       first_mismatch_line, NESTEST_OFFICIAL_OPCODES_END);
+                exit_code = 1;
+            }
+        } else if (mismatches > 0) {
+            exit_code = 1;
+        }
+
+        fclose(compare_file);
+    }
+
+    // Cleanup
+    if (trace_buffer) {
+        for (int i = 0; i < trace_count; i++) {
+            free(trace_buffer[i]);
+        }
+        free(trace_buffer);
+    }
+    if (output_file != stdout) {
+        fclose(output_file);
+    }
+    free(memory);
+    ines_free(&rom);
+
+    return exit_code;
+}

@@ -14,7 +14,7 @@ static bool validate_header(const ines_header_t *header) {
            header->magic[3] == 0x1A;
 }
 
-static void parse_header(ines_rom_t *rom) {
+static void decode_header(ines_rom_t *rom) {
     byte_t flags6 = rom->header.flags6;
     byte_t flags7 = rom->header.flags7;
 
@@ -43,6 +43,7 @@ bool ines_load_file(FILE *file, ines_rom_t *rom) {
     memset(rom, 0, sizeof(ines_rom_t));
 
     // Read header
+    // Note this can't just be read into a struct like this. We need to go byte by byte
     if (fread(&rom->header, sizeof(ines_header_t), 1, file) != 1) {
         return false;
     }
@@ -52,8 +53,8 @@ bool ines_load_file(FILE *file, ines_rom_t *rom) {
         return false;
     }
 
-    // Parse header flags
-    parse_header(rom);
+    // Read the header and set ROM struct state appropriately
+    decode_header(rom);
 
     // Skip trainer if present
     if (rom->has_trainer) {
