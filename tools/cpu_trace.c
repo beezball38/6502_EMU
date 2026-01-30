@@ -11,6 +11,7 @@
 //   --nestest             Use nestest automation mode (auto-finds nestest files)
 //   -o, --output <file>   Write trace to file instead of stdout
 //   -q, --quiet           Suppress trace output (useful with --compare)
+//   -s, --step            Step mode: press Enter to step, 'c' to continue
 //
 // Examples:
 //   cpu_trace roms/game.nes
@@ -22,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <termios.h>
+#include <unistd.h>
 #include "cpu.h"
 #include "ines.h"
 
@@ -49,6 +52,7 @@ typedef struct {
     int start_pc;           // -1 means use reset vector
     bool nestest_mode;
     bool quiet;
+    bool step;              // Step mode: press Enter to step, 'c' to continue
 } options_t;
 
 // Log entry for comparison
@@ -71,6 +75,53 @@ static bool file_exists(const char *path) {
     return false;
 }
 
+// Terminal state for step mode
+static struct termios orig_termios;
+static bool termios_saved = false;
+
+// Restore terminal to original state
+static void restore_terminal(void) {
+    if (termios_saved) {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+    }
+}
+
+// Enable raw mode for single character input
+static void enable_raw_mode(void) {
+    if (!termios_saved) {
+        tcgetattr(STDIN_FILENO, &orig_termios);
+        termios_saved = true;
+        atexit(restore_terminal);
+    }
+
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ICANON | ECHO);  // Disable canonical mode and echo
+    raw.c_cc[VMIN] = 1;               // Read 1 byte at a time
+    raw.c_cc[VTIME] = 0;              // No timeout
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+// Read a single character in step mode
+// Returns: 's' to step, 'c' to continue, 'q' to quit
+static char read_step_input(void) {
+    enable_raw_mode();
+    char c;
+    if (read(STDIN_FILENO, &c, 1) != 1) {
+        restore_terminal();
+        return 'q';
+    }
+    restore_terminal();
+
+    if (c == '\n' || c == '\r' || c == ' ') {
+        return 's';  // Step
+    } else if (c == 'c' || c == 'C') {
+        return 'c';  // Continue
+    } else if (c == 'q' || c == 'Q' || c == 3) {  // 3 = Ctrl+C
+        return 'q';  // Quit
+    }
+    return 's';  // Default to step for any other key
+}
+
 static void print_usage(const char *program_name) {
     printf("CPU trace tool - outputs execution logs for any ROM\n\n");
     printf("Usage: %s <rom.nes> [options]\n", program_name);
@@ -82,11 +133,13 @@ static void print_usage(const char *program_name) {
     printf("  --nestest             Use nestest automation mode (uses %s and %s)\n", NESTEST_ROM_PATH, NESTEST_LOG_PATH);
     printf("  -o, --output <file>   Write trace to file instead of stdout\n");
     printf("  -q, --quiet           Suppress trace output (useful with --compare)\n");
+    printf("  -s, --step            Step mode: Enter=step, c=continue, q=quit\n");
     printf("\nExamples:\n");
     printf("  %s roms/game.nes\n", program_name);
     printf("  %s roms/game.nes --pc 8000\n", program_name);
     printf("  %s --nestest\n", program_name);
     printf("  %s roms/game.nes -o logs/trace.log\n", program_name);
+    printf("  %s roms/game.nes -s    (step through execution)\n", program_name);
 }
 
 static bool parse_args(int argc, char *argv[], options_t *opts) {
@@ -98,6 +151,7 @@ static bool parse_args(int argc, char *argv[], options_t *opts) {
     opts->start_pc = -1;  // Use reset vector by default
     opts->nestest_mode = false;
     opts->quiet = false;
+    opts->step = false;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--compare") == 0) {
@@ -137,6 +191,8 @@ static bool parse_args(int argc, char *argv[], options_t *opts) {
             opts->output_path = argv[++i];
         } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
             opts->quiet = true;
+        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--step") == 0) {
+            opts->step = true;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             exit(0);
@@ -404,7 +460,12 @@ int main(int argc, char *argv[]) {
     int mismatches = 0;
     int first_mismatch_line = 0;  // Track where first mismatch occurred
     bool running = true;
+    bool stepping = opts.step;    // Track if we're in step mode
     int exit_code = 0;
+
+    if (stepping) {
+        printf("Step mode: Enter=step, c=continue, q=quit\n\n");
+    }
 
     while (running && instruction_count < opts.max_instructions) {
         // Format current state before execution
@@ -440,6 +501,29 @@ int main(int argc, char *argv[]) {
         // Output trace line (unless quiet mode)
         if (!opts.quiet && !compare_file) {
             fprintf(output_file, "%s\n", cpu_log);
+            if (output_file != stdout) {
+                fflush(output_file);  // Ensure line is written to file before stepping
+            }
+        }
+
+        // Handle step mode
+        if (stepping) {
+            // Always print trace line to stdout in step mode
+            printf("%s\n", cpu_log);
+            printf("[%d] ", instruction_count + 1);
+            fflush(stdout);
+
+            char input = read_step_input();
+            printf("\r                    \r");  // Clear the prompt
+            if (input == 'c') {
+                stepping = false;
+                printf("Continuing...\n");
+            } else if (input == 'q') {
+                printf("Quit.\n");
+                running = false;
+                break;
+            }
+            // 's' (step) just continues to next iteration
         }
 
         // Execute instruction
