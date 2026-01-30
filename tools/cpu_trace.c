@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <termios.h>
 #include <unistd.h>
+#include <getopt.h>
 #include "cpu.h"
 #include "ines.h"
 
@@ -143,73 +144,81 @@ static void print_usage(const char *program_name) {
 }
 
 static bool parse_args(int argc, char *argv[], options_t *opts) {
+    static struct option long_options[] = {
+        {"compare", required_argument, NULL, 'c'},
+        {"max",     required_argument, NULL, 'n'},
+        {"pc",      required_argument, NULL, 'p'},
+        {"nestest", no_argument,       NULL, 'N'},
+        {"output",  required_argument, NULL, 'o'},
+        {"quiet",   no_argument,       NULL, 'q'},
+        {"step",    no_argument,       NULL, 's'},
+        {"help",    no_argument,       NULL, 'h'},
+        {NULL, 0, NULL, 0}
+    };
+
     // Initialize defaults
     opts->rom_path = NULL;
     opts->compare_path = NULL;
     opts->output_path = NULL;
     opts->max_instructions = DEFAULT_MAX_INSTRUCTIONS;
-    opts->start_pc = -1;  // Use reset vector by default
+    opts->start_pc = -1;
     opts->nestest_mode = false;
     opts->quiet = false;
     opts->step = false;
 
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--compare") == 0) {
-            if (i + 1 >= argc) {
-                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
-                return false;
+    int opt;
+    while ((opt = getopt_long(argc, argv, "c:n:o:qsh", long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'c':
+                opts->compare_path = optarg;
+                break;
+            case 'n':
+                opts->max_instructions = atoi(optarg);
+                if (opts->max_instructions <= 0) {
+                    fprintf(stderr, "Error: Invalid max instruction count\n");
+                    return false;
+                }
+                break;
+            case 'p': {
+                unsigned int pc;
+                if (sscanf(optarg, "%x", &pc) != 1) {
+                    fprintf(stderr, "Error: Invalid PC address (expected hex)\n");
+                    return false;
+                }
+                opts->start_pc = (int)pc;
+                break;
             }
-            opts->compare_path = argv[++i];
-        } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--max") == 0) {
-            if (i + 1 >= argc) {
-                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
+            case 'N':
+                opts->nestest_mode = true;
+                break;
+            case 'o':
+                opts->output_path = optarg;
+                break;
+            case 'q':
+                opts->quiet = true;
+                break;
+            case 's':
+                opts->step = true;
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                exit(0);
+            case '?':
                 return false;
-            }
-            opts->max_instructions = atoi(argv[++i]);
-            if (opts->max_instructions <= 0) {
-                fprintf(stderr, "Error: Invalid max instruction count\n");
-                return false;
-            }
-        } else if (strcmp(argv[i], "--pc") == 0) {
-            if (i + 1 >= argc) {
-                fprintf(stderr, "Error: --pc requires an argument\n");
-                return false;
-            }
-            unsigned int pc;
-            if (sscanf(argv[++i], "%x", &pc) != 1) {
-                fprintf(stderr, "Error: Invalid PC address (expected hex)\n");
-                return false;
-            }
-            opts->start_pc = (int)pc;
-        } else if (strcmp(argv[i], "--nestest") == 0) {
-            opts->nestest_mode = true;
-        } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
-            if (i + 1 >= argc) {
-                fprintf(stderr, "Error: %s requires an argument\n", argv[i]);
-                return false;
-            }
-            opts->output_path = argv[++i];
-        } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
-            opts->quiet = true;
-        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--step") == 0) {
-            opts->step = true;
-        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            exit(0);
-        } else if (argv[i][0] == '-') {
-            fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
-            return false;
-        } else if (opts->rom_path == NULL) {
-            opts->rom_path = argv[i];
-        } else {
-            fprintf(stderr, "Error: Unexpected argument: %s\n", argv[i]);
+        }
+    }
+
+    // Handle positional argument (ROM path)
+    if (optind < argc) {
+        opts->rom_path = argv[optind];
+        if (optind + 1 < argc) {
+            fprintf(stderr, "Error: Unexpected argument: %s\n", argv[optind + 1]);
             return false;
         }
     }
 
     // Handle --nestest mode: auto-find ROM and log files
     if (opts->nestest_mode) {
-        // Use default paths if not specified
         if (opts->rom_path == NULL) {
             opts->rom_path = NESTEST_ROM_PATH;
         }
@@ -217,7 +226,6 @@ static bool parse_args(int argc, char *argv[], options_t *opts) {
             opts->compare_path = NESTEST_LOG_PATH;
         }
 
-        // Verify required files exist
         if (!file_exists(opts->rom_path)) {
             fprintf(stderr, "Error: nestest ROM not found: %s\n", opts->rom_path);
             return false;
