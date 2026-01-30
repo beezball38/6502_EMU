@@ -6,7 +6,12 @@ case "$1" in
         echo "Clean complete"
         ;;
     test)
-        mkdir -p build && cd build && cmake .. && make && ./bin/tests/emulator_tests
+        mkdir -p build && cd build && cmake .. && make && cd .. && \
+        echo "=== Running unit tests ===" && \
+        ./build/bin/tests/emulator_tests && \
+        echo "" && \
+        echo "=== Running nestest (legal opcodes) ===" && \
+        ./build/bin/cpu_trace --nestest -q -n 5003
         ;;
     *)
         mkdir -p build && cd build && cmake .. && make
