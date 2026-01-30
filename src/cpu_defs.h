@@ -11,7 +11,7 @@
 typedef uint8_t byte_t;
 typedef uint16_t word_t;   // used for addresses
 typedef int8_t offset_t;   // used for signed branch offsets
-typedef struct c6502 cpu_s; // Forward declaration
+typedef struct cpu_s cpu_s; // Forward declaration
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 // =============================================================================

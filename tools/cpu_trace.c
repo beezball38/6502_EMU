@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include "cpu.h"
+#include "bus.h"
 #include "ines.h"
 
 #define MEMORY_SIZE (64 * 1024)
@@ -248,13 +249,13 @@ static bool parse_args(int argc, char *argv[], options_t *opts) {
 
 // Format current CPU state as nestest log line
 static void format_log_line(cpu_s *cpu, char *buffer, size_t size) {
-    cpu_instruction_s *instr = get_instruction(cpu, cpu->memory[cpu->PC]);
+    cpu_instruction_s *instr = get_instruction(cpu, bus_read(cpu->bus, cpu->PC));
 
     // Read instruction bytes
     byte_t bytes[3] = {0};
-    bytes[0] = cpu->memory[cpu->PC];
-    if (instr->length > 1) bytes[1] = cpu->memory[cpu->PC + 1];
-    if (instr->length > 2) bytes[2] = cpu->memory[cpu->PC + 2];
+    bytes[0] = bus_read(cpu->bus, cpu->PC);
+    if (instr->length > 1) bytes[1] = bus_read(cpu->bus, cpu->PC + 1);
+    if (instr->length > 2) bytes[2] = bus_read(cpu->bus, cpu->PC + 2);
 
     // Format: PC  BYTES  MNEMONIC  A:XX X:XX Y:XX P:XX SP:XX
     char byte_str[12];
@@ -349,7 +350,7 @@ static bool compare_state(cpu_s *cpu, const log_entry_t *expected, int line_num,
 
 // Run a single instruction (fetch, decode, execute)
 static void run_instruction(cpu_s *cpu) {
-    cpu->current_opcode = cpu->memory[cpu->PC];
+    cpu->current_opcode = bus_read(cpu->bus, cpu->PC);
     cpu->instruction_pending = true;
     cpu->pc_changed = false;
 
@@ -390,20 +391,13 @@ int main(int argc, char *argv[]) {
         ines_print_info(&rom);
     }
 
-    // Initialize memory and CPU
-    byte_t *memory = malloc(MEMORY_SIZE);
-    if (!memory) {
-        fprintf(stderr, "Failed to allocate memory\n");
-        ines_free(&rom);
-        return 1;
-    }
+    // Initialize bus and CPU
+    bus_s bus;
+    bus_init(&bus);
+    bus_load_prg_rom(&bus, rom.prg_rom, rom.prg_rom_bytes);
 
     cpu_s cpu;
-    cpu_init(&cpu, memory);
-    init_instruction_table(&cpu);
-
-    // Load PRG ROM into memory
-    ines_load_prg_into_memory(&rom, memory);
+    cpu_init(&cpu, &bus);
 
     // Set initial CPU state
     if (opts.nestest_mode) {
@@ -433,7 +427,7 @@ int main(int argc, char *argv[]) {
         }
     } else {
         // Use reset vector
-        word_t reset_vector = memory[0xFFFC] | (memory[0xFFFD] << 8);
+        word_t reset_vector = bus_read(&bus, 0xFFFC) | (bus_read(&bus, 0xFFFD) << 8);
         cpu.PC = reset_vector;
         if (!opts.quiet) {
             printf("\nStarting at PC=$%04X (reset vector)\n", cpu.PC);
@@ -446,7 +440,6 @@ int main(int argc, char *argv[]) {
         output_file = fopen(opts.output_path, "w");
         if (!output_file) {
             fprintf(stderr, "Failed to open output file: %s\n", opts.output_path);
-            free(memory);
             ines_free(&rom);
             return 1;
         }
@@ -474,7 +467,6 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to allocate trace buffer\n");
             if (compare_file) fclose(compare_file);
             if (output_file != stdout) fclose(output_file);
-            free(memory);
             ines_free(&rom);
             return 1;
         }
@@ -591,7 +583,7 @@ int main(int argc, char *argv[]) {
             }
 
             // Stop if we hit BRK at certain addresses (error conditions)
-            if (cpu.memory[cpu.PC] == 0x00 && cpu.PC < 0xC000) {
+            if (bus_read(&bus, cpu.PC) == 0x00 && cpu.PC < 0xC000) {
                 if (!opts.quiet) {
                     printf("\nHit BRK at $%04X, stopping.\n", cpu.PC);
                 }
@@ -674,7 +666,6 @@ int main(int argc, char *argv[]) {
     if (output_file != stdout) {
         fclose(output_file);
     }
-    free(memory);
     ines_free(&rom);
 
     return exit_code;

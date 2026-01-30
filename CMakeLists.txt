@@ -10,6 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_library(emulator_lib
     src/cpu.c
     src/ines.c
+    src/bus.c
 )
 
 # Main executable

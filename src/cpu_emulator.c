@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "cpu.h"
-// 64 kb macro
-#define MEM_SIZE 1024 * 64
+#include "bus.h"
 
 cpu_s *get_cpu_instance(void);
 cpu_s *get_cpu_instance(void)
@@ -10,10 +9,18 @@ cpu_s *get_cpu_instance(void)
     return &cpu;
 }
 
+bus_s *get_bus_instance(void);
+bus_s *get_bus_instance(void)
+{
+    static bus_s bus;
+    return &bus;
+}
+
 int main(void)
 {
     cpu_s *cpu = get_cpu_instance();
-    byte_t memory[MEM_SIZE] = {0};
-    cpu_init(cpu, memory);
+    bus_s *bus = get_bus_instance();
+    bus_init(bus);
+    cpu_init(cpu, bus);
     return 0;
 }

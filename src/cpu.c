@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "bus.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,7 +27,7 @@ bool acc_mode;                     // true when using accumulator addressing mod
 
 /// @brief Function where all instructions for 6502 are defined
 /// @param cpu
-void init_instruction_table(cpu_s *cpu)
+static void init_instruction_table(cpu_s *cpu)
 {
     cpu_instruction_s *table = &cpu->table[0];
 
@@ -2256,8 +2257,8 @@ word_t assemble_word(byte_t high, byte_t low)
 
 void push_address(cpu_s *cpu, word_t addr)
 {
-    push_byte(cpu, ((addr) & 0xFF00) >> 8);
-    push_byte(cpu, (addr) & 0x00FF);
+    push_byte_to_stack(cpu, ((addr) & 0xFF00) >> 8);
+    push_byte_to_stack(cpu, (addr) & 0x00FF);
 }
 
 
@@ -2301,28 +2302,28 @@ byte_t branch_pc(cpu_s *cpu)
     return 0;
 }
 
-byte_t peek(cpu_s *cpu)
+static byte_t peek(cpu_s *cpu)
 {
-    assert(cpu != NULL && cpu->memory != NULL);
-    return cpu->memory[cpu->PC];
+    assert(cpu != NULL && cpu->bus != NULL);
+    return bus_read(cpu->bus, cpu->PC);
 }
 
 byte_t read_from_addr(cpu_s *cpu, word_t address)
 {
-    assert(cpu != NULL && cpu->memory != NULL);
-    return cpu->memory[address];
+    assert(cpu != NULL && cpu->bus != NULL);
+    return bus_read(cpu->bus, address);
 }
 
 void write_to_addr(cpu_s *cpu, word_t address, byte_t value)
 {
-    assert(cpu != NULL && cpu->memory != NULL);
-    cpu->memory[address] = value;
+    assert(cpu != NULL && cpu->bus != NULL);
+    bus_write(cpu->bus, address, value);
     return;
 }
 
-void push_byte(cpu_s *cpu, byte_t byte)
+void push_byte_to_stack(cpu_s *cpu, byte_t byte)
 {
-    assert(cpu != NULL && cpu->memory != NULL);
+    assert(cpu != NULL && cpu->bus != NULL);
     if (cpu->SP == 0x00)
     {
         cpu->SP = 0xFF; // stack is full, wrap around page 1
@@ -2335,7 +2336,7 @@ void push_byte(cpu_s *cpu, byte_t byte)
 
 byte_t pop_byte(cpu_s *cpu)
 {
-    assert(cpu != NULL && cpu->memory != NULL);
+    assert(cpu != NULL && cpu->bus != NULL);
     cpu->SP++;
     if (cpu->SP == 0xFF)
     {
@@ -2364,7 +2365,7 @@ bool fetch_and_execute(cpu_s *cpu)
 
 void clock(cpu_s *cpu)
 {
-    assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
+    assert(cpu != NULL && cpu->bus != NULL && cpu->table != NULL);
     cpu_instruction_s *instruction = NULL;
     if(cpu->does_need_additional_cycle)
     {
@@ -2394,9 +2395,9 @@ void clock(cpu_s *cpu)
 }
 
 //Just for constructing the CPU, not an actual interrupt
-void cpu_init(cpu_s *cpu, byte_t *memory)
+void cpu_init(cpu_s *cpu, bus_s *bus)
 {
-    assert(cpu != NULL && memory != NULL);
+    assert(cpu != NULL && bus != NULL);
     cpu->A = 0x00;
     cpu->X = 0x00;
     cpu->Y = 0x00;
@@ -2407,9 +2408,8 @@ void cpu_init(cpu_s *cpu, byte_t *memory)
     cpu->current_opcode = 0x00;
     cpu->instruction_pending = false;
 
-    cpu->memory = memory;
+    cpu->bus = bus; //attaching bus to CPU
     init_instruction_table(cpu);
-
 
     reset_globals();
     return;
@@ -2417,7 +2417,7 @@ void cpu_init(cpu_s *cpu, byte_t *memory)
 
 void reset(cpu_s *cpu)
 {
-    cpu_init(cpu, cpu->memory);
+    cpu_init(cpu, cpu->bus);
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->cycles += 8;
@@ -2427,12 +2427,12 @@ void reset(cpu_s *cpu)
 
 void irq(cpu_s *cpu)
 {
-    if (get_flag(cpu, STATUS_FLAG_I))
+    if (get_flag(cpu, STATUS_FLAG_I)) //interupt is overridden by I flag
     {
         return;
     }
     push_address(cpu, cpu->PC);
-    push_byte(cpu, cpu->STATUS);
+    push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
     cpu->cycles += 7;
@@ -2442,7 +2442,7 @@ void irq(cpu_s *cpu)
 void nmi(cpu_s *cpu)
 {
     push_address(cpu, cpu->PC);
-    push_byte(cpu, cpu->STATUS);
+    push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
     cpu->cycles += 8;
@@ -2710,7 +2710,7 @@ byte_t BRK(cpu_s *cpu)
     cpu->PC++; // BRK has a padding byte
     push_address(cpu, cpu->PC);
     set_flag(cpu, STATUS_FLAG_B, true); // sets the break flag because this is a software interrupt
-    push_byte(cpu, cpu->STATUS);
+    push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_B, false); // clears the break flag
     set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
@@ -2762,7 +2762,7 @@ byte_t ASL(cpu_s *cpu)
 */
 byte_t PHP(cpu_s *cpu)
 {
-    push_byte(cpu, cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U); // pushes the status register with the break and unused bits set
+    push_byte_to_stack(cpu, cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U); // pushes the status register with the break and unused bits set
     return 0;
 }
 
@@ -2991,7 +2991,7 @@ byte_t LSR(cpu_s *cpu)
 byte_t PHA(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    push_byte(cpu, cpu->A);
+    push_byte_to_stack(cpu, cpu->A);
     return 0;
 }
 

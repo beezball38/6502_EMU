@@ -3,13 +3,32 @@
 #include <string.h>
 #include "unity.h"
 #include "cpu.h"
+#include "bus.h"
 
-#define MEM_SIZE (64 * 1024 * 1024)
+#define MEM_SIZE (64 * 1024)
 #define BRANCH_INSTR_LEN 0x02
 
 // Singletons for tests, will only be accessed via get_test_cpu
 static cpu_s cpu;
-static byte_t memory[MEM_SIZE];
+static bus_s bus;
+
+// Helper to access bus RAM directly for test setup/verification
+// Note: For addresses >= 0x8000, we need to use PRG ROM area
+// For tests, we'll use a static PRG ROM buffer
+static byte_t test_prg_rom[32 * 1024];  // 32KB PRG ROM for tests
+
+// Unified memory access for tests - routes through bus
+static inline byte_t* test_mem_ptr(word_t addr) {
+    if (addr < 0x2000) {
+        // Internal RAM (mirrored)
+        return &bus.ram[addr & 0x07FF];
+    } else if (addr >= 0x8000) {
+        // PRG ROM area - use our test buffer
+        return &test_prg_rom[addr - 0x8000];
+    }
+    // For other addresses, just use RAM (tests shouldn't need PPU/APU regions)
+    return &bus.ram[addr & 0x07FF];
+}
 
 cpu_s *get_test_cpu(void);
 void load_instruction(cpu_s *cpu, const byte_t *instruction, size_t len);
@@ -25,9 +44,10 @@ void tearDown(void) {
 }
 
 cpu_s *get_test_cpu(void) {
-    memset(memory, 0, MEM_SIZE);
-    cpu_init(&cpu, memory);
-    init_instruction_table(&cpu);
+    bus_init(&bus);
+    memset(test_prg_rom, 0, sizeof(test_prg_rom));
+    bus_load_prg_rom(&bus, test_prg_rom, sizeof(test_prg_rom));
+    cpu_init(&cpu, &bus);
     return &cpu;
 }
 
@@ -40,7 +60,7 @@ void load_instruction(cpu_s *cpu, const byte_t *instruction, size_t len) {
     assert(current_instruction->length == len);
     word_t pc = cpu->PC;
     for (size_t i = 0; i < len; i++) {
-        cpu->memory[pc++] = instruction[i];
+        *test_mem_ptr(pc++) = instruction[i];
     }
 }
 
@@ -55,8 +75,8 @@ void run_instruction(cpu_s *cpu) {
 }
 
 void load_interrupt_vector(cpu_s *cpu, byte_t irq_vector_low, byte_t irq_vector_high) {
-    cpu->memory[0xFFFE] = irq_vector_low;
-    cpu->memory[0xFFFF] = irq_vector_high;
+    *test_mem_ptr(0xFFFE) = irq_vector_low;
+    *test_mem_ptr(0xFFFF) = irq_vector_high;
 }
 
 // =============================================================================
@@ -78,10 +98,10 @@ void test_0x00_BRK(void) {
 
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I)); // I set after push
     TEST_ASSERT_EQUAL_HEX16(irq_vector, cpu->PC);
-    TEST_ASSERT_EQUAL_HEX8(pushed_pc & 0xFF, cpu->memory[0x01FC]);
-    TEST_ASSERT_EQUAL_HEX8((pushed_pc >> 8) & 0xFF, cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX8(pushed_pc & 0xFF, *test_mem_ptr(0x01FC));
+    TEST_ASSERT_EQUAL_HEX8((pushed_pc >> 8) & 0xFF, *test_mem_ptr(0x01FD));
 
-    byte_t pushed_status = cpu->memory[0x01FB];
+    byte_t pushed_status = *test_mem_ptr(0x01FB);
     TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_B) != 0); // B always set in pushed status
     // Note: I flag in pushed status reflects state BEFORE BRK, not after
 }
@@ -91,9 +111,9 @@ void test_0x01_ORA_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0xF0;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -104,7 +124,7 @@ void test_0x01_ORA_IZX(void) {
 void test_0x05_ORA_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
-    cpu->memory[0x20] = 0xF0;
+    *test_mem_ptr(0x20) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -114,7 +134,7 @@ void test_0x05_ORA_ZP0(void) {
 // 0x06 - ASL ZP0
 void test_0x06_ASL_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x30] = 0x40;
+    *test_mem_ptr(0x30) = 0x40;
     byte_t instr[] = {INSTRUCTION_ASL_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -130,7 +150,7 @@ void test_0x08_PHP(void) {
     byte_t instr[] = {INSTRUCTION_PHP_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8((cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U), cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX8((cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U), *test_mem_ptr(0x01FD));
 }
 
 // 0x09 - ORA IMM
@@ -158,7 +178,7 @@ void test_0x0A_ASL_ACC(void) {
 void test_0x0D_ORA_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
-    cpu->memory[0x0400] = 0xF0;
+    *test_mem_ptr(0x0400) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_ABS, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -168,7 +188,7 @@ void test_0x0D_ORA_ABS(void) {
 // 0x0E - ASL ABS
 void test_0x0E_ASL_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0400] = 0x40;
+    *test_mem_ptr(0x0400) = 0x40;
     byte_t instr[] = {INSTRUCTION_ASL_ABS, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -192,9 +212,9 @@ void test_0x11_ORA_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
     cpu->Y = 0;
-    cpu->memory[0x20] = 0x00;
-    cpu->memory[0x21] = 0x03;
-    cpu->memory[0x0300] = 0xF0;
+    *test_mem_ptr(0x20) = 0x00;
+    *test_mem_ptr(0x21) = 0x03;
+    *test_mem_ptr(0x0300) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_IZY, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -206,7 +226,7 @@ void test_0x15_ORA_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
     cpu->X = 0x02;
-    cpu->memory[0x22] = 0xF0;
+    *test_mem_ptr(0x22) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_ZPX, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -217,7 +237,7 @@ void test_0x15_ORA_ZPX(void) {
 void test_0x16_ASL_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x01;
-    cpu->memory[0x31] = 0x40;
+    *test_mem_ptr(0x31) = 0x40;
     byte_t instr[] = {INSTRUCTION_ASL_ZPX, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -241,7 +261,7 @@ void test_0x19_ORA_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
     cpu->Y = 0;
-    cpu->memory[0x0400] = 0xF0;
+    *test_mem_ptr(0x0400) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_ABY, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -253,7 +273,7 @@ void test_0x1D_ORA_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0F;
     cpu->X = 0;
-    cpu->memory[0x0400] = 0xF0;
+    *test_mem_ptr(0x0400) = 0xF0;
     byte_t instr[] = {INSTRUCTION_ORA_ABX, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -264,7 +284,7 @@ void test_0x1D_ORA_ABX(void) {
 void test_0x1E_ASL_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0400] = 0x40;
+    *test_mem_ptr(0x0400) = 0x40;
     byte_t instr[] = {INSTRUCTION_ASL_ABX, 0x00, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -284,8 +304,8 @@ void test_0x20_JSR(void) {
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX16(target_addr, cpu->PC);
-    TEST_ASSERT_EQUAL_HEX8(pushed_addr & 0xFF, cpu->memory[0x01FC]);
-    TEST_ASSERT_EQUAL_HEX8((pushed_addr >> 8) & 0xFF, cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX8(pushed_addr & 0xFF, *test_mem_ptr(0x01FC));
+    TEST_ASSERT_EQUAL_HEX8((pushed_addr >> 8) & 0xFF, *test_mem_ptr(0x01FD));
 }
 
 // 0x21 - AND IZX
@@ -293,9 +313,9 @@ void test_0x21_AND_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x0F;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -306,7 +326,7 @@ void test_0x21_AND_IZX(void) {
 void test_0x24_BIT_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
-    cpu->memory[0x40] = 0x80;
+    *test_mem_ptr(0x40) = 0x80;
     byte_t instr[] = {INSTRUCTION_BIT_ZP0, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -318,7 +338,7 @@ void test_0x24_BIT_ZP0(void) {
 void test_0x25_AND_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
-    cpu->memory[0x50] = 0x0F;
+    *test_mem_ptr(0x50) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_ZP0, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -328,11 +348,11 @@ void test_0x25_AND_ZP0(void) {
 // 0x26 - ROL ZP0
 void test_0x26_ROL_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x60] = 0x80;
+    *test_mem_ptr(0x60) = 0x80;
     byte_t instr[] = {INSTRUCTION_ROL_ZP0, 0x60};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x60]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *test_mem_ptr(0x60));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
@@ -340,7 +360,7 @@ void test_0x26_ROL_ZP0(void) {
 // 0x28 - PLP
 void test_0x28_PLP(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x01FC] = 0x80;
+    *test_mem_ptr(0x01FC) = 0x80;
     cpu->SP = 0xFB;
     byte_t instr[] = {INSTRUCTION_PLP_IMP};
     load_instruction(cpu, instr, sizeof(instr));
@@ -374,7 +394,7 @@ void test_0x2A_ROL_ACC(void) {
 void test_0x2C_BIT_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
-    cpu->memory[0x0500] = 0x40;
+    *test_mem_ptr(0x0500) = 0x40;
     byte_t instr[] = {INSTRUCTION_BIT_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -386,7 +406,7 @@ void test_0x2C_BIT_ABS(void) {
 void test_0x2D_AND_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -396,11 +416,11 @@ void test_0x2D_AND_ABS(void) {
 // 0x2E - ROL ABS
 void test_0x2E_ROL_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x80;
+    *test_mem_ptr(0x0500) = 0x80;
     byte_t instr[] = {INSTRUCTION_ROL_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *test_mem_ptr(0x0500));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
@@ -420,9 +440,9 @@ void test_0x31_AND_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x0F;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -434,7 +454,7 @@ void test_0x35_AND_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0x01;
-    cpu->memory[0x41] = 0x0F;
+    *test_mem_ptr(0x41) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -445,11 +465,11 @@ void test_0x35_AND_ZPX(void) {
 void test_0x36_ROL_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x01;
-    cpu->memory[0x51] = 0x80;
+    *test_mem_ptr(0x51) = 0x80;
     byte_t instr[] = {INSTRUCTION_ROL_ZPX, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x51]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *test_mem_ptr(0x51));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
@@ -469,7 +489,7 @@ void test_0x39_AND_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -481,7 +501,7 @@ void test_0x3D_AND_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_AND_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -492,20 +512,20 @@ void test_0x3D_AND_ABX(void) {
 void test_0x3E_ROL_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x80;
+    *test_mem_ptr(0x0500) = 0x80;
     byte_t instr[] = {INSTRUCTION_ROL_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *test_mem_ptr(0x0500));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x40 - RTI
 void test_0x40_RTI(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x01FB] = 0x00;
-    cpu->memory[0x01FC] = 0x34;
-    cpu->memory[0x01FD] = 0x12;
+    *test_mem_ptr(0x01FB) = 0x00;
+    *test_mem_ptr(0x01FC) = 0x34;
+    *test_mem_ptr(0x01FD) = 0x12;
     cpu->SP = 0xFA;
     byte_t instr[] = {INSTRUCTION_RTI_IMP};
     load_instruction(cpu, instr, sizeof(instr));
@@ -518,9 +538,9 @@ void test_0x41_EOR_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x0F;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -531,7 +551,7 @@ void test_0x41_EOR_IZX(void) {
 void test_0x45_EOR_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
-    cpu->memory[0x20] = 0x0F;
+    *test_mem_ptr(0x20) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -541,11 +561,11 @@ void test_0x45_EOR_ZP0(void) {
 // 0x46 - LSR ZP0
 void test_0x46_LSR_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x30] = 0x04;
+    *test_mem_ptr(0x30) = 0x04;
     byte_t instr[] = {INSTRUCTION_LSR_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x30]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x30));
     TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
@@ -556,7 +576,7 @@ void test_0x48_PHA(void) {
     byte_t instr[] = {INSTRUCTION_PHA_IMP};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x01FD));
 }
 
 // 0x49 - EOR IMM
@@ -593,7 +613,7 @@ void test_0x4C_JMP_ABS(void) {
 void test_0x4D_EOR_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -603,11 +623,11 @@ void test_0x4D_EOR_ABS(void) {
 // 0x4E - LSR ABS
 void test_0x4E_LSR_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x04;
+    *test_mem_ptr(0x0500) = 0x04;
     byte_t instr[] = {INSTRUCTION_LSR_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x0500));
 }
 
 // 0x50 - BVC
@@ -626,9 +646,9 @@ void test_0x51_EOR_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x0F;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -640,7 +660,7 @@ void test_0x55_EOR_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0x01;
-    cpu->memory[0x41] = 0x0F;
+    *test_mem_ptr(0x41) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -651,11 +671,11 @@ void test_0x55_EOR_ZPX(void) {
 void test_0x56_LSR_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x01;
-    cpu->memory[0x51] = 0x04;
+    *test_mem_ptr(0x51) = 0x04;
     byte_t instr[] = {INSTRUCTION_LSR_ZPX, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x51]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x51));
 }
 
 // 0x58 - CLI
@@ -674,7 +694,7 @@ void test_0x59_EOR_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -686,7 +706,7 @@ void test_0x5D_EOR_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xFF;
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x0F;
+    *test_mem_ptr(0x0500) = 0x0F;
     byte_t instr[] = {INSTRUCTION_EOR_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -697,18 +717,18 @@ void test_0x5D_EOR_ABX(void) {
 void test_0x5E_LSR_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x04;
+    *test_mem_ptr(0x0500) = 0x04;
     byte_t instr[] = {INSTRUCTION_LSR_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x0500));
 }
 
 // 0x60 - RTS
 void test_0x60_RTS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x01FC] = 0x02;
-    cpu->memory[0x01FD] = 0x03;
+    *test_mem_ptr(0x01FC) = 0x02;
+    *test_mem_ptr(0x01FD) = 0x03;
     cpu->SP = 0xFB;
     byte_t instr[] = {INSTRUCTION_RTS_IMP};
     load_instruction(cpu, instr, sizeof(instr));
@@ -722,9 +742,9 @@ void test_0x61_ADC_IZX(void) {
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x02;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -736,7 +756,7 @@ void test_0x65_ADC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
-    cpu->memory[0x20] = 0x02;
+    *test_mem_ptr(0x20) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -747,18 +767,18 @@ void test_0x65_ADC_ZP0(void) {
 void test_0x66_ROR_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     set_flag(cpu, STATUS_FLAG_C, true);
-    cpu->memory[0x30] = 0x00;
+    *test_mem_ptr(0x30) = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x80, cpu->memory[0x30]);
+    TEST_ASSERT_EQUAL_HEX8(0x80, *test_mem_ptr(0x30));
     TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 // 0x68 - PLA
 void test_0x68_PLA(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x01FD] = 0xCD;
+    *test_mem_ptr(0x01FD) = 0xCD;
     cpu->SP = 0xFC;
     byte_t instr[] = {INSTRUCTION_PLA_IMP};
     load_instruction(cpu, instr, sizeof(instr));
@@ -793,8 +813,8 @@ void test_0x6A_ROR_ACC(void) {
 // 0x6C - JMP IND
 void test_0x6C_JMP_IND(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0010] = 0x78;
-    cpu->memory[0x0011] = 0x56;
+    *test_mem_ptr(0x0010) = 0x78;
+    *test_mem_ptr(0x0011) = 0x56;
     byte_t instr[] = {INSTRUCTION_JMP_IND, 0x10, 0x00};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -806,7 +826,7 @@ void test_0x6D_ADC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -817,11 +837,11 @@ void test_0x6D_ADC_ABS(void) {
 void test_0x6E_ROR_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     set_flag(cpu, STATUS_FLAG_C, true);
-    cpu->memory[0x0500] = 0x00;
+    *test_mem_ptr(0x0500) = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x80, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x80, *test_mem_ptr(0x0500));
 }
 
 // 0x70 - BVS
@@ -841,9 +861,9 @@ void test_0x71_ADC_IZY(void) {
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x02;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -856,7 +876,7 @@ void test_0x75_ADC_ZPX(void) {
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0x01;
-    cpu->memory[0x41] = 0x02;
+    *test_mem_ptr(0x41) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -868,11 +888,11 @@ void test_0x76_ROR_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0x01;
-    cpu->memory[0x51] = 0x00;
+    *test_mem_ptr(0x51) = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ZPX, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x80, cpu->memory[0x51]);
+    TEST_ASSERT_EQUAL_HEX8(0x80, *test_mem_ptr(0x51));
 }
 
 // 0x78 - SEI
@@ -892,7 +912,7 @@ void test_0x79_ADC_ABY(void) {
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -905,7 +925,7 @@ void test_0x7D_ADC_ABX(void) {
     cpu->A = 0x01;
     set_flag(cpu, STATUS_FLAG_C, false);
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_ADC_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -917,11 +937,11 @@ void test_0x7E_ROR_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x00;
+    *test_mem_ptr(0x0500) = 0x00;
     byte_t instr[] = {INSTRUCTION_ROR_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x80, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x80, *test_mem_ptr(0x0500));
 }
 
 // 0x81 - STA IZX
@@ -929,12 +949,12 @@ void test_0x81_STA_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xAB;
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
     byte_t instr[] = {INSTRUCTION_STA_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x0300]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x0300));
 }
 
 // 0x84 - STY ZP0
@@ -944,7 +964,7 @@ void test_0x84_STY_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_STY_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xCD, cpu->memory[0x20]);
+    TEST_ASSERT_EQUAL_HEX8(0xCD, *test_mem_ptr(0x20));
 }
 
 // 0x85 - STA ZP0
@@ -954,7 +974,7 @@ void test_0x85_STA_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_STA_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x20]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x20));
 }
 
 // 0x86 - STX ZP0
@@ -964,7 +984,7 @@ void test_0x86_STX_ZP0(void) {
     byte_t instr[] = {INSTRUCTION_STX_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xEF, cpu->memory[0x20]);
+    TEST_ASSERT_EQUAL_HEX8(0xEF, *test_mem_ptr(0x20));
 }
 
 // 0x88 - DEY
@@ -995,7 +1015,7 @@ void test_0x8C_STY_ABS(void) {
     byte_t instr[] = {INSTRUCTION_STY_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xCD, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0xCD, *test_mem_ptr(0x0500));
 }
 
 // 0x8D - STA ABS
@@ -1005,7 +1025,7 @@ void test_0x8D_STA_ABS(void) {
     byte_t instr[] = {INSTRUCTION_STA_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x0500));
 }
 
 // 0x8E - STX ABS
@@ -1015,7 +1035,7 @@ void test_0x8E_STX_ABS(void) {
     byte_t instr[] = {INSTRUCTION_STX_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xEF, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0xEF, *test_mem_ptr(0x0500));
 }
 
 // 0x90 - BCC
@@ -1034,12 +1054,12 @@ void test_0x91_STA_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0xAB;
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
     byte_t instr[] = {INSTRUCTION_STA_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x0300]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x0300));
 }
 
 // 0x94 - STY ZPX
@@ -1050,7 +1070,7 @@ void test_0x94_STY_ZPX(void) {
     byte_t instr[] = {INSTRUCTION_STY_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xCD, cpu->memory[0x42]);
+    TEST_ASSERT_EQUAL_HEX8(0xCD, *test_mem_ptr(0x42));
 }
 
 // 0x95 - STA ZPX
@@ -1061,7 +1081,7 @@ void test_0x95_STA_ZPX(void) {
     byte_t instr[] = {INSTRUCTION_STA_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x42]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x42));
 }
 
 // 0x96 - STX ZPY
@@ -1072,7 +1092,7 @@ void test_0x96_STX_ZPY(void) {
     byte_t instr[] = {INSTRUCTION_STX_ZPY, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xEF, cpu->memory[0x42]);
+    TEST_ASSERT_EQUAL_HEX8(0xEF, *test_mem_ptr(0x42));
 }
 
 // 0x98 - TYA
@@ -1093,7 +1113,7 @@ void test_0x99_STA_ABY(void) {
     byte_t instr[] = {INSTRUCTION_STA_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x0500));
 }
 
 // 0x9A - TXS
@@ -1114,7 +1134,7 @@ void test_0x9D_STA_ABX(void) {
     byte_t instr[] = {INSTRUCTION_STA_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0xAB, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0xAB, *test_mem_ptr(0x0500));
 }
 
 // 0xA0 - LDY IMM
@@ -1130,9 +1150,9 @@ void test_0xA0_LDY_IMM(void) {
 void test_0xA1_LDA_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x99;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1151,7 +1171,7 @@ void test_0xA2_LDX_IMM(void) {
 // 0xA4 - LDY ZP0
 void test_0xA4_LDY_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x20] = 0x42;
+    *test_mem_ptr(0x20) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDY_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1161,7 +1181,7 @@ void test_0xA4_LDY_ZP0(void) {
 // 0xA5 - LDA ZP0
 void test_0xA5_LDA_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x20] = 0x99;
+    *test_mem_ptr(0x20) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1171,7 +1191,7 @@ void test_0xA5_LDA_ZP0(void) {
 // 0xA6 - LDX ZP0
 void test_0xA6_LDX_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x20] = 0x42;
+    *test_mem_ptr(0x20) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDX_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1210,7 +1230,7 @@ void test_0xAA_TAX(void) {
 // 0xAC - LDY ABS
 void test_0xAC_LDY_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x42;
+    *test_mem_ptr(0x0500) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDY_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1220,7 +1240,7 @@ void test_0xAC_LDY_ABS(void) {
 // 0xAD - LDA ABS
 void test_0xAD_LDA_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x99;
+    *test_mem_ptr(0x0500) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1230,7 +1250,7 @@ void test_0xAD_LDA_ABS(void) {
 // 0xAE - LDX ABS
 void test_0xAE_LDX_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x42;
+    *test_mem_ptr(0x0500) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDX_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1252,9 +1272,9 @@ void test_0xB0_BCS(void) {
 void test_0xB1_LDA_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x99;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1265,7 +1285,7 @@ void test_0xB1_LDA_IZY(void) {
 void test_0xB4_LDY_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x02;
-    cpu->memory[0x42] = 0x42;
+    *test_mem_ptr(0x42) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDY_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1276,7 +1296,7 @@ void test_0xB4_LDY_ZPX(void) {
 void test_0xB5_LDA_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x02;
-    cpu->memory[0x42] = 0x99;
+    *test_mem_ptr(0x42) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1287,7 +1307,7 @@ void test_0xB5_LDA_ZPX(void) {
 void test_0xB6_LDX_ZPY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0x02;
-    cpu->memory[0x42] = 0x42;
+    *test_mem_ptr(0x42) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDX_ZPY, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1309,7 +1329,7 @@ void test_0xB8_CLV(void) {
 void test_0xB9_LDA_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x99;
+    *test_mem_ptr(0x0500) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1330,7 +1350,7 @@ void test_0xBA_TSX(void) {
 void test_0xBC_LDY_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x42;
+    *test_mem_ptr(0x0500) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDY_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1341,7 +1361,7 @@ void test_0xBC_LDY_ABX(void) {
 void test_0xBD_LDA_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x99;
+    *test_mem_ptr(0x0500) = 0x99;
     byte_t instr[] = {INSTRUCTION_LDA_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1352,7 +1372,7 @@ void test_0xBD_LDA_ABX(void) {
 void test_0xBE_LDX_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x42;
+    *test_mem_ptr(0x0500) = 0x42;
     byte_t instr[] = {INSTRUCTION_LDX_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1375,9 +1395,9 @@ void test_0xC1_CMP_IZX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x03;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x03;
     byte_t instr[] = {INSTRUCTION_CMP_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1389,7 +1409,7 @@ void test_0xC1_CMP_IZX(void) {
 void test_0xC4_CPY_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0x05;
-    cpu->memory[0x20] = 0x05;
+    *test_mem_ptr(0x20) = 0x05;
     byte_t instr[] = {INSTRUCTION_CPY_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1401,7 +1421,7 @@ void test_0xC4_CPY_ZP0(void) {
 void test_0xC5_CMP_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
-    cpu->memory[0x20] = 0x05;
+    *test_mem_ptr(0x20) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1412,11 +1432,11 @@ void test_0xC5_CMP_ZP0(void) {
 // 0xC6 - DEC ZP0
 void test_0xC6_DEC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x30] = 0x01;
+    *test_mem_ptr(0x30) = 0x01;
     byte_t instr[] = {INSTRUCTION_DEC_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x00, cpu->memory[0x30]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *test_mem_ptr(0x30));
     TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_Z));
 }
 
@@ -1456,7 +1476,7 @@ void test_0xCA_DEX(void) {
 void test_0xCC_CPY_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->Y = 0x0A;
-    cpu->memory[0x0500] = 0x05;
+    *test_mem_ptr(0x0500) = 0x05;
     byte_t instr[] = {INSTRUCTION_CPY_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1467,7 +1487,7 @@ void test_0xCC_CPY_ABS(void) {
 void test_0xCD_CMP_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0A;
-    cpu->memory[0x0500] = 0x05;
+    *test_mem_ptr(0x0500) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1477,11 +1497,11 @@ void test_0xCD_CMP_ABS(void) {
 // 0xCE - DEC ABS
 void test_0xCE_DEC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_DEC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, *test_mem_ptr(0x0500));
 }
 
 // 0xD0 - BNE
@@ -1500,9 +1520,9 @@ void test_0xD1_CMP_IZY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0A;
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x05;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1514,7 +1534,7 @@ void test_0xD5_CMP_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0A;
     cpu->X = 0x01;
-    cpu->memory[0x41] = 0x05;
+    *test_mem_ptr(0x41) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1525,11 +1545,11 @@ void test_0xD5_CMP_ZPX(void) {
 void test_0xD6_DEC_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x01;
-    cpu->memory[0x51] = 0x02;
+    *test_mem_ptr(0x51) = 0x02;
     byte_t instr[] = {INSTRUCTION_DEC_ZPX, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x51]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, *test_mem_ptr(0x51));
 }
 
 // 0xD8 - CLD
@@ -1548,7 +1568,7 @@ void test_0xD9_CMP_ABY(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0A;
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x05;
+    *test_mem_ptr(0x0500) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1560,7 +1580,7 @@ void test_0xDD_CMP_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x0A;
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x05;
+    *test_mem_ptr(0x0500) = 0x05;
     byte_t instr[] = {INSTRUCTION_CMP_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1571,11 +1591,11 @@ void test_0xDD_CMP_ABX(void) {
 void test_0xDE_DEC_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_DEC_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, *test_mem_ptr(0x0500));
 }
 
 // 0xE0 - CPX IMM
@@ -1594,9 +1614,9 @@ void test_0xE1_SBC_IZX(void) {
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
-    cpu->memory[0x10] = 0x00;
-    cpu->memory[0x11] = 0x03;
-    cpu->memory[0x0300] = 0x02;
+    *test_mem_ptr(0x10) = 0x00;
+    *test_mem_ptr(0x11) = 0x03;
+    *test_mem_ptr(0x0300) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_IZX, 0x10};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1607,7 +1627,7 @@ void test_0xE1_SBC_IZX(void) {
 void test_0xE4_CPX_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x05;
-    cpu->memory[0x20] = 0x05;
+    *test_mem_ptr(0x20) = 0x05;
     byte_t instr[] = {INSTRUCTION_CPX_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1619,7 +1639,7 @@ void test_0xE5_SBC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
-    cpu->memory[0x20] = 0x02;
+    *test_mem_ptr(0x20) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ZP0, 0x20};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1629,11 +1649,11 @@ void test_0xE5_SBC_ZP0(void) {
 // 0xE6 - INC ZP0
 void test_0xE6_INC_ZP0(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x30] = 0x01;
+    *test_mem_ptr(0x30) = 0x01;
     byte_t instr[] = {INSTRUCTION_INC_ZP0, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x30]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x30));
 }
 
 // 0xE8 - INX
@@ -1671,7 +1691,7 @@ void test_0xEA_NOP(void) {
 void test_0xEC_CPX_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x0A;
-    cpu->memory[0x0500] = 0x05;
+    *test_mem_ptr(0x0500) = 0x05;
     byte_t instr[] = {INSTRUCTION_CPX_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1683,7 +1703,7 @@ void test_0xED_SBC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1693,11 +1713,11 @@ void test_0xED_SBC_ABS(void) {
 // 0xEE - INC ABS
 void test_0xEE_INC_ABS(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->memory[0x0500] = 0x01;
+    *test_mem_ptr(0x0500) = 0x01;
     byte_t instr[] = {INSTRUCTION_INC_ABS, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x0500));
 }
 
 // 0xF0 - BEQ
@@ -1717,9 +1737,9 @@ void test_0xF1_SBC_IZY(void) {
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->Y = 0;
-    cpu->memory[0x30] = 0x00;
-    cpu->memory[0x31] = 0x03;
-    cpu->memory[0x0300] = 0x02;
+    *test_mem_ptr(0x30) = 0x00;
+    *test_mem_ptr(0x31) = 0x03;
+    *test_mem_ptr(0x0300) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_IZY, 0x30};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1732,7 +1752,7 @@ void test_0xF5_SBC_ZPX(void) {
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0x01;
-    cpu->memory[0x41] = 0x02;
+    *test_mem_ptr(0x41) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ZPX, 0x40};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1743,11 +1763,11 @@ void test_0xF5_SBC_ZPX(void) {
 void test_0xF6_INC_ZPX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0x01;
-    cpu->memory[0x51] = 0x01;
+    *test_mem_ptr(0x51) = 0x01;
     byte_t instr[] = {INSTRUCTION_INC_ZPX, 0x50};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x51]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x51));
 }
 
 // 0xF8 - SED
@@ -1767,7 +1787,7 @@ void test_0xF9_SBC_ABY(void) {
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->Y = 0;
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABY, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1780,7 +1800,7 @@ void test_0xFD_SBC_ABX(void) {
     cpu->A = 0x05;
     set_flag(cpu, STATUS_FLAG_C, true);
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x02;
+    *test_mem_ptr(0x0500) = 0x02;
     byte_t instr[] = {INSTRUCTION_SBC_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1791,11 +1811,11 @@ void test_0xFD_SBC_ABX(void) {
 void test_0xFE_INC_ABX(void) {
     cpu_s *cpu = get_test_cpu();
     cpu->X = 0;
-    cpu->memory[0x0500] = 0x01;
+    *test_mem_ptr(0x0500) = 0x01;
     byte_t instr[] = {INSTRUCTION_INC_ABX, 0x00, 0x05};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x0500]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, *test_mem_ptr(0x0500));
 }
 
 // =============================================================================
@@ -1922,17 +1942,22 @@ void test_BEQ_negative_offset(void) {
 
 void test_JMP_IND_page_boundary_bug(void) {
     cpu_s *cpu = get_test_cpu();
-    word_t ptr_addr = 0x10FF; // pointer at page boundary
+    // Use addresses that don't conflict with PC (which is at 0x0000 and uses 0x0000-0x0002)
+    // Use page 2 ($02xx) for the indirect pointer - with 2KB RAM mirroring this maps to $0200+
+    word_t ptr_addr = 0x02FF; // pointer at page boundary
     word_t target_addr = 0x1234;
-    word_t buggy_high_addr = ptr_addr & 0xFF00; // wraps to $1000, not $1100
-    word_t wrong_high_addr = (ptr_addr & 0xFF00) + 0x0100; // $1100
+    word_t buggy_high_addr = ptr_addr & 0xFF00; // wraps to $0200, not $0300
+    word_t wrong_high_addr = (ptr_addr & 0xFF00) + 0x0100; // $0300
 
-    cpu->memory[ptr_addr] = target_addr & 0xFF;
-    cpu->memory[buggy_high_addr] = (target_addr >> 8) & 0xFF;
-    cpu->memory[wrong_high_addr] = 0xFF; // should NOT be used
-
+    // Load instruction first before setting up the memory
     byte_t instr[] = {INSTRUCTION_JMP_IND, ptr_addr & 0xFF, (ptr_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
+
+    // Now set up the indirect address data
+    *test_mem_ptr(ptr_addr) = target_addr & 0xFF;
+    *test_mem_ptr(buggy_high_addr) = (target_addr >> 8) & 0xFF;
+    *test_mem_ptr(wrong_high_addr) = 0xFF; // should NOT be used
+
     run_instruction(cpu);
     TEST_ASSERT_EQUAL_HEX16(target_addr, cpu->PC);
 }
@@ -1950,7 +1975,7 @@ void test_ADC_overflow_positive_plus_positive(void) {
     cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[mem_addr] = operand_b;
+    *test_mem_ptr(mem_addr) = operand_b;
     byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1970,7 +1995,7 @@ void test_ADC_overflow_negative_plus_negative(void) {
     cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[mem_addr] = operand_b;
+    *test_mem_ptr(mem_addr) = operand_b;
     byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -1990,7 +2015,7 @@ void test_ADC_no_overflow_positive_plus_negative(void) {
     cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[mem_addr] = operand_b;
+    *test_mem_ptr(mem_addr) = operand_b;
     byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -2009,7 +2034,7 @@ void test_SBC_overflow_positive_minus_negative(void) {
     cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, true);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[mem_addr] = operand_b;
+    *test_mem_ptr(mem_addr) = operand_b;
     byte_t instr[] = {INSTRUCTION_SBC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -2027,7 +2052,7 @@ void test_SBC_overflow_negative_minus_positive(void) {
     cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, true);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[mem_addr] = operand_b;
+    *test_mem_ptr(mem_addr) = operand_b;
     byte_t instr[] = {INSTRUCTION_SBC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -2046,7 +2071,7 @@ void test_LDA_ABX_page_cross(void) {
     byte_t expected_value = 0x42;
 
     cpu->X = index;
-    cpu->memory[effective_addr] = expected_value;
+    *test_mem_ptr(effective_addr) = expected_value;
     byte_t instr[] = {INSTRUCTION_LDA_ABX, base_addr & 0xFF, (base_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -2061,7 +2086,7 @@ void test_LDA_ABY_page_cross(void) {
     byte_t expected_value = 0x55;
 
     cpu->Y = index;
-    cpu->memory[effective_addr] = expected_value;
+    *test_mem_ptr(effective_addr) = expected_value;
     byte_t instr[] = {INSTRUCTION_LDA_ABY, base_addr & 0xFF, (base_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
@@ -2077,9 +2102,9 @@ void test_LDA_IZY_page_cross(void) {
     byte_t expected_value = 0x77;
 
     cpu->Y = index;
-    cpu->memory[zp_addr] = base_addr & 0xFF;
-    cpu->memory[zp_addr + 1] = (base_addr >> 8) & 0xFF;
-    cpu->memory[effective_addr] = expected_value;
+    *test_mem_ptr(zp_addr) = base_addr & 0xFF;
+    *test_mem_ptr(zp_addr + 1) = (base_addr >> 8) & 0xFF;
+    *test_mem_ptr(effective_addr) = expected_value;
     byte_t instr[] = {INSTRUCTION_LDA_IZY, zp_addr};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
