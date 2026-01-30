@@ -5,6 +5,7 @@
 #include "cpu.h"
 
 #define MEM_SIZE (64 * 1024 * 1024)
+#define BRANCH_INSTR_LEN 0x02
 
 // Singletons for tests, will only be accessed via get_test_cpu
 static cpu_s cpu;
@@ -65,18 +66,24 @@ void load_interrupt_vector(cpu_s *cpu, byte_t irq_vector_low, byte_t irq_vector_
 // 0x00 - BRK (Force Interrupt)
 void test_0x00_BRK(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0200;
+    word_t start_pc = 0x0200;
+    word_t irq_vector = 0x1234;
+    word_t pushed_pc = start_pc + 0x01; // BRK pushes PC+1 (after padding byte)
+
+    cpu->PC = start_pc;
     byte_t instr[] = {INSTRUCTION_BRK_IMP, 0x00};
     load_instruction(cpu, instr, sizeof(instr));
-    load_interrupt_vector(cpu, 0x34, 0x12);
+    load_interrupt_vector(cpu, irq_vector & 0xFF, (irq_vector >> 8) & 0xFF);
     run_instruction(cpu);
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I));
-    TEST_ASSERT_EQUAL_HEX16(0x1234, cpu->PC);
-    TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x01FC]);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x01FD]);
+
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_I)); // I set after push
+    TEST_ASSERT_EQUAL_HEX16(irq_vector, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX8(pushed_pc & 0xFF, cpu->memory[0x01FC]);
+    TEST_ASSERT_EQUAL_HEX8((pushed_pc >> 8) & 0xFF, cpu->memory[0x01FD]);
+
     byte_t pushed_status = cpu->memory[0x01FB];
-    TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_I) != 0);
-    TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_B) != 0);
+    TEST_ASSERT_TRUE((pushed_status & STATUS_FLAG_B) != 0); // B always set in pushed status
+    // Note: I flag in pushed status reflects state BEFORE BRK, not after
 }
 
 // 0x01 - ORA IZX
@@ -177,7 +184,7 @@ void test_0x10_BPL(void) {
     byte_t instr[] = {INSTRUCTION_BPL_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0200 + 2 + 0x04, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0200 + BRANCH_INSTR_LEN + 0x04, cpu->PC);
 }
 
 // 0x11 - ORA IZY
@@ -268,13 +275,17 @@ void test_0x1E_ASL_ABX(void) {
 // 0x20 - JSR
 void test_0x20_JSR(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0200;
-    byte_t instr[] = {INSTRUCTION_JSR_ABS, 0x34, 0x12};
+    word_t start_pc = 0x0200;
+    word_t target_addr = 0x1234;
+    word_t pushed_addr = start_pc + 0x02; // JSR pushes return_address - 1
+
+    cpu->PC = start_pc;
+    byte_t instr[] = {INSTRUCTION_JSR_ABS, target_addr & 0xFF, (target_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x1234, cpu->PC);
-    TEST_ASSERT_EQUAL_HEX8(0x01, cpu->memory[0x01FC]);
-    TEST_ASSERT_EQUAL_HEX8(0x02, cpu->memory[0x01FD]);
+    TEST_ASSERT_EQUAL_HEX16(target_addr, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX8(pushed_addr & 0xFF, cpu->memory[0x01FC]);
+    TEST_ASSERT_EQUAL_HEX8((pushed_addr >> 8) & 0xFF, cpu->memory[0x01FD]);
 }
 
 // 0x21 - AND IZX
@@ -401,7 +412,7 @@ void test_0x30_BMI(void) {
     byte_t instr[] = {INSTRUCTION_BMI_REL, 0x02};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0300 + 2 + 0x02, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0300 + BRANCH_INSTR_LEN + 0x02, cpu->PC);
 }
 
 // 0x31 - AND IZY
@@ -607,7 +618,7 @@ void test_0x50_BVC(void) {
     byte_t instr[] = {INSTRUCTION_BVC_REL, 0x06};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0400 + 2 + 0x06, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0400 + BRANCH_INSTR_LEN + 0x06, cpu->PC);
 }
 
 // 0x51 - EOR IZY
@@ -821,7 +832,7 @@ void test_0x70_BVS(void) {
     byte_t instr[] = {INSTRUCTION_BVS_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0500 + 2 + 0x04, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0500 + BRANCH_INSTR_LEN + 0x04, cpu->PC);
 }
 
 // 0x71 - ADC IZY
@@ -1015,7 +1026,7 @@ void test_0x90_BCC(void) {
     byte_t instr[] = {INSTRUCTION_BCC_REL, 0x08};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0600 + 2 + 0x08, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0600 + BRANCH_INSTR_LEN + 0x08, cpu->PC);
 }
 
 // 0x91 - STA IZY
@@ -1234,7 +1245,7 @@ void test_0xB0_BCS(void) {
     byte_t instr[] = {INSTRUCTION_BCS_REL, 0x0A};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0700 + 2 + 0x0A, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0700 + BRANCH_INSTR_LEN + 0x0A, cpu->PC);
 }
 
 // 0xB1 - LDA IZY
@@ -1481,7 +1492,7 @@ void test_0xD0_BNE(void) {
     byte_t instr[] = {INSTRUCTION_BNE_REL, 0x06};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0800 + 2 + 0x06, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0800 + BRANCH_INSTR_LEN + 0x06, cpu->PC);
 }
 
 // 0xD1 - CMP IZY
@@ -1697,7 +1708,7 @@ void test_0xF0_BEQ(void) {
     byte_t instr[] = {INSTRUCTION_BEQ_REL, 0x04};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX16(0x0900 + 2 + 0x04, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(0x0900 + BRANCH_INSTR_LEN + 0x04, cpu->PC);
 }
 
 // 0xF1 - SBC IZY
@@ -1792,95 +1803,118 @@ void test_0xFE_INC_ABX(void) {
 // =============================================================================
 
 // --- Negative Branch Offset Tests ---
-// Branch instructions use signed offsets (-128 to +127)
-// Offset 0xFE = -2, which should branch backward 2 bytes from PC+2
+// Branch instructions use signed offsets (0x80-0xFF = negative)
 
 void test_BPL_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0210;
-    set_flag(cpu, STATUS_FLAG_N, false); // N=0, branch taken
-    byte_t instr[] = {INSTRUCTION_BPL_REL, 0xFC}; // -4
+    word_t start_pc = 0x0210;
+    byte_t offset_byte = 0xFC;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_N, false);
+    byte_t instr[] = {INSTRUCTION_BPL_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0210 + 2 + (-4) = 0x020E
-    TEST_ASSERT_EQUAL_HEX16(0x020E, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BMI_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0310;
-    set_flag(cpu, STATUS_FLAG_N, true); // N=1, branch taken
-    byte_t instr[] = {INSTRUCTION_BMI_REL, 0xF0}; // -16
+    word_t start_pc = 0x0310;
+    byte_t offset_byte = 0xF0;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_N, true);
+    byte_t instr[] = {INSTRUCTION_BMI_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0310 + 2 + (-16) = 0x0302
-    TEST_ASSERT_EQUAL_HEX16(0x0302, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BVC_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0420;
-    set_flag(cpu, STATUS_FLAG_V, false); // V=0, branch taken
-    byte_t instr[] = {INSTRUCTION_BVC_REL, 0xFE}; // -2
+    word_t start_pc = 0x0420;
+    byte_t offset_byte = 0xFE;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_V, false);
+    byte_t instr[] = {INSTRUCTION_BVC_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0420 + 2 + (-2) = 0x0420
-    TEST_ASSERT_EQUAL_HEX16(0x0420, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BVS_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0530;
-    set_flag(cpu, STATUS_FLAG_V, true); // V=1, branch taken
-    byte_t instr[] = {INSTRUCTION_BVS_REL, 0x80}; // -128 (max negative)
+    word_t start_pc = 0x0530;
+    byte_t offset_byte = 0x80;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_V, true);
+    byte_t instr[] = {INSTRUCTION_BVS_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0530 + 2 + (-128) = 0x04B2
-    TEST_ASSERT_EQUAL_HEX16(0x04B2, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BCC_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0640;
-    set_flag(cpu, STATUS_FLAG_C, false); // C=0, branch taken
-    byte_t instr[] = {INSTRUCTION_BCC_REL, 0xF8}; // -8
+    word_t start_pc = 0x0640;
+    byte_t offset_byte = 0xF8;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_C, false);
+    byte_t instr[] = {INSTRUCTION_BCC_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0640 + 2 + (-8) = 0x063A
-    TEST_ASSERT_EQUAL_HEX16(0x063A, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BCS_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0750;
-    set_flag(cpu, STATUS_FLAG_C, true); // C=1, branch taken
-    byte_t instr[] = {INSTRUCTION_BCS_REL, 0xEE}; // -18
+    word_t start_pc = 0x0750;
+    byte_t offset_byte = 0xEE;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_C, true);
+    byte_t instr[] = {INSTRUCTION_BCS_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0750 + 2 + (-18) = 0x0740
-    TEST_ASSERT_EQUAL_HEX16(0x0740, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BNE_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0860;
-    set_flag(cpu, STATUS_FLAG_Z, false); // Z=0, branch taken
-    byte_t instr[] = {INSTRUCTION_BNE_REL, 0xFA}; // -6
+    word_t start_pc = 0x0860;
+    byte_t offset_byte = 0xFA;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_Z, false);
+    byte_t instr[] = {INSTRUCTION_BNE_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0860 + 2 + (-6) = 0x085C
-    TEST_ASSERT_EQUAL_HEX16(0x085C, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 void test_BEQ_negative_offset(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->PC = 0x0970;
-    set_flag(cpu, STATUS_FLAG_Z, true); // Z=1, branch taken
-    byte_t instr[] = {INSTRUCTION_BEQ_REL, 0xE0}; // -32
+    word_t start_pc = 0x0970;
+    byte_t offset_byte = 0xE0;
+    word_t expected_pc = start_pc + BRANCH_INSTR_LEN + (int8_t)offset_byte;
+
+    cpu->PC = start_pc;
+    set_flag(cpu, STATUS_FLAG_Z, true);
+    byte_t instr[] = {INSTRUCTION_BEQ_REL, offset_byte};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // PC = 0x0970 + 2 + (-32) = 0x0952
-    TEST_ASSERT_EQUAL_HEX16(0x0952, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(expected_pc, cpu->PC);
 }
 
 // --- JMP Indirect Page Boundary Bug Test ---
@@ -1888,15 +1922,19 @@ void test_BEQ_negative_offset(void) {
 
 void test_JMP_IND_page_boundary_bug(void) {
     cpu_s *cpu = get_test_cpu();
-    // Set up pointer at $10FF (page boundary)
-    cpu->memory[0x10FF] = 0x34; // low byte of target
-    cpu->memory[0x1000] = 0x12; // high byte (bug: reads from $1000, not $1100)
-    cpu->memory[0x1100] = 0xFF; // wrong high byte (should NOT be used)
-    byte_t instr[] = {INSTRUCTION_JMP_IND, 0xFF, 0x10};
+    word_t ptr_addr = 0x10FF; // pointer at page boundary
+    word_t target_addr = 0x1234;
+    word_t buggy_high_addr = ptr_addr & 0xFF00; // wraps to $1000, not $1100
+    word_t wrong_high_addr = (ptr_addr & 0xFF00) + 0x0100; // $1100
+
+    cpu->memory[ptr_addr] = target_addr & 0xFF;
+    cpu->memory[buggy_high_addr] = (target_addr >> 8) & 0xFF;
+    cpu->memory[wrong_high_addr] = 0xFF; // should NOT be used
+
+    byte_t instr[] = {INSTRUCTION_JMP_IND, ptr_addr & 0xFF, (ptr_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // Should jump to $1234, NOT $FF34
-    TEST_ASSERT_EQUAL_HEX16(0x1234, cpu->PC);
+    TEST_ASSERT_EQUAL_HEX16(target_addr, cpu->PC);
 }
 
 // --- ADC Overflow Flag Edge Cases ---
@@ -1904,77 +1942,97 @@ void test_JMP_IND_page_boundary_bug(void) {
 
 void test_ADC_overflow_positive_plus_positive(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->A = 0x50; // +80
+    byte_t operand_a = 0x50;
+    byte_t operand_b = 0x50;
+    byte_t expected_result = (operand_a + operand_b) & 0xFF;
+    word_t mem_addr = 0x0500;
+
+    cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[0x0500] = 0x50; // +80
-    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    cpu->memory[mem_addr] = operand_b;
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // 0x50 + 0x50 = 0xA0 (-96 in signed), overflow!
-    TEST_ASSERT_EQUAL_HEX8(0xA0, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N)); // Result is negative
-    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C)); // No carry
+    TEST_ASSERT_EQUAL_HEX8(expected_result, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 void test_ADC_overflow_negative_plus_negative(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->A = 0x90; // -112
+    byte_t operand_a = 0x90;
+    byte_t operand_b = 0x90;
+    byte_t expected_result = (operand_a + operand_b) & 0xFF;
+    word_t mem_addr = 0x0500;
+
+    cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[0x0500] = 0x90; // -112
-    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    cpu->memory[mem_addr] = operand_b;
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // 0x90 + 0x90 = 0x120, wraps to 0x20 (+32 in signed), overflow!
-    TEST_ASSERT_EQUAL_HEX8(0x20, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
-    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_N)); // Result is positive
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C)); // Carry set
+    TEST_ASSERT_EQUAL_HEX8(expected_result, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_N));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 void test_ADC_no_overflow_positive_plus_negative(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->A = 0x50; // +80
+    byte_t operand_a = 0x50;
+    byte_t operand_b = 0xD0;
+    byte_t expected_result = (operand_a + operand_b) & 0xFF;
+    word_t mem_addr = 0x0500;
+
+    cpu->A = operand_a;
     set_flag(cpu, STATUS_FLAG_C, false);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[0x0500] = 0xD0; // -48
-    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    cpu->memory[mem_addr] = operand_b;
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // 0x50 + 0xD0 = 0x120, wraps to 0x20 (+32), no overflow
-    TEST_ASSERT_EQUAL_HEX8(0x20, cpu->A);
-    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_V)); // No overflow
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C)); // Carry set
+    TEST_ASSERT_EQUAL_HEX8(expected_result, cpu->A);
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_V));
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C));
 }
 
 void test_SBC_overflow_positive_minus_negative(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->A = 0x50; // +80
-    set_flag(cpu, STATUS_FLAG_C, true); // No borrow
+    byte_t operand_a = 0x50;
+    byte_t operand_b = 0xB0;
+    byte_t expected_result = (operand_a - operand_b) & 0xFF;
+    word_t mem_addr = 0x0500;
+
+    cpu->A = operand_a;
+    set_flag(cpu, STATUS_FLAG_C, true);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[0x0500] = 0xB0; // -80
-    byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
+    cpu->memory[mem_addr] = operand_b;
+    byte_t instr[] = {INSTRUCTION_SBC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // 0x50 - 0xB0 = 0x50 - (-80) = 0x50 + 0x50 = 0xA0, overflow!
-    TEST_ASSERT_EQUAL_HEX8(0xA0, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+    TEST_ASSERT_EQUAL_HEX8(expected_result, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
 }
 
 void test_SBC_overflow_negative_minus_positive(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->A = 0x80; // -128
-    set_flag(cpu, STATUS_FLAG_C, true); // No borrow
+    byte_t operand_a = 0x80;
+    byte_t operand_b = 0x01;
+    byte_t expected_result = (operand_a - operand_b) & 0xFF;
+    word_t mem_addr = 0x0500;
+
+    cpu->A = operand_a;
+    set_flag(cpu, STATUS_FLAG_C, true);
     set_flag(cpu, STATUS_FLAG_V, false);
-    cpu->memory[0x0500] = 0x01; // +1
-    byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
+    cpu->memory[mem_addr] = operand_b;
+    byte_t instr[] = {INSTRUCTION_SBC_ABS, mem_addr & 0xFF, (mem_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    // 0x80 - 0x01 = 0x7F (+127), overflow! (negative became positive)
-    TEST_ASSERT_EQUAL_HEX8(0x7F, cpu->A);
-    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+    TEST_ASSERT_EQUAL_HEX8(expected_result, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V));
 }
 
 // --- Page Boundary Crossing Tests ---
@@ -1982,37 +2040,50 @@ void test_SBC_overflow_negative_minus_positive(void) {
 
 void test_LDA_ABX_page_cross(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->X = 0x10;
-    cpu->memory[0x1100] = 0x42; // Target address after page cross
-    // Base address 0x10F0 + X (0x10) = 0x1100 (crosses from page 0x10 to 0x11)
-    byte_t instr[] = {INSTRUCTION_LDA_ABX, 0xF0, 0x10};
+    word_t base_addr = 0x10F0;
+    byte_t index = 0x10;
+    word_t effective_addr = base_addr + index;
+    byte_t expected_value = 0x42;
+
+    cpu->X = index;
+    cpu->memory[effective_addr] = expected_value;
+    byte_t instr[] = {INSTRUCTION_LDA_ABX, base_addr & 0xFF, (base_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x42, cpu->A);
+    TEST_ASSERT_EQUAL_HEX8(expected_value, cpu->A);
 }
 
 void test_LDA_ABY_page_cross(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->Y = 0x20;
-    cpu->memory[0x1200] = 0x55; // Target address after page cross
-    // Base address 0x11E0 + Y (0x20) = 0x1200 (crosses from page 0x11 to 0x12)
-    byte_t instr[] = {INSTRUCTION_LDA_ABY, 0xE0, 0x11};
+    word_t base_addr = 0x11E0;
+    byte_t index = 0x20;
+    word_t effective_addr = base_addr + index;
+    byte_t expected_value = 0x55;
+
+    cpu->Y = index;
+    cpu->memory[effective_addr] = expected_value;
+    byte_t instr[] = {INSTRUCTION_LDA_ABY, base_addr & 0xFF, (base_addr >> 8) & 0xFF};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x55, cpu->A);
+    TEST_ASSERT_EQUAL_HEX8(expected_value, cpu->A);
 }
 
 void test_LDA_IZY_page_cross(void) {
     cpu_s *cpu = get_test_cpu();
-    cpu->Y = 0x30;
-    // Zero page pointer at $20 points to $13D0
-    cpu->memory[0x20] = 0xD0;
-    cpu->memory[0x21] = 0x13;
-    cpu->memory[0x1400] = 0x77; // Target: $13D0 + $30 = $1400 (page cross)
-    byte_t instr[] = {INSTRUCTION_LDA_IZY, 0x20};
+    byte_t zp_addr = 0x20;
+    word_t base_addr = 0x13D0;
+    byte_t index = 0x30;
+    word_t effective_addr = base_addr + index;
+    byte_t expected_value = 0x77;
+
+    cpu->Y = index;
+    cpu->memory[zp_addr] = base_addr & 0xFF;
+    cpu->memory[zp_addr + 1] = (base_addr >> 8) & 0xFF;
+    cpu->memory[effective_addr] = expected_value;
+    byte_t instr[] = {INSTRUCTION_LDA_IZY, zp_addr};
     load_instruction(cpu, instr, sizeof(instr));
     run_instruction(cpu);
-    TEST_ASSERT_EQUAL_HEX8(0x77, cpu->A);
+    TEST_ASSERT_EQUAL_HEX8(expected_value, cpu->A);
 }
 
 // =============================================================================

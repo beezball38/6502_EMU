@@ -2447,12 +2447,12 @@ void adjust_pc(cpu_s *cpu, byte_t length)
     return;
 }
 
-cpu_instruction_s* get_instruction(cpu_s *cpu, byte_t opcode)
+cpu_instruction_s *get_instruction(cpu_s *cpu, byte_t opcode)
 {
     return &cpu->table[opcode];
 }
 
-cpu_instruction_s* get_current_instruction(cpu_s *cpu)
+cpu_instruction_s *get_current_instruction(cpu_s *cpu)
 {
     return get_instruction(cpu, cpu->current_opcode);
 }
@@ -2561,10 +2561,6 @@ byte_t REL(cpu_s *cpu)
     assert(cpu != NULL);
     acc_mode = false;
     address_rel = read_from_addr(cpu, cpu->PC + 1);
-    if (address_rel & 0x80)
-    { // if the address is negative
-        address_rel |= 0xFF00; // sign extend
-    }
     return 0;
 }
 
@@ -2703,14 +2699,14 @@ byte_t IZY(cpu_s *cpu)
 byte_t BRK(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    set_flag(cpu, STATUS_FLAG_I, true);
-    cpu->PC++;
-    // pushes the next instruction address onto the stack
+    cpu->PC++; // BRK has a padding byte
     push_address(cpu, cpu->PC);
     set_flag(cpu, STATUS_FLAG_B, true); // sets the break flag because this is a software interrupt
     push_byte(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_B, false); // clears the break flag
+    set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
+    cpu->pc_changed = true;
     return 0;
 }
 
@@ -2775,6 +2771,7 @@ byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
         cpu->PC += 2; // Move past the 2-byte branch instruction
         word_t old_PC = cpu->PC;
         cpu->PC += address_rel;
+        cpu->pc_changed = true;
         // checks if the page boundary is crossed
         if (crosses_page(old_PC, cpu->PC))
         {
@@ -2815,9 +2812,10 @@ byte_t CLC(cpu_s *cpu)
 byte_t JSR(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    word_t val = cpu->PC + 1;
-    push_address(cpu, val); // todo check if this is correct
+    word_t val = cpu->PC + 2; // push address of last byte of JSR instruction
+    push_address(cpu, val);
     cpu->PC = address;
+    cpu->pc_changed = true;
     return 0;
 }
 
@@ -2934,6 +2932,7 @@ byte_t RTI(cpu_s *cpu)
     cpu->PC = assemble_word(high, low);
     set_flag(cpu, STATUS_FLAG_U, true); // this is always logical 1
     set_flag(cpu, STATUS_FLAG_B, false); // B flag is only 1 when BRK is executed
+    cpu->pc_changed = true;
     return 0;
 }
 
@@ -2998,6 +2997,7 @@ byte_t JMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->PC = address;
+    cpu->pc_changed = true;
     return 0;
 }
 
@@ -3034,7 +3034,8 @@ byte_t RTS(cpu_s *cpu)
     assert(cpu != NULL);
     cpu->PC = pop_byte(cpu);
     cpu->PC |= (pop_byte(cpu) << 8);
-    cpu->PC++; // increment so we don't return to the same instruction
+    cpu->PC++; // increment to instruction after JSR
+    cpu->pc_changed = true;
     return 0;
 }
 

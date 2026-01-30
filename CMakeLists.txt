@@ -9,6 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Main emulator library
 add_library(emulator_lib
     src/cpu.c
+    src/ines.c
 )
 
 # Main executable
@@ -16,6 +17,12 @@ add_executable(emulator_main
     src/cpu_emulator.c
 )
 target_link_libraries(emulator_main PRIVATE emulator_lib)
+
+# nestest runner
+add_executable(nestest_runner
+    src/nestest_runner.c
+)
+target_link_libraries(nestest_runner PRIVATE emulator_lib)
 
 # Include directories
 target_include_directories(emulator_lib
