@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(6502_emulator C)
 
-# Set output directories
+# Set output directories - binaries go to bin/ at project root
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 # Main emulator library
 add_library(emulator_lib
@@ -13,23 +13,18 @@ add_library(emulator_lib
     src/bus.c
 )
 
-# Main executable
-add_executable(emulator_main
-    src/cpu_emulator.c
-)
-target_link_libraries(emulator_main PRIVATE emulator_lib)
-
-# CPU trace tool
-add_executable(cpu_trace
-    tools/cpu_trace.c
-)
-target_link_libraries(cpu_trace PRIVATE emulator_lib)
-
-# Include directories
 target_include_directories(emulator_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+# Main executable
+add_executable(emulator_main src/cpu_emulator.c)
+target_link_libraries(emulator_main PRIVATE emulator_lib)
+
+# CPU trace tool
+add_executable(cpu_trace src/cpu_trace.c)
+target_link_libraries(cpu_trace PRIVATE emulator_lib)
 
 # Testing configuration
 option(BUILD_TESTS "Build test suite" ON)
@@ -43,5 +38,6 @@ if(BUILD_TESTS)
     )
     FetchContent_MakeAvailable(unity)
 
-    add_subdirectory(tests)
+    add_executable(emulator_tests src/cpu_tests.c)
+    target_link_libraries(emulator_tests PRIVATE emulator_lib unity)
 endif()
