@@ -44,7 +44,6 @@ X(RTS)                   \
 X(ADC)                   \
 X(ROR)                   \
 X(PLA)                   \
-X(ROR_ACC)               \
 X(BVS)                   \
 X(SEI)                   \
 X(STA)                   \
@@ -93,6 +92,7 @@ X(NOP)
  */
 #define ADDRESSING_MODE_LIST  \
 X(IMP)                  \
+X(ACC)                  \
 X(IMM)                  \
 X(ZP0)                  \
 X(ZPX)                  \
@@ -304,7 +304,8 @@ X(0xE2) X(0xE3) X(0xE7) X(0xEB) X(0xEF) \
 X(0xF2) X(0xF3) X(0xF4) X(0xF7) X(0xFA) X(0xFB) X(0xFC) X(0xFF)
 
 typedef uint8_t byte_t;
-typedef uint16_t word_t; //used for addresses
+typedef uint16_t word_t;   // used for addresses
+typedef int16_t offset_t;  // used for signed branch offsets
 typedef struct c6502 cpu_s; // Forward declaration
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 

@@ -11,9 +11,10 @@
 #define MEM_SIZE (1024 * 1024 * 64)
 
 word_t address;                    // used by absolute, zero page, and indirect addressing modes
-byte_t address_rel;                // used only by branch instructions
+offset_t address_rel;              // used only by branch instructions (signed for negative offsets)
 byte_t value;                      // holds fetched value, could be immediate value or value from memory
 byte_t current_instruction_length; // used by instructions to determine how many bytes to consume
+bool acc_mode;                     // true when using accumulator addressing mode
 
 /// @brief Function where all instructions for 6502 are defined
 /// @param cpu
@@ -118,7 +119,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x0A,
         .cycles = 2,
         .length = 1,
-        .data_fetch = IMP,
+        .data_fetch = ACC,
         .execute = ASL,
     };
     table[OPCODE_UNDEFINED_0x0B] = (cpu_instruction_s)
@@ -406,7 +407,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x2A,
         .cycles = 2,
         .length = 1,
-        .data_fetch = IMP,
+        .data_fetch = ACC,
         .execute = ROL,
     };
     table[OPCODE_UNDEFINED_0x2B] = (cpu_instruction_s)
@@ -667,7 +668,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x4A,
         .cycles = 2,
         .length = 1,
-        .data_fetch = IMP,
+        .data_fetch = ACC,
         .execute = LSR,
     };
     table[OPCODE_UNDEFINED_0x4B] = (cpu_instruction_s)
@@ -937,7 +938,7 @@ void init_instruction_table(cpu_s *cpu)
         .opcode = 0x6A,
         .cycles = 2,
         .length = 1,
-        .data_fetch = IMP,
+        .data_fetch = ACC,
         .execute = ROR,
     };
     table[OPCODE_UNDEFINED_0x6B] = (cpu_instruction_s)
@@ -2356,6 +2357,7 @@ bool fetch_and_execute(cpu_s *cpu)
 void clock(cpu_s *cpu)
 {
     assert(cpu != NULL && cpu->memory != NULL && cpu->table != NULL);
+    cpu_instruction_s *instruction = NULL;
     if(cpu->does_need_additional_cycle)
     {
         cpu->does_need_additional_cycle = false;
@@ -2366,7 +2368,7 @@ void clock(cpu_s *cpu)
     {
         cpu->current_opcode = peek(cpu);
         cpu->instruction_pending = true;
-        cpu_instruction_s *instruction = get_current_instruction(cpu);
+        instruction = get_current_instruction(cpu);
         cpu->cycles = instruction->cycles - 1; //takes one cycle to fetch
     }
     else
@@ -2376,7 +2378,7 @@ void clock(cpu_s *cpu)
 
     if (cpu->cycles == 0)
     {
-        cpu_instruction_s *instruction = get_current_instruction(cpu);
+        instruction = get_current_instruction(cpu);
         cpu->does_need_additional_cycle = fetch_and_execute(cpu);
         adjust_pc(cpu, instruction->length);
         cpu->instruction_pending = false;
@@ -2464,7 +2466,21 @@ cpu_instruction_s* get_current_instruction(cpu_s *cpu)
 byte_t IMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    value = cpu->A; //could be the accumulator for some instructions
+    acc_mode = false;
+    return 0;
+}
+
+/*
+ * Accumulator addressing mode
+ * Operand is the accumulator
+ * Sets value to accumulator and acc_mode flag for write-back
+ * Returns 0
+ */
+byte_t ACC(cpu_s *cpu)
+{
+    assert(cpu != NULL);
+    value = cpu->A;
+    acc_mode = true;
     return 0;
 }
 
@@ -2476,6 +2492,7 @@ byte_t IMP(cpu_s *cpu)
 byte_t IMM(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     value = read_from_addr(cpu, cpu->PC + 1);
     return 0;
 }
@@ -2489,6 +2506,7 @@ byte_t IMM(cpu_s *cpu)
 byte_t ZP0(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     address = read_from_addr(cpu, cpu->PC + 1);
     address = address & 0x00FF;
     value = read_from_addr(cpu, address);
@@ -2506,6 +2524,7 @@ byte_t ZP0(cpu_s *cpu)
 byte_t ZPX(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     address = read_from_addr(cpu, cpu->PC + 1) & 0x00FF;
     address += cpu->X;
     address = address & 0x00FF; //wrap around zero page
@@ -2524,6 +2543,7 @@ byte_t ZPX(cpu_s *cpu)
 byte_t ZPY(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     address = read_from_addr(cpu, cpu->PC + 1) & 0x00FF;
     address += cpu->Y;
     address = address & 0x00FF; //wrap around zero page
@@ -2539,6 +2559,7 @@ byte_t ZPY(cpu_s *cpu)
 byte_t REL(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     address_rel = read_from_addr(cpu, cpu->PC + 1);
     if (address_rel & 0x80)
     { // if the address is negative
@@ -2556,6 +2577,7 @@ byte_t REL(cpu_s *cpu)
 byte_t ABS(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     byte_t low_byte = read_from_addr(cpu, cpu->PC + 1);
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     address = assemble_word(high_byte, low_byte);
@@ -2575,6 +2597,7 @@ byte_t ABS(cpu_s *cpu)
 byte_t ABX(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     byte_t low_byte = read_from_addr(cpu, cpu->PC + 1);
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     address = assemble_word(high_byte, low_byte);
@@ -2596,6 +2619,7 @@ byte_t ABX(cpu_s *cpu)
 byte_t ABY(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     byte_t low_byte = read_from_addr(cpu, cpu->PC + 1);
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     address = assemble_word(high_byte, low_byte);
@@ -2615,6 +2639,7 @@ byte_t ABY(cpu_s *cpu)
 byte_t IND(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     byte_t low_byte = read_from_addr(cpu, cpu->PC + 1);
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     word_t ptr = assemble_word(high_byte, low_byte);
@@ -2638,6 +2663,7 @@ byte_t IND(cpu_s *cpu)
 byte_t IZX(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     byte_t zp_addr = read_from_addr(cpu, cpu->PC + 1);
     byte_t low = read_from_addr(cpu, (zp_addr + cpu->X) & 0x00FF);
     byte_t high = read_from_addr(cpu, (zp_addr + cpu->X + 1) & 0x00FF);
@@ -2657,6 +2683,7 @@ byte_t IZX(cpu_s *cpu)
 byte_t IZY(cpu_s *cpu)
 {
     assert(cpu != NULL);
+    acc_mode = false;
     word_t ptr = (word_t)read_from_addr(cpu, cpu->PC + 1);
     ptr = ptr & 0x00FF;
     address = assemble_word(read_from_addr(cpu, ptr + 1), read_from_addr(cpu, ptr));
@@ -2701,11 +2728,28 @@ byte_t ORA(cpu_s *cpu)
 }
 
 
+/*
+    ASL Arithmetic Shift Left
+    Shifts the value left by 1 bit
+    Sets the carry flag to the 7th bit of the value
+    Sets the zero flag if the result is zero
+    Sets the negative flag if the result is negative
+    Stores the result in accumulator or memory based on addressing mode
+*/
 byte_t ASL(cpu_s *cpu)
 {
+    assert(cpu != NULL);
     set_flag(cpu, STATUS_FLAG_C, value & 0x80);
     value <<= 1;
     set_zn(cpu, value);
+    if (acc_mode)
+    {
+        cpu->A = value;
+    }
+    else
+    {
+        write_to_addr(cpu, address, value);
+    }
     return 0;
 }
 /*
@@ -2726,8 +2770,9 @@ byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
 {
     assert(cpu != NULL);
     // checks if the flag is set to the flag value
-    if ((get_flag(cpu, flag)) == (flag_value & flag))
+    if (get_flag(cpu, flag) == flag_value)
     {
+        cpu->PC += 2; // Move past the 2-byte branch instruction
         word_t old_PC = cpu->PC;
         cpu->PC += address_rel;
         // checks if the page boundary is crossed
@@ -2811,21 +2856,29 @@ byte_t BIT(cpu_s *cpu)
 }
 
 /*
-    Rotate Left (Memory)
-    Gets value from address and rotates it left by 1 bit
-    Sets the carry flag to the 7th bit of the value
+    ROL Rotate Left
+    Rotates the value left by 1 bit through carry
+    Old carry goes into bit 0, old bit 7 goes into carry
     Sets the zero flag if the result is zero
     Sets the negative flag if the result is negative
-    Stores the result in memory
+    Stores the result in accumulator or memory based on addressing mode
 */
 byte_t ROL(cpu_s *cpu)
 {
-    // assume address and value are set
     assert(cpu != NULL);
+    byte_t carry = (byte_t) get_flag(cpu, STATUS_FLAG_C);
     set_flag(cpu, STATUS_FLAG_C, value & 0x80);
     value <<= 1;
+    value |= carry;
     set_zn(cpu, value);
-    write_to_addr(cpu, address, value);
+    if (acc_mode)
+    {
+        cpu->A = value;
+    }
+    else
+    {
+        write_to_addr(cpu, address, value);
+    }
     return 0;
 }
 
@@ -2900,21 +2953,27 @@ byte_t EOR(cpu_s *cpu)
 }
 
 /*
-    LSR Logical Shift Right (Memory)
+    LSR Logical Shift Right
     Shifts the value right by 1 bit
     Sets the carry flag to the 0th bit of the value
     Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in memory
+    Sets the negative flag to 0 (bit 7 is always 0 after shift)
+    Stores the result in accumulator or memory based on addressing mode
 */
 byte_t LSR(cpu_s *cpu)
 {
     assert(cpu != NULL);
     set_flag(cpu, STATUS_FLAG_C, value & 0x01);
     value >>= 1;
-    set_flag(cpu, STATUS_FLAG_Z, value == 0x00);
-    set_flag(cpu, STATUS_FLAG_N, value & 0x80);
-    write_to_addr(cpu, address, value);
+    set_zn(cpu, value);
+    if (acc_mode)
+    {
+        cpu->A = value;
+    }
+    else
+    {
+        write_to_addr(cpu, address, value);
+    }
     return 0;
 }
 
@@ -2938,9 +2997,7 @@ byte_t PHA(cpu_s *cpu)
 byte_t JMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    byte_t low = read_from_addr(cpu, cpu->PC + 1);
-    byte_t high = read_from_addr(cpu, cpu->PC + 2);
-    cpu->PC = assemble_word(high, low);
+    cpu->PC = address;
     return 0;
 }
 
@@ -3009,25 +3066,29 @@ byte_t ADC(cpu_s *cpu)
 }
 
 /*
-    ROR Rotate Right (Memory)
-    Gets value from address and rotates it right by 1 bit
-    Sets the carry flag to the 0th bit of the value
+    ROR Rotate Right
+    Rotates the value right by 1 bit through carry
+    Old carry goes into bit 7, old bit 0 goes into carry
     Sets the zero flag if the result is zero
     Sets the negative flag if the result is negative
-    Stores the result in memory
+    Stores the result in accumulator or memory based on addressing mode
 */
 byte_t ROR(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t carry = (byte_t) get_flag(cpu, STATUS_FLAG_C);
-    // set the carry flag to the 0th bit of the value
     set_flag(cpu, STATUS_FLAG_C, value & 0x01);
-    // shift the value right by 1 bit
     value >>= 1;
-    // set the 7th bit to the carry flag
     value |= (carry << 7);
     set_zn(cpu, value);
-    write_to_addr(cpu, address, value);
+    if (acc_mode)
+    {
+        cpu->A = value;
+    }
+    else
+    {
+        write_to_addr(cpu, address, value);
+    }
     return 0;
 }
 
@@ -3041,24 +3102,6 @@ byte_t PLA(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->A = pop_byte(cpu);
-    set_zn(cpu, cpu->A);
-    return 0;
-}
-
-/*
-    ROR Rotate Right (Accumulator)
-    Rotates the accumulator right by 1 bit
-    Sets the carry flag to the 0th bit of the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
-byte_t ROR_ACC(cpu_s *cpu)
-{
-    assert(cpu != NULL);
-    byte_t carry = (byte_t) get_flag(cpu, STATUS_FLAG_C);
-    set_flag(cpu, STATUS_FLAG_C, cpu->A & 0x01);
-    cpu->A >>= 1;
-    cpu->A |= (carry << 7);
     set_zn(cpu, cpu->A);
     return 0;
 }

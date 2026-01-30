@@ -1788,6 +1788,234 @@ void test_0xFE_INC_ABX(void) {
 }
 
 // =============================================================================
+// Edge Case Tests - High Priority
+// =============================================================================
+
+// --- Negative Branch Offset Tests ---
+// Branch instructions use signed offsets (-128 to +127)
+// Offset 0xFE = -2, which should branch backward 2 bytes from PC+2
+
+void test_BPL_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0210;
+    set_flag(cpu, STATUS_FLAG_N, false); // N=0, branch taken
+    byte_t instr[] = {INSTRUCTION_BPL_REL, 0xFC}; // -4
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0210 + 2 + (-4) = 0x020E
+    TEST_ASSERT_EQUAL_HEX16(0x020E, cpu->PC);
+}
+
+void test_BMI_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0310;
+    set_flag(cpu, STATUS_FLAG_N, true); // N=1, branch taken
+    byte_t instr[] = {INSTRUCTION_BMI_REL, 0xF0}; // -16
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0310 + 2 + (-16) = 0x0302
+    TEST_ASSERT_EQUAL_HEX16(0x0302, cpu->PC);
+}
+
+void test_BVC_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0420;
+    set_flag(cpu, STATUS_FLAG_V, false); // V=0, branch taken
+    byte_t instr[] = {INSTRUCTION_BVC_REL, 0xFE}; // -2
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0420 + 2 + (-2) = 0x0420
+    TEST_ASSERT_EQUAL_HEX16(0x0420, cpu->PC);
+}
+
+void test_BVS_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0530;
+    set_flag(cpu, STATUS_FLAG_V, true); // V=1, branch taken
+    byte_t instr[] = {INSTRUCTION_BVS_REL, 0x80}; // -128 (max negative)
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0530 + 2 + (-128) = 0x04B2
+    TEST_ASSERT_EQUAL_HEX16(0x04B2, cpu->PC);
+}
+
+void test_BCC_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0640;
+    set_flag(cpu, STATUS_FLAG_C, false); // C=0, branch taken
+    byte_t instr[] = {INSTRUCTION_BCC_REL, 0xF8}; // -8
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0640 + 2 + (-8) = 0x063A
+    TEST_ASSERT_EQUAL_HEX16(0x063A, cpu->PC);
+}
+
+void test_BCS_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0750;
+    set_flag(cpu, STATUS_FLAG_C, true); // C=1, branch taken
+    byte_t instr[] = {INSTRUCTION_BCS_REL, 0xEE}; // -18
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0750 + 2 + (-18) = 0x0740
+    TEST_ASSERT_EQUAL_HEX16(0x0740, cpu->PC);
+}
+
+void test_BNE_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0860;
+    set_flag(cpu, STATUS_FLAG_Z, false); // Z=0, branch taken
+    byte_t instr[] = {INSTRUCTION_BNE_REL, 0xFA}; // -6
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0860 + 2 + (-6) = 0x085C
+    TEST_ASSERT_EQUAL_HEX16(0x085C, cpu->PC);
+}
+
+void test_BEQ_negative_offset(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->PC = 0x0970;
+    set_flag(cpu, STATUS_FLAG_Z, true); // Z=1, branch taken
+    byte_t instr[] = {INSTRUCTION_BEQ_REL, 0xE0}; // -32
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // PC = 0x0970 + 2 + (-32) = 0x0952
+    TEST_ASSERT_EQUAL_HEX16(0x0952, cpu->PC);
+}
+
+// --- JMP Indirect Page Boundary Bug Test ---
+// The 6502 has a bug: JMP ($xxFF) reads high byte from $xx00, not $xx00+$0100
+
+void test_JMP_IND_page_boundary_bug(void) {
+    cpu_s *cpu = get_test_cpu();
+    // Set up pointer at $10FF (page boundary)
+    cpu->memory[0x10FF] = 0x34; // low byte of target
+    cpu->memory[0x1000] = 0x12; // high byte (bug: reads from $1000, not $1100)
+    cpu->memory[0x1100] = 0xFF; // wrong high byte (should NOT be used)
+    byte_t instr[] = {INSTRUCTION_JMP_IND, 0xFF, 0x10};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // Should jump to $1234, NOT $FF34
+    TEST_ASSERT_EQUAL_HEX16(0x1234, cpu->PC);
+}
+
+// --- ADC Overflow Flag Edge Cases ---
+// Overflow occurs when sign of result differs from sign of both operands
+
+void test_ADC_overflow_positive_plus_positive(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->A = 0x50; // +80
+    set_flag(cpu, STATUS_FLAG_C, false);
+    set_flag(cpu, STATUS_FLAG_V, false);
+    cpu->memory[0x0500] = 0x50; // +80
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // 0x50 + 0x50 = 0xA0 (-96 in signed), overflow!
+    TEST_ASSERT_EQUAL_HEX8(0xA0, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_N)); // Result is negative
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_C)); // No carry
+}
+
+void test_ADC_overflow_negative_plus_negative(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->A = 0x90; // -112
+    set_flag(cpu, STATUS_FLAG_C, false);
+    set_flag(cpu, STATUS_FLAG_V, false);
+    cpu->memory[0x0500] = 0x90; // -112
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // 0x90 + 0x90 = 0x120, wraps to 0x20 (+32 in signed), overflow!
+    TEST_ASSERT_EQUAL_HEX8(0x20, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_N)); // Result is positive
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C)); // Carry set
+}
+
+void test_ADC_no_overflow_positive_plus_negative(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->A = 0x50; // +80
+    set_flag(cpu, STATUS_FLAG_C, false);
+    set_flag(cpu, STATUS_FLAG_V, false);
+    cpu->memory[0x0500] = 0xD0; // -48
+    byte_t instr[] = {INSTRUCTION_ADC_ABS, 0x00, 0x05};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // 0x50 + 0xD0 = 0x120, wraps to 0x20 (+32), no overflow
+    TEST_ASSERT_EQUAL_HEX8(0x20, cpu->A);
+    TEST_ASSERT_FALSE(get_flag(cpu, STATUS_FLAG_V)); // No overflow
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_C)); // Carry set
+}
+
+void test_SBC_overflow_positive_minus_negative(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->A = 0x50; // +80
+    set_flag(cpu, STATUS_FLAG_C, true); // No borrow
+    set_flag(cpu, STATUS_FLAG_V, false);
+    cpu->memory[0x0500] = 0xB0; // -80
+    byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // 0x50 - 0xB0 = 0x50 - (-80) = 0x50 + 0x50 = 0xA0, overflow!
+    TEST_ASSERT_EQUAL_HEX8(0xA0, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+}
+
+void test_SBC_overflow_negative_minus_positive(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->A = 0x80; // -128
+    set_flag(cpu, STATUS_FLAG_C, true); // No borrow
+    set_flag(cpu, STATUS_FLAG_V, false);
+    cpu->memory[0x0500] = 0x01; // +1
+    byte_t instr[] = {INSTRUCTION_SBC_ABS, 0x00, 0x05};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    // 0x80 - 0x01 = 0x7F (+127), overflow! (negative became positive)
+    TEST_ASSERT_EQUAL_HEX8(0x7F, cpu->A);
+    TEST_ASSERT_TRUE(get_flag(cpu, STATUS_FLAG_V)); // Overflow set
+}
+
+// --- Page Boundary Crossing Tests ---
+// These addressing modes add an extra cycle when crossing page boundaries
+
+void test_LDA_ABX_page_cross(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->X = 0x10;
+    cpu->memory[0x1100] = 0x42; // Target address after page cross
+    // Base address 0x10F0 + X (0x10) = 0x1100 (crosses from page 0x10 to 0x11)
+    byte_t instr[] = {INSTRUCTION_LDA_ABX, 0xF0, 0x10};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    TEST_ASSERT_EQUAL_HEX8(0x42, cpu->A);
+}
+
+void test_LDA_ABY_page_cross(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->Y = 0x20;
+    cpu->memory[0x1200] = 0x55; // Target address after page cross
+    // Base address 0x11E0 + Y (0x20) = 0x1200 (crosses from page 0x11 to 0x12)
+    byte_t instr[] = {INSTRUCTION_LDA_ABY, 0xE0, 0x11};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    TEST_ASSERT_EQUAL_HEX8(0x55, cpu->A);
+}
+
+void test_LDA_IZY_page_cross(void) {
+    cpu_s *cpu = get_test_cpu();
+    cpu->Y = 0x30;
+    // Zero page pointer at $20 points to $13D0
+    cpu->memory[0x20] = 0xD0;
+    cpu->memory[0x21] = 0x13;
+    cpu->memory[0x1400] = 0x77; // Target: $13D0 + $30 = $1400 (page cross)
+    byte_t instr[] = {INSTRUCTION_LDA_IZY, 0x20};
+    load_instruction(cpu, instr, sizeof(instr));
+    run_instruction(cpu);
+    TEST_ASSERT_EQUAL_HEX8(0x77, cpu->A);
+}
+
+// =============================================================================
 // Main - Unity test runner
 // =============================================================================
 
@@ -1945,6 +2173,31 @@ int main(void) {
     RUN_TEST(test_0xF9_SBC_ABY);
     RUN_TEST(test_0xFD_SBC_ABX);
     RUN_TEST(test_0xFE_INC_ABX);
+
+    // Edge case tests - negative branch offsets
+    RUN_TEST(test_BPL_negative_offset);
+    RUN_TEST(test_BMI_negative_offset);
+    RUN_TEST(test_BVC_negative_offset);
+    RUN_TEST(test_BVS_negative_offset);
+    RUN_TEST(test_BCC_negative_offset);
+    RUN_TEST(test_BCS_negative_offset);
+    RUN_TEST(test_BNE_negative_offset);
+    RUN_TEST(test_BEQ_negative_offset);
+
+    // Edge case tests - JMP indirect page boundary bug
+    RUN_TEST(test_JMP_IND_page_boundary_bug);
+
+    // Edge case tests - ADC/SBC overflow
+    RUN_TEST(test_ADC_overflow_positive_plus_positive);
+    RUN_TEST(test_ADC_overflow_negative_plus_negative);
+    RUN_TEST(test_ADC_no_overflow_positive_plus_negative);
+    RUN_TEST(test_SBC_overflow_positive_minus_negative);
+    RUN_TEST(test_SBC_overflow_negative_minus_positive);
+
+    // Edge case tests - page boundary crossing
+    RUN_TEST(test_LDA_ABX_page_cross);
+    RUN_TEST(test_LDA_ABY_page_cross);
+    RUN_TEST(test_LDA_IZY_page_cross);
 
     return UNITY_END();
 }
