@@ -11,15 +11,15 @@ A 6502 microprocessor emulator written in C. The goal is to build an NES emulato
 ## Building
 
 ```bash
-./build.sh          # Build
-./build.sh test     # Build and run tests (unit tests + nestest)
-./build.sh clean    # Clean build directory
+./build    # Build the project
+./test     # Build and run tests (unit tests + nestest)
+./clean    # Clean build artifacts
 ```
 
 ## Usage
 
 ```bash
-./build/bin/cpu_trace <rom.nes>           # Trace ROM execution
-./build/bin/cpu_trace --nestest           # Run nestest validation
-./build/bin/emulator_main <rom.nes>       # Run emulator
+./bin/cpu_trace <rom.nes>           # Trace ROM execution
+./bin/cpu_trace --nestest           # Run nestest validation
+./bin/emulator_main                 # Run emulator
 ```
