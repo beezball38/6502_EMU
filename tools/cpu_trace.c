@@ -43,6 +43,7 @@
 #define NESTEST_ROM_PATH ROMS_DIR "nestest.nes"
 #define NESTEST_LOG_PATH LOGS_DIR "nestest.log"
 #define NESTEST_TRACE_OUTPUT LOGS_DIR "nestest_cpu_trace.log"
+#define NESTEST_ERROR_LOG LOGS_DIR "nestest_errors.log"
 
 // Command line options
 typedef struct {
@@ -52,6 +53,7 @@ typedef struct {
     int max_instructions;
     int start_pc;           // -1 means use reset vector
     bool nestest_mode;
+    bool official_only;     // Only test official opcodes in nestest mode
     bool quiet;
     bool step;              // Step mode: press Enter to step, 'c' to continue
 } options_t;
@@ -163,6 +165,7 @@ static bool parse_args(int argc, char *argv[], options_t *opts) {
     opts->max_instructions = DEFAULT_MAX_INSTRUCTIONS;
     opts->start_pc = -1;
     opts->nestest_mode = false;
+    opts->official_only = false;
     opts->quiet = false;
     opts->step = false;
 
@@ -300,39 +303,45 @@ static bool parse_log_line(const char *line, log_entry_t *entry) {
     return true;
 }
 
-// Compare CPU state against expected log entry
-static bool compare_state(cpu_s *cpu, const log_entry_t *expected, int line_num) {
+// Compare CPU state against expected log entry (writes mismatches to error_log)
+static bool compare_state(cpu_s *cpu, const log_entry_t *expected, int line_num,
+                          FILE *error_log, const char *cpu_log, const char *expected_line) {
     bool match = true;
 
     if (cpu->PC != expected->pc) {
-        printf("Line %d: PC mismatch - expected %04X, got %04X\n",
-               line_num, expected->pc, cpu->PC);
+        fprintf(error_log, "Line %d: PC mismatch - expected %04X, got %04X\n",
+                line_num, expected->pc, cpu->PC);
         match = false;
     }
     if (cpu->A != expected->a) {
-        printf("Line %d: A mismatch - expected %02X, got %02X\n",
-               line_num, expected->a, cpu->A);
+        fprintf(error_log, "Line %d: A mismatch - expected %02X, got %02X\n",
+                line_num, expected->a, cpu->A);
         match = false;
     }
     if (cpu->X != expected->x) {
-        printf("Line %d: X mismatch - expected %02X, got %02X\n",
-               line_num, expected->x, cpu->X);
+        fprintf(error_log, "Line %d: X mismatch - expected %02X, got %02X\n",
+                line_num, expected->x, cpu->X);
         match = false;
     }
     if (cpu->Y != expected->y) {
-        printf("Line %d: Y mismatch - expected %02X, got %02X\n",
-               line_num, expected->y, cpu->Y);
+        fprintf(error_log, "Line %d: Y mismatch - expected %02X, got %02X\n",
+                line_num, expected->y, cpu->Y);
         match = false;
     }
     if (cpu->STATUS != expected->p) {
-        printf("Line %d: P mismatch - expected %02X, got %02X\n",
-               line_num, expected->p, cpu->STATUS);
+        fprintf(error_log, "Line %d: P mismatch - expected %02X, got %02X\n",
+                line_num, expected->p, cpu->STATUS);
         match = false;
     }
     if (cpu->SP != expected->sp) {
-        printf("Line %d: SP mismatch - expected %02X, got %02X\n",
-               line_num, expected->sp, cpu->SP);
+        fprintf(error_log, "Line %d: SP mismatch - expected %02X, got %02X\n",
+                line_num, expected->sp, cpu->SP);
         match = false;
+    }
+
+    if (!match) {
+        fprintf(error_log, "CPU:      %s\n", cpu_log);
+        fprintf(error_log, "Expected: %s\n", expected_line);
     }
 
     return match;
@@ -398,6 +407,14 @@ int main(int argc, char *argv[]) {
 
     // Set initial CPU state
     if (opts.nestest_mode) {
+        // Ask about official opcodes only
+        printf("Test official opcodes only? (y/n): ");
+        fflush(stdout);
+        char response = getchar();
+        // Clear any remaining input
+        while (getchar() != '\n');
+        opts.official_only = (response == 'y' || response == 'Y');
+
         // nestest automation mode
         cpu.PC = NESTEST_START_PC;
         cpu.SP = NESTEST_INITIAL_SP;
@@ -405,6 +422,8 @@ int main(int argc, char *argv[]) {
         if (!opts.quiet) {
             printf("\nNestest mode: PC=$%04X, SP=$%02X, P=$%02X\n",
                    cpu.PC, cpu.SP, cpu.STATUS);
+            printf("Testing: %s opcodes\n",
+                   opts.official_only ? "official only" : "all (official + unofficial)");
         }
     } else if (opts.start_pc >= 0) {
         // Custom start PC
@@ -461,6 +480,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Open error log file for mismatches
+    FILE *error_log = NULL;
+    if (compare_file) {
+        error_log = fopen(NESTEST_ERROR_LOG, "w");
+        if (!error_log) {
+            fprintf(stderr, "Warning: Could not open error log: %s\n", NESTEST_ERROR_LOG);
+        }
+    }
+
     // Run instructions
     char line_buffer[256];
     char cpu_log[256];
@@ -487,19 +515,30 @@ int main(int argc, char *argv[]) {
 
         // Compare against log file if available
         if (compare_file && fgets(line_buffer, sizeof(line_buffer), compare_file)) {
+            // Strip newline from line_buffer for cleaner logging
+            size_t len = strlen(line_buffer);
+            if (len > 0 && line_buffer[len-1] == '\n') {
+                line_buffer[len-1] = '\0';
+            }
+
             log_entry_t expected;
             if (parse_log_line(line_buffer, &expected)) {
-                if (!compare_state(&cpu, &expected, instruction_count + 1)) {
-                    printf("CPU: %s\n", cpu_log);
-                    printf("Expected: %s", line_buffer);
+                if (error_log && !compare_state(&cpu, &expected, instruction_count + 1,
+                                                 error_log, cpu_log, line_buffer)) {
                     mismatches++;
 
                     if (first_mismatch_line == 0) {
                         first_mismatch_line = instruction_count + 1;
                     }
 
-                    if (mismatches >= 10) {
-                        printf("\nToo many mismatches, stopping.\n");
+                    // Stop if testing official only and we hit a mismatch in official section
+                    if (opts.official_only && first_mismatch_line <= NESTEST_OFFICIAL_OPCODES_END) {
+                        break;
+                    }
+
+                    // Stop after first mismatch when testing unofficial (they crash the emulator)
+                    if (!opts.official_only && first_mismatch_line > NESTEST_OFFICIAL_OPCODES_END) {
+                        running = false;
                         break;
                     }
                 }
@@ -540,9 +579,14 @@ int main(int argc, char *argv[]) {
 
         // Check for end conditions in nestest mode
         if (opts.nestest_mode) {
+            // Stop at official opcodes boundary if only testing official
+            if (opts.official_only && instruction_count >= NESTEST_OFFICIAL_OPCODES_END) {
+                running = false;
+            }
+
             // nestest writes results to $02 and $03
-            // Official test ends around instruction 8991
-            if (instruction_count > 8991) {
+            // Full test ends around instruction 8991
+            if (!opts.official_only && instruction_count > 8991) {
                 running = false;
             }
 
@@ -556,71 +600,67 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Close error log
+    if (error_log) {
+        fclose(error_log);
+    }
+
     // Print results
     if (!opts.quiet) {
         printf("\n=== Results ===\n");
         printf("Instructions executed: %d\n", instruction_count);
-        printf("Final PC: $%04X\n", cpu.PC);
     }
 
-    // Check nestest result codes
+    // Check nestest result codes and report pass/fail
     if (opts.nestest_mode) {
-        if (!opts.quiet) {
-            printf("Error code at $02: $%02X\n", memory[0x0002]);
-            printf("Error code at $03: $%02X\n", memory[0x0003]);
-        }
-
-        if (memory[0x0002] == 0x00 && memory[0x0003] == 0x00) {
-            if (!opts.quiet) {
-                printf("\n*** ALL TESTS PASSED ***\n");
-            }
-        } else {
-            if (!opts.quiet) {
-                printf("\n*** TESTS FAILED ***\n");
-                printf("Check nestest.txt for error code meanings.\n");
-            }
-            exit_code = 1;
-        }
-    }
-
-    if (compare_file) {
-        if (!opts.quiet) {
-            printf("Mismatches with log: %d\n", mismatches);
-        }
-
-        // Report official vs unofficial opcode status for nestest
-        if (opts.nestest_mode && !opts.quiet) {
-            if (mismatches == 0) {
-                printf("\n*** ALL OFFICIAL AND UNOFFICIAL OPCODES PASSED ***\n");
-            } else if (first_mismatch_line > NESTEST_OFFICIAL_OPCODES_END) {
-                printf("\n*** ALL OFFICIAL OPCODES PASSED ***\n");
-                printf("Unofficial opcodes: FAILED (first mismatch at line %d)\n", first_mismatch_line);
-                // Don't fail exit code for unofficial opcodes
-                exit_code = 0;
-
-                // Dump trace to file for manual comparison
-                if (trace_buffer) {
-                    FILE *trace_file = fopen(NESTEST_TRACE_OUTPUT, "w");
-                    if (trace_file) {
-                        for (int i = 0; i < trace_count; i++) {
-                            fprintf(trace_file, "%s\n", trace_buffer[i]);
-                        }
-                        fclose(trace_file);
-                        printf("Trace written to: %s\n", NESTEST_TRACE_OUTPUT);
-                    } else {
-                        fprintf(stderr, "Warning: Could not write trace file: %s\n", NESTEST_TRACE_OUTPUT);
-                    }
+        if (compare_file) {
+            if (opts.official_only) {
+                // Testing official opcodes only
+                if (mismatches == 0) {
+                    printf("\nPASSED: All official opcodes correct\n");
+                } else {
+                    printf("\nFAILED: Official opcode mismatch at line %d\n", first_mismatch_line);
+                    printf("See %s for details\n", NESTEST_ERROR_LOG);
+                    exit_code = 1;
                 }
             } else {
-                printf("\n*** OFFICIAL OPCODES FAILED ***\n");
-                printf("First mismatch at line %d (official opcodes end at line %d)\n",
-                       first_mismatch_line, NESTEST_OFFICIAL_OPCODES_END);
-                exit_code = 1;
+                // Testing all opcodes
+                if (mismatches == 0) {
+                    printf("\nPASSED: All opcodes (official + unofficial) correct\n");
+                } else if (first_mismatch_line > NESTEST_OFFICIAL_OPCODES_END) {
+                    printf("\nPASSED: All official opcodes correct\n");
+                    printf("FAILED: Unofficial opcode mismatch at line %d\n", first_mismatch_line);
+                    printf("See %s for details\n", NESTEST_ERROR_LOG);
+                    // Don't fail exit code for unofficial opcodes
+                    exit_code = 0;
+                } else {
+                    printf("\nFAILED: Official opcode mismatch at line %d\n", first_mismatch_line);
+                    printf("See %s for details\n", NESTEST_ERROR_LOG);
+                    exit_code = 1;
+                }
             }
-        } else if (mismatches > 0) {
+
+            // Write trace to file
+            if (trace_buffer) {
+                FILE *trace_file = fopen(NESTEST_TRACE_OUTPUT, "w");
+                if (trace_file) {
+                    for (int i = 0; i < trace_count; i++) {
+                        fprintf(trace_file, "%s\n", trace_buffer[i]);
+                    }
+                    fclose(trace_file);
+                }
+            }
+
+            fclose(compare_file);
+        }
+    } else if (compare_file) {
+        if (mismatches == 0) {
+            printf("\nPASSED: No mismatches\n");
+        } else {
+            printf("\nFAILED: %d mismatches (first at line %d)\n", mismatches, first_mismatch_line);
+            printf("See %s for details\n", NESTEST_ERROR_LOG);
             exit_code = 1;
         }
-
         fclose(compare_file);
     }
 

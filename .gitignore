@@ -16,3 +16,6 @@ CTestTestfile.cmake
 bin/
 lib/
 .DS_Store
+logs/nestest_cpu_trace.log
+logs/nestest_errors.log
+logs/nestest_cpu_trace.log
