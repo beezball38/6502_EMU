@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+mkdir -p lib && cd lib && cmake .. && make && cd .. && \
+echo "=== Running unit tests ===" && \
+./bin/emulator_tests && \
+echo "" && \
+echo "=== Running nestest (legal opcodes) ===" && \
+./bin/cpu_trace --nestest -q -n 5003
