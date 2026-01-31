@@ -18,13 +18,19 @@ target_include_directories(emulator_lib
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# Main executable
-add_executable(emulator_main src/cpu_emulator.c)
-target_link_libraries(emulator_main PRIVATE emulator_lib)
-
 # CPU trace tool
 add_executable(cpu_trace src/cpu_trace.c)
 target_link_libraries(cpu_trace PRIVATE emulator_lib)
+
+# SDL2 Visual Debugger (optional - only built if SDL2 is found)
+find_package(SDL2 QUIET)
+if(SDL2_FOUND)
+    add_executable(debugger src/debugger.c)
+    target_link_libraries(debugger PRIVATE emulator_lib SDL2::SDL2)
+    message(STATUS "SDL2 found - building debugger")
+else()
+    message(STATUS "SDL2 not found - debugger will not be built")
+endif()
 
 # Testing configuration
 option(BUILD_TESTS "Build test suite" ON)

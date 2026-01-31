@@ -98,3 +98,11 @@ void bus_load_prg_rom(bus_s *bus, byte_t *prg_rom, size_t size)
     bus->prg_rom = prg_rom;
     bus->prg_rom_size = size;
 }
+
+word_t bus_read_word(bus_s *bus, word_t addr)
+{
+    assert(bus != NULL);
+    byte_t lo = bus_read(bus, addr);
+    byte_t hi = bus_read(bus, addr + 1);
+    return (word_t)(lo | (hi << 8));
+}

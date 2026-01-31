@@ -29,6 +29,9 @@ byte_t bus_read(bus_s *bus, word_t addr);
 // Routes address to correct component based on memory map
 void bus_write(bus_s *bus, word_t addr, byte_t value);
 
+// Read a 16-bit word from the bus (little-endian: low byte at addr, high byte at addr+1)
+word_t bus_read_word(bus_s *bus, word_t addr);
+
 // Connect PRG ROM to the bus (for cartridge loading)
 void bus_load_prg_rom(bus_s *bus, byte_t *prg_rom, size_t size);
 

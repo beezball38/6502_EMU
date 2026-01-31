@@ -348,32 +348,6 @@ static bool compare_state(cpu_s *cpu, const log_entry_t *expected, int line_num,
     return match;
 }
 
-// Run a single instruction (fetch, decode, execute)
-static void run_instruction(cpu_s *cpu) {
-    cpu->current_opcode = bus_read(cpu->bus, cpu->PC);
-    cpu->instruction_pending = true;
-    cpu->pc_changed = false;
-
-    cpu_instruction_s *instr = get_current_instruction(cpu);
-
-    // Fetch operand
-    if (instr->data_fetch) {
-        instr->data_fetch(cpu);
-    }
-
-    // Execute
-    if (instr->execute) {
-        instr->execute(cpu);
-    }
-
-    // Advance PC if instruction didn't modify it
-    if (!cpu->pc_changed) {
-        cpu->PC += instr->length;
-    }
-
-    cpu->instruction_pending = false;
-}
-
 int main(int argc, char *argv[]) {
     options_t opts;
     if (!parse_args(argc, argv, &opts)) {

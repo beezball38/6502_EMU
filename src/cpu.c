@@ -2363,7 +2363,7 @@ bool fetch_and_execute(cpu_s *cpu)
     return result;
 }
 
-void clock(cpu_s *cpu)
+void cpu_clock(cpu_s *cpu)
 {
     assert(cpu != NULL && cpu->bus != NULL && cpu->table != NULL);
     cpu_instruction_s *instruction = NULL;
@@ -3547,4 +3547,36 @@ byte_t NOP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     return 0;
+}
+
+/*
+    Run a single instruction (fetch, decode, execute, update PC)
+    Used by debugger for single-stepping
+*/
+void run_instruction(cpu_s *cpu)
+{
+    assert(cpu != NULL);
+
+    cpu->current_opcode = bus_read(cpu->bus, cpu->PC);
+    cpu->instruction_pending = true;
+    cpu->pc_changed = false;
+
+    cpu_instruction_s *instr = get_current_instruction(cpu);
+
+    // Fetch operand
+    if (instr->data_fetch) {
+        instr->data_fetch(cpu);
+    }
+
+    // Execute
+    if (instr->execute) {
+        instr->execute(cpu);
+    }
+
+    // Advance PC if instruction didn't modify it
+    if (!cpu->pc_changed) {
+        cpu->PC += instr->length;
+    }
+
+    cpu->instruction_pending = false;
 }

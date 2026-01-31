@@ -40,7 +40,7 @@ struct cpu_s
 void irq(cpu_s *cpu);
 void nmi(cpu_s *cpu);
 void reset(cpu_s *cpu);
-void clock(cpu_s *cpu);
+void cpu_clock(cpu_s *cpu);
 void adjust_pc(cpu_s *cpu, byte_t instruction_length);
 
 bool get_flag(cpu_s *cpu, cpu_status_flag_e flag);
@@ -56,4 +56,7 @@ cpu_instruction_s* get_current_instruction(cpu_s *cpu);
 
 byte_t read_from_addr(cpu_s *cpu, word_t address);
 void write_to_addr(cpu_s *cpu, word_t address, byte_t value);
+
+// Execute a single instruction (fetch, decode, execute, update PC)
+void run_instruction(cpu_s *cpu);
 #endif
