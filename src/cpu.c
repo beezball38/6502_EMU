@@ -19,6 +19,12 @@ byte_t ILLEGAL(cpu_s *cpu)
     return 0;
 }
 
+bool is_illegal_opcode(cpu_s *cpu, byte_t opcode)
+{
+    cpu_instruction_s *instr = get_instruction(cpu, opcode);
+    return instr->execute == ILLEGAL;
+}
+
 word_t address;                    // used by absolute, zero page, and indirect addressing modes
 offset_t address_rel;              // used only by branch instructions (signed for negative offsets)
 byte_t value;                      // holds fetched value, could be immediate value or value from memory

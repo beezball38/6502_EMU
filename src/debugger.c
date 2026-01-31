@@ -219,6 +219,7 @@ static const SDL_Color COLOR_PAUSED   = {0xFF, 0x80, 0x00, 0xFF};  // Orange for
 static const SDL_Color COLOR_RUNNING  = {0x00, 0xFF, 0x00, 0xFF};  // Green for running
 static const SDL_Color COLOR_ADDR     = {0x80, 0xC0, 0xFF, 0xFF};  // Light blue for addresses
 static const SDL_Color COLOR_HEX      = {0xFF, 0xC0, 0x80, 0xFF};  // Light orange for hex
+static const SDL_Color COLOR_ERROR    = {0xFF, 0x40, 0x40, 0xFF};  // Red for errors
 
 // Layout constants
 #define PANEL_MARGIN    20
@@ -621,9 +622,30 @@ static void draw_controls(debugger_s *debugger_context) {
     draw_text(debugger_context, x, y, "[SPACE]=Step  [P]=Pause  [R]=Reset  [Z]=ZP  [T]=Stack  [Q/ESC]=Quit", COLOR_LABEL);
 }
 
+// Reset CPU to initial state
+static void reset_to_init_state(debugger_s *debugger_context) {
+    debugger_context->cpu->PC = debugger_context->init_state.PC;
+    debugger_context->cpu->SP = debugger_context->init_state.SP;
+    debugger_context->cpu->STATUS = debugger_context->init_state.STATUS;
+    debugger_context->cpu->A = debugger_context->init_state.A;
+    debugger_context->cpu->X = debugger_context->init_state.X;
+    debugger_context->cpu->Y = debugger_context->init_state.Y;
+    debugger_context->cpu->cycles = 7; // Reset to initial cycle count
+    debugger_context->illegal_opcode = false;
+    debugger_context->paused = true;
+}
+
 // Handle keyboard input
 static void handle_input(debugger_s *debugger_context, SDL_Event *event) {
     if (event->type == SDL_KEYDOWN) {
+        // Handle illegal opcode state - only space resets
+        if (debugger_context->illegal_opcode) {
+            if (event->key.keysym.sym == SDLK_SPACE) {
+                reset_to_init_state(debugger_context);
+            }
+            return;
+        }
+
         switch (event->key.keysym.sym) {
             case SDLK_ESCAPE:
             case SDLK_q:
@@ -755,6 +777,24 @@ static void draw_game_fullscreen(debugger_s *debugger_context) {
 }
 
 // Render all debugger UI
+// Draw error overlay for illegal opcode
+static void draw_error_overlay(debugger_s *debugger_context) {
+    // Semi-transparent dark overlay
+    SDL_SetRenderDrawBlendMode(debugger_context->renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(debugger_context->renderer, 0, 0, 0, 200);
+    SDL_Rect overlay = {0, 0, DEBUGGER_WINDOW_WIDTH, DEBUGGER_WINDOW_HEIGHT};
+    SDL_RenderFillRect(debugger_context->renderer, &overlay);
+
+    // Error message centered on screen
+    const char *error_msg = "Unimplemented Opcode! Press space to reset";
+    int text_len = strlen(error_msg);
+    int text_width = text_len * FONT_WIDTH * FONT_SCALE;
+    int text_x = (DEBUGGER_WINDOW_WIDTH - text_width) / 2;
+    int text_y = DEBUGGER_WINDOW_HEIGHT / 2 - (FONT_HEIGHT * FONT_SCALE / 2);
+
+    draw_text(debugger_context, text_x, text_y, error_msg, COLOR_ERROR);
+}
+
 static void render(debugger_s *debugger_context) {
     // Clear screen
     SDL_SetRenderDrawColor(debugger_context->renderer, COLOR_BG.r, COLOR_BG.g, COLOR_BG.b, COLOR_BG.a);
@@ -772,6 +812,11 @@ static void render(debugger_s *debugger_context) {
         draw_controls(debugger_context);
     }
 
+    // Draw error overlay if we hit an illegal opcode
+    if (debugger_context->illegal_opcode) {
+        draw_error_overlay(debugger_context);
+    }
+
     // Present
     SDL_RenderPresent(debugger_context->renderer);
 }
@@ -785,9 +830,18 @@ bool debugger_init(debugger_s *debugger_context, cpu_s *cpu, bus_s *bus) {
     debugger_context->step_requested = false;
     debugger_context->quit_requested = false;
     debugger_context->play_mode = false;
+    debugger_context->illegal_opcode = false;
     debugger_context->mem_view_mode = MEM_VIEW_MODE_ZERO_PAGE;
     debugger_context->mem_view_addr = 0x0000;
     debugger_context->run_speed = 100;  // 100 instructions per frame when running
+
+    // Save initial CPU state for reset
+    debugger_context->init_state.PC = cpu->PC;
+    debugger_context->init_state.SP = cpu->SP;
+    debugger_context->init_state.STATUS = cpu->STATUS;
+    debugger_context->init_state.A = cpu->A;
+    debugger_context->init_state.X = cpu->X;
+    debugger_context->init_state.Y = cpu->Y;
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -848,24 +902,39 @@ void debugger_run(debugger_s *debugger_context) {
             }
         }
 
-        // Execute CPU instructions
-        if (!debugger_context->paused) {
-            // Run multiple instructions per frame
-            int count = debugger_context->run_speed > 0 ? debugger_context->run_speed : 10000;
-            for (int i = 0; i < count; i++) {
-                run_instruction(debugger_context->cpu);
+        // Don't execute if we hit an illegal opcode
+        if (!debugger_context->illegal_opcode) {
+            // Execute CPU instructions
+            if (!debugger_context->paused) {
+                // Run multiple instructions per frame
+                int count = debugger_context->run_speed > 0 ? debugger_context->run_speed : 10000;
+                for (int i = 0; i < count; i++) {
+                    // Check for illegal opcode before executing
+                    byte_t opcode = bus_read(debugger_context->bus, debugger_context->cpu->PC);
+                    if (is_illegal_opcode(debugger_context->cpu, opcode)) {
+                        debugger_context->illegal_opcode = true;
+                        debugger_context->paused = true;
+                        break;
+                    }
+                    run_instruction(debugger_context->cpu);
+                }
+            } else if (debugger_context->step_requested) {
+                // Check for illegal opcode before stepping
+                byte_t opcode = bus_read(debugger_context->bus, debugger_context->cpu->PC);
+                if (is_illegal_opcode(debugger_context->cpu, opcode)) {
+                    debugger_context->illegal_opcode = true;
+                } else {
+                    run_instruction(debugger_context->cpu);
+                }
+                debugger_context->step_requested = false;
             }
-        } else if (debugger_context->step_requested) {
-            // Single step
-            run_instruction(debugger_context->cpu);
-            debugger_context->step_requested = false;
         }
 
         // Render
         render(debugger_context);
 
-        // Cap frame rate when paused to reduce CPU usage
-        if (debugger_context->paused) {
+        // Cap frame rate when paused or in error state to reduce CPU usage
+        if (debugger_context->paused || debugger_context->illegal_opcode) {
             SDL_Delay(16);  // ~60 FPS
         }
     }

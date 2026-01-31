@@ -57,4 +57,7 @@ void write_to_addr(cpu_s *cpu, word_t address, byte_t value);
 
 // Execute a single instruction (fetch, decode, execute, update PC)
 void run_instruction(cpu_s *cpu);
+
+// Check if an opcode is illegal/unimplemented
+bool is_illegal_opcode(cpu_s *cpu, byte_t opcode);
 #endif

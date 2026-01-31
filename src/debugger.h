@@ -25,6 +25,16 @@ typedef enum {
     MEM_VIEW_MODE_CUSTOM
 } mem_view_mode_e;
 
+// Initial CPU state for reset
+typedef struct {
+    word_t PC;
+    byte_t SP;
+    byte_t STATUS;
+    byte_t A;
+    byte_t X;
+    byte_t Y;
+} cpu_init_state_s;
+
 // Debugger state
 typedef struct {
     SDL_Window *window;
@@ -39,6 +49,9 @@ typedef struct {
     bool step_requested;    // Step one instruction
     bool quit_requested;    // First ESC/Q pressed, waiting for confirmation
     bool play_mode;         // Full-screen game mode (no debug panels)
+    bool illegal_opcode;    // Hit an unimplemented opcode
+
+    cpu_init_state_s init_state;  // Initial state for reset
 
     mem_view_mode_e mem_view_mode;
     word_t mem_view_addr;   // Memory view start address

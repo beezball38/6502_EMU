@@ -8,12 +8,16 @@
 
 #include "bus.h"
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 void bus_init(bus_s *bus)
 {
     assert(bus != NULL);
-    memset(bus->ram, 0, BUS_RAM_SIZE);
+    // Randomize RAM to match real hardware behavior (RAM is undefined at power-on)
+    for (size_t i = 0; i < BUS_RAM_SIZE; i++) {
+        bus->ram[i] = rand() & 0xFF;
+    }
     bus->prg_rom = NULL;
     bus->prg_rom_size = 0;
 }
