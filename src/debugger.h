@@ -1,4 +1,4 @@
-// SDL2 Visual Debugger for 6502 emulator
+// SDL2 Visual Debugger for NES emulator
 // Displays CPU state, memory, and current instruction
 // Supports pause/resume and single-step execution
 #ifndef DEBUGGER_H

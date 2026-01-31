@@ -1,4 +1,4 @@
-// CPU struct and interface for 6502 processor
+// CPU struct and interface for NES (6502-based) processor
 #ifndef CPU_H
 #define CPU_H
 
@@ -28,11 +28,10 @@ struct cpu_s
     word_t PC;
     byte_t STATUS;
 
-    size_t cycles;
+    size_t cycles;              // Total elapsed cycles (counts up from 0)
     byte_t current_opcode;
     bool instruction_pending;
     bool pc_changed;
-    bool does_need_additional_cycle;
     bus_s *bus;
     cpu_instruction_s table[256];
 };
@@ -40,7 +39,6 @@ struct cpu_s
 void irq(cpu_s *cpu);
 void nmi(cpu_s *cpu);
 void reset(cpu_s *cpu);
-void cpu_clock(cpu_s *cpu);
 void adjust_pc(cpu_s *cpu, byte_t instruction_length);
 
 bool get_flag(cpu_s *cpu, cpu_status_flag_e flag);

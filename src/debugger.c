@@ -1,4 +1,4 @@
-// SDL2 Visual Debugger for 6502 emulator
+// SDL2 Visual Debugger for NES emulator
 // Uses a simple 8x8 bitmap font for text rendering
 
 #include <stdio.h>
@@ -436,17 +436,15 @@ static void draw_registers(debugger_s *debugger_context) {
         flag_x += flag_char_spacing;
     }
 
-    // Status hex value
+    // Status hex value and cycles
     y += LINE_HEIGHT;
     const int status_value_x = 112;
+    const int cycles_label_x = 180;
+    const int cycles_value_x = 112;
 
     draw_text(debugger_context, x, y, "Status:", COLOR_LABEL);
     snprintf(buf, sizeof(buf), "%02X", debugger_context->cpu->STATUS);
     draw_text(debugger_context, x + status_value_x, y, buf, COLOR_VALUE);
-
-    // Cycles
-    const int cycles_label_x = 180;
-    const int cycles_value_x = 112;
 
     draw_text(debugger_context, x + cycles_label_x, y, "Cycles:", COLOR_LABEL);
     snprintf(buf, sizeof(buf), "%zu", debugger_context->cpu->cycles);
@@ -889,35 +887,57 @@ void debugger_cleanup(debugger_s *debugger_context) {
     SDL_Quit();
 }
 
+// Test ROM constants (nestest automation mode)
+#define NESTEST_ROM_PATH "roms/nestest.nes"
+#define NESTEST_START_PC 0xC000
+#define NESTEST_INITIAL_SP 0xFD
+#define NESTEST_INITIAL_STATUS 0x24
+
 // Main function for standalone debugger
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <rom.nes> [options]\n", argv[0]);
-        fprintf(stderr, "\nOptions:\n");
-        fprintf(stderr, "  --pc <addr>   Override start PC (hex, e.g. C000)\n");
-        fprintf(stderr, "  --play        Start in full-screen play mode\n");
-        fprintf(stderr, "  --rom-info    Print ROM header information\n");
-        return 1;
-    }
-
-    const char *rom_path = argv[1];
-    int start_pc = -1;
+    const char *rom_path = NULL;
     bool play_mode = false;
     bool show_rom_info = false;
+    bool test_rom_mode = false;
 
     // Parse arguments
-    for (int i = 2; i < argc; i++) {
-        if (strcmp(argv[i], "--pc") == 0 && i + 1 < argc) {
-            unsigned int pc;
-            if (sscanf(argv[i + 1], "%x", &pc) == 1) {
-                start_pc = (int)pc;
-            }
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--rom") == 0 && i + 1 < argc) {
+            rom_path = argv[i + 1];
             i++;
         } else if (strcmp(argv[i], "--play") == 0) {
             play_mode = true;
         } else if (strcmp(argv[i], "--rom-info") == 0) {
             show_rom_info = true;
+        } else if (strcmp(argv[i], "--test-rom") == 0) {
+            test_rom_mode = true;
+        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            printf("Usage: %s [options]\n", argv[0]);
+            printf("\nOptions:\n");
+            printf("  --rom <path>  Load ROM from path\n");
+            printf("  --test-rom    Load nestest.nes with automation state (PC=$C000, SP=$FD, P=$24)\n");
+            printf("  --play        Start in full-screen play mode\n");
+            printf("  --rom-info    Print ROM header information\n");
+            printf("  --help, -h    Show this help message\n");
+            return 0;
         }
+    }
+
+    // Handle --test-rom mode
+    if (test_rom_mode) {
+        rom_path = NESTEST_ROM_PATH;
+    }
+
+    // Check that we have a ROM path
+    if (rom_path == NULL) {
+        fprintf(stderr, "Usage: %s [options]\n", argv[0]);
+        fprintf(stderr, "\nOptions:\n");
+        fprintf(stderr, "  --rom <path>  Load ROM from path\n");
+        fprintf(stderr, "  --test-rom    Load nestest.nes with automation state (PC=$C000, SP=$FD, P=$24)\n");
+        fprintf(stderr, "  --play        Start in full-screen play mode\n");
+        fprintf(stderr, "  --rom-info    Print ROM header information\n");
+        fprintf(stderr, "  --help, -h    Show this help message\n");
+        return 1;
     }
 
     // Load ROM
@@ -940,10 +960,12 @@ int main(int argc, char *argv[]) {
     cpu_s cpu;
     cpu_init(&cpu, &bus);
 
-    // Set start PC if specified
-    if (start_pc >= 0) {
-        cpu.PC = (word_t)start_pc;
-        printf("Starting at PC=$%04X (custom)\n", cpu.PC);
+    // Set CPU state based on mode
+    if (test_rom_mode) {
+        cpu.PC = NESTEST_START_PC;
+        cpu.SP = NESTEST_INITIAL_SP;
+        cpu.STATUS = NESTEST_INITIAL_STATUS;
+        printf("Test ROM mode: PC=$%04X, SP=$%02X, P=$%02X\n", cpu.PC, cpu.SP, cpu.STATUS);
     } else {
         word_t reset_vector = bus_read_word(&bus, 0xFFFC);
         cpu.PC = reset_vector;

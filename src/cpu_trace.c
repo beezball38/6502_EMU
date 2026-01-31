@@ -257,7 +257,7 @@ static void format_log_line(cpu_s *cpu, char *buffer, size_t size) {
     if (instr->length > 1) bytes[1] = bus_read(cpu->bus, cpu->PC + 1);
     if (instr->length > 2) bytes[2] = bus_read(cpu->bus, cpu->PC + 2);
 
-    // Format: PC  BYTES  MNEMONIC  A:XX X:XX Y:XX P:XX SP:XX
+    // Format: PC  BYTES  MNEMONIC  A:XX X:XX Y:XX P:XX SP:XX CYC:XXXX
     char byte_str[12];
     switch (instr->length) {
         case 1:
@@ -275,9 +275,9 @@ static void format_log_line(cpu_s *cpu, char *buffer, size_t size) {
     }
 
     snprintf(buffer, size,
-             "%04X  %s  %-4s  A:%02X X:%02X Y:%02X P:%02X SP:%02X",
+             "%04X  %s  %-4s  A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%zu",
              cpu->PC, byte_str, instr->name ? instr->name : "???",
-             cpu->A, cpu->X, cpu->Y, cpu->STATUS, cpu->SP);
+             cpu->A, cpu->X, cpu->Y, cpu->STATUS, cpu->SP, cpu->cycles);
 }
 
 // Parse a reference log line to extract CPU state

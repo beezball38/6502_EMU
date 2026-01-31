@@ -1,4 +1,4 @@
-// 6502 CPU definitions - X-Macros, opcodes, and generated enums
+// NES CPU definitions - X-Macros, opcodes, and generated enums
 #ifndef CPU_DEFS_H
 #define CPU_DEFS_H
 
@@ -16,7 +16,7 @@ typedef byte_t (*instruction_func_t)(cpu_s *cpu);
 
 // =============================================================================
 // X-Macro: OPCODE_MNEMONICS
-// Lists all 6502 instruction mnemonics (operation names).
+// Lists all CPU instruction mnemonics (operation names).
 // =============================================================================
 
 #define OPCODE_MNEMONICS \
@@ -79,7 +79,7 @@ X(NOP)
 
 // =============================================================================
 // X-Macro: ADDRESSING_MODE_LIST
-// Lists all 6502 addressing modes.
+// Lists all CPU addressing modes.
 // =============================================================================
 
 #define ADDRESSING_MODE_LIST  \
@@ -99,7 +99,7 @@ X(IZY)
 
 // =============================================================================
 // X-Macro: INSTRUCTION_OPCODE_TABLE
-// Maps each valid 6502 instruction to its mnemonic, addressing mode, and opcode.
+// Maps each valid CPU instruction to its mnemonic, addressing mode, and opcode.
 // =============================================================================
 
 #define INSTRUCTION_OPCODE_TABLE    \
@@ -257,7 +257,7 @@ X(INC, ABX, 0xFE)
 
 // =============================================================================
 // X-Macro: UNDEFINED_OPCODES
-// Lists all undefined/illegal 6502 opcodes.
+// Lists all undefined/illegal CPU opcodes.
 // =============================================================================
 
 #define UNDEFINED_OPCODES \

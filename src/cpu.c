@@ -25,7 +25,7 @@ byte_t value;                      // holds fetched value, could be immediate va
 byte_t current_instruction_length; // used by instructions to determine how many bytes to consume
 bool acc_mode;                     // true when using accumulator addressing mode
 
-/// @brief Function where all instructions for 6502 are defined
+/// @brief Function where all CPU instructions are defined
 /// @param cpu
 static void init_instruction_table(cpu_s *cpu)
 {
@@ -2287,18 +2287,9 @@ void set_flag(cpu_s *cpu, cpu_status_flag_e flag, bool value)
         cpu->STATUS &= ~flag;
     return;
 }
-/*
-    This function is unique in that it directly modifies the cycle count
-*/
 byte_t branch_pc(cpu_s *cpu)
 {
-    word_t old_pc = cpu->PC;
     cpu->PC += address_rel;
-
-    if(crosses_page(old_pc, cpu->PC))
-    {
-        cpu->cycles += 1;
-    }
     return 0;
 }
 
@@ -2363,37 +2354,6 @@ bool fetch_and_execute(cpu_s *cpu)
     return result;
 }
 
-void cpu_clock(cpu_s *cpu)
-{
-    assert(cpu != NULL && cpu->bus != NULL && cpu->table != NULL);
-    cpu_instruction_s *instruction = NULL;
-    if(cpu->does_need_additional_cycle)
-    {
-        cpu->does_need_additional_cycle = false;
-        return; //noop
-    }
-
-    if (!cpu->instruction_pending)
-    {
-        cpu->current_opcode = peek(cpu);
-        cpu->instruction_pending = true;
-        instruction = get_current_instruction(cpu);
-        cpu->cycles = instruction->cycles - 1; //takes one cycle to fetch
-    }
-    else
-    {
-        cpu->cycles--;
-    }
-
-    if (cpu->cycles == 0)
-    {
-        instruction = get_current_instruction(cpu);
-        cpu->does_need_additional_cycle = fetch_and_execute(cpu);
-        adjust_pc(cpu, instruction->length);
-        cpu->instruction_pending = false;
-    }
-}
-
 //Just for constructing the CPU, not an actual interrupt
 void cpu_init(cpu_s *cpu, bus_s *bus)
 {
@@ -2404,7 +2364,7 @@ void cpu_init(cpu_s *cpu, bus_s *bus)
     cpu->SP = 0xFD;
     cpu->STATUS = 0x00 | STATUS_FLAG_U;
     cpu->PC = 0x0000;
-    cpu->does_need_additional_cycle = false;
+    cpu->cycles = 7; // Reset sequence takes 7 cycles
     cpu->current_opcode = 0x00;
     cpu->instruction_pending = false;
 
@@ -2420,7 +2380,6 @@ void reset(cpu_s *cpu)
     cpu_init(cpu, cpu->bus);
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
-    cpu->cycles += 8;
     cpu->STATUS = (rand() % 256) | STATUS_FLAG_U;
     return;
 }
@@ -2435,7 +2394,7 @@ void irq(cpu_s *cpu)
     push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
-    cpu->cycles += 7;
+    cpu->cycles += 7; // IRQ takes 7 cycles
     return;
 }
 
@@ -2445,7 +2404,7 @@ void nmi(cpu_s *cpu)
     push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
-    cpu->cycles += 8;
+    cpu->cycles += 7; // NMI takes 7 cycles
     return;
 }
 
@@ -2769,7 +2728,7 @@ byte_t PHP(cpu_s *cpu)
 // branch helper function that takes a flag as a parameter
 // if flag value is 1, we check if the flag is set
 // otherwise we check if the flag is not set
-// returns 1 if page boundary is crossed and branch taken, 0 otherwise
+// Adds extra cycles directly to cpu->cycles: +1 if taken, +2 if taken and page cross
 byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
 {
     assert(cpu != NULL);
@@ -2780,10 +2739,14 @@ byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
         word_t old_PC = cpu->PC;
         cpu->PC += address_rel;
         cpu->pc_changed = true;
-        // checks if the page boundary is crossed
+        // +1 for branch taken, +1 more if page boundary crossed
         if (crosses_page(old_PC, cpu->PC))
         {
-            return 1;
+            cpu->cycles += 2;
+        }
+        else
+        {
+            cpu->cycles += 1;
         }
     }
     return 0;
@@ -2956,7 +2919,7 @@ byte_t EOR(cpu_s *cpu)
     assert(cpu != NULL);
     cpu->A ^= value;
     set_zn(cpu, cpu->A);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3071,7 +3034,7 @@ byte_t ADC(cpu_s *cpu)
     byte_t overflow = ((accumulator_msb ^ value_msb) == 0) && ((accumulator_msb ^ result_msb) != 0);
     set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3248,7 +3211,7 @@ byte_t LDY(cpu_s *cpu)
     assert(cpu != NULL);
     cpu->Y = value;
     set_zn(cpu, cpu->Y);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3276,7 +3239,7 @@ byte_t LDX(cpu_s *cpu)
     assert(cpu != NULL);
     cpu->X = value;
     set_zn(cpu, cpu->X);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3373,7 +3336,7 @@ byte_t CMP(cpu_s *cpu)
     byte_t result = cpu->A - value;
     set_flag(cpu, STATUS_FLAG_C, cpu->A >= value);
     set_zn(cpu, result);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3468,7 +3431,7 @@ byte_t SBC(cpu_s *cpu)
     byte_t overflow = ((accumulator_msb ^ value_msb) != 0) && ((accumulator_msb ^ result_msb) != 0);
     set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
-    return 0;
+    return 1; // Can take extra cycle on page cross
 }
 
 /*
@@ -3551,7 +3514,13 @@ byte_t NOP(cpu_s *cpu)
 
 /*
     Run a single instruction (fetch, decode, execute, update PC)
-    Used by debugger for single-stepping
+    Tracks cycle count for timing accuracy.
+
+    Cycle counting:
+    - Base cycles come from instruction->cycles
+    - Extra cycle for page boundary crossing (indexed addressing modes)
+      only if instruction allows it (execute returns 1)
+    - Branch instructions add their own extra cycles directly
 */
 void run_instruction(cpu_s *cpu)
 {
@@ -3563,14 +3532,25 @@ void run_instruction(cpu_s *cpu)
 
     cpu_instruction_s *instr = get_current_instruction(cpu);
 
-    // Fetch operand
+    // Fetch operand - returns 1 if page boundary crossed (for indexed modes)
+    byte_t page_crossed = 0;
     if (instr->data_fetch) {
-        instr->data_fetch(cpu);
+        page_crossed = instr->data_fetch(cpu);
     }
 
-    // Execute
+    // Execute - returns 1 if instruction can take page-crossing penalty
+    // (branches handle their own extra cycles internally)
+    byte_t can_take_penalty = 0;
     if (instr->execute) {
-        instr->execute(cpu);
+        can_take_penalty = instr->execute(cpu);
+    }
+
+    // Add base cycles
+    cpu->cycles += instr->cycles;
+
+    // Add page-crossing penalty if applicable
+    if (page_crossed && can_take_penalty) {
+        cpu->cycles += 1;
     }
 
     // Advance PC if instruction didn't modify it

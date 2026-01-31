@@ -1,6 +1,6 @@
-# 6502 Emulator
+# NES Emulator
 
-A 6502 microprocessor emulator written in C. The goal is to build an NES emulator and a general-purpose CPU for emulating other systems that used this processor.
+An NES emulator written in C, featuring a cycle-accurate 6502 CPU implementation.
 
 ## Status
 
