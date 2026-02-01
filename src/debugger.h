@@ -25,6 +25,12 @@ typedef enum {
     MEM_VIEW_MODE_CUSTOM
 } mem_view_mode_e;
 
+// Debug view modes (CPU vs PPU panels)
+typedef enum {
+    DEBUG_VIEW_CPU,
+    DEBUG_VIEW_PPU
+} debug_view_mode_e;
+
 // Initial CPU state for reset
 typedef struct {
     word_t PC;
@@ -41,6 +47,7 @@ typedef struct {
     SDL_Renderer *renderer;
     SDL_Texture *font_texture;   // Bitmap font texture
     SDL_Texture *screen_texture; // NES screen (256x240)
+    SDL_Texture *pattern_texture; // Pattern tables (256x128 for both tables)
 
     cpu_s *cpu;
     bus_s *bus;
@@ -56,6 +63,10 @@ typedef struct {
 
     mem_view_mode_e mem_view_mode;
     word_t mem_view_addr;   // Memory view start address
+
+    debug_view_mode_e debug_view_mode;  // CPU or PPU view
+    int ppu_palette_select;             // Selected palette for pattern table rendering (0-7)
+    int oam_scroll_offset;              // Scroll offset for OAM list
 
     int run_speed;          // Instructions per frame when running (0 = unlimited)
 } debugger_s;

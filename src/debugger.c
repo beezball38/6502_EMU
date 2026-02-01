@@ -220,6 +220,19 @@ static const SDL_Color COLOR_RUNNING  = {0x00, 0xFF, 0x00, 0xFF};  // Green for 
 static const SDL_Color COLOR_ADDR     = {0x80, 0xC0, 0xFF, 0xFF};  // Light blue for addresses
 static const SDL_Color COLOR_HEX      = {0xFF, 0xC0, 0x80, 0xFF};  // Light orange for hex
 static const SDL_Color COLOR_ERROR    = {0xFF, 0x40, 0x40, 0xFF};  // Red for errors
+static const SDL_Color COLOR_HIGHLIGHT = {0xFF, 0xFF, 0x00, 0xFF}; // Yellow for highlights
+
+// NES Master Palette (64 colors, ARGB format) - copy for debugger use
+static const uint32_t NES_PALETTE[64] = {
+    0xFF666666, 0xFF002A88, 0xFF1412A7, 0xFF3B00A4, 0xFF5C007E, 0xFF6E0040, 0xFF6C0600, 0xFF561D00,
+    0xFF333500, 0xFF0B4800, 0xFF005200, 0xFF004F08, 0xFF00404D, 0xFF000000, 0xFF000000, 0xFF000000,
+    0xFFADADAD, 0xFF155FD9, 0xFF4240FF, 0xFF7527FE, 0xFFA01ACC, 0xFFB71E7B, 0xFFB53120, 0xFF994E00,
+    0xFF6B6D00, 0xFF388700, 0xFF0C9300, 0xFF008F32, 0xFF007C8D, 0xFF000000, 0xFF000000, 0xFF000000,
+    0xFFFFFEFF, 0xFF64B0FF, 0xFF9290FF, 0xFFC676FF, 0xFFF36AFF, 0xFFFE6ECC, 0xFFFE8170, 0xFFEA9E22,
+    0xFFBCBE00, 0xFF88D800, 0xFF5CE430, 0xFF45E082, 0xFF48CDDE, 0xFF4F4F4F, 0xFF000000, 0xFF000000,
+    0xFFFFFEFF, 0xFFC0DFFF, 0xFFD3D2FF, 0xFFE8C8FF, 0xFFFBC2FF, 0xFFFEC4EA, 0xFFFECCC5, 0xFFF7D8A5,
+    0xFFE4E594, 0xFFCFEF96, 0xFFBDF4AB, 0xFFB3F3CC, 0xFFB5EBF2, 0xFFB8B8B8, 0xFF000000, 0xFF000000,
+};
 
 // Layout constants
 #define PANEL_MARGIN    20
@@ -268,6 +281,29 @@ static const SDL_Color COLOR_ERROR    = {0xFF, 0x40, 0x40, 0xFF};  // Red for er
 // Title bar height within panels
 #define PANEL_TITLE_Y   4
 #define PANEL_CONTENT_Y 28
+
+// PPU View panels (right side, replacing CPU panels)
+// Pattern tables panel (two 128x128 grids side by side = 256x128)
+#define PATTERN_X       REGS_X
+#define PATTERN_Y       PANEL_MARGIN
+#define PATTERN_W       REGS_W
+#define PATTERN_H       190
+
+// Palettes panel
+#define PALETTES_X      REGS_X
+#define PALETTES_Y      (PATTERN_Y + PATTERN_H + SECTION_GAP)
+#define PALETTES_W      REGS_W
+#define PALETTES_H      120
+
+// OAM panel
+#define OAM_X           REGS_X
+#define OAM_Y           (PALETTES_Y + PALETTES_H + SECTION_GAP)
+#define OAM_W           REGS_W
+#define OAM_H           (DEBUGGER_WINDOW_HEIGHT - OAM_Y - 60 - SECTION_GAP)
+
+// Pattern table texture dimensions (both tables side by side)
+#define PATTERN_TEX_W   256
+#define PATTERN_TEX_H   128
 
 // Create the font texture from bitmap data
 static bool create_font_texture(debugger_s *debugger_context) {
@@ -593,6 +629,182 @@ static void update_screen_texture(debugger_s *debugger_context) {
     }
 }
 
+// Update pattern table texture from CHR ROM
+// Renders both pattern tables (PT0 at $0000, PT1 at $1000) side by side
+static void update_pattern_texture(debugger_s *debugger_context) {
+    void *pixels;
+    int pitch;
+
+    if (SDL_LockTexture(debugger_context->pattern_texture, NULL, &pixels, &pitch) == 0) {
+        ppu_s *ppu = &debugger_context->bus->ppu;
+        int palette_base = debugger_context->ppu_palette_select * 4;
+
+        // Get the 4 colors for the selected palette
+        uint32_t colors[4];
+        colors[0] = NES_PALETTE[ppu->palette[0] & 0x3F];  // Background color is always palette[0]
+        for (int i = 1; i < 4; i++) {
+            colors[i] = NES_PALETTE[ppu->palette[palette_base + i] & 0x3F];
+        }
+
+        // Render both pattern tables (256 tiles each, 16x16 grid of 8x8 tiles)
+        for (int table = 0; table < 2; table++) {
+            word_t table_base = table * 0x1000;
+            int x_offset = table * 128;  // PT1 starts at x=128
+
+            for (int tile_y = 0; tile_y < 16; tile_y++) {
+                for (int tile_x = 0; tile_x < 16; tile_x++) {
+                    int tile_index = tile_y * 16 + tile_x;
+                    word_t tile_addr = table_base + tile_index * 16;
+
+                    // Decode 8x8 tile (2 bitplanes)
+                    for (int row = 0; row < 8; row++) {
+                        byte_t plane0 = ppu_vram_read(ppu, tile_addr + row);
+                        byte_t plane1 = ppu_vram_read(ppu, tile_addr + row + 8);
+
+                        for (int col = 0; col < 8; col++) {
+                            int bit = 7 - col;
+                            int color_index = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
+
+                            int px = x_offset + tile_x * 8 + col;
+                            int py = tile_y * 8 + row;
+
+                            uint32_t *row_pixels = (uint32_t *)((uint8_t *)pixels + py * pitch);
+                            row_pixels[px] = colors[color_index];
+                        }
+                    }
+                }
+            }
+        }
+
+        SDL_UnlockTexture(debugger_context->pattern_texture);
+    }
+}
+
+// Draw pattern tables panel (PPU view)
+static void draw_pattern_tables(debugger_s *debugger_context) {
+    draw_panel(debugger_context, PATTERN_X, PATTERN_Y, PATTERN_W, PATTERN_H, "Pattern Tables");
+
+    int content_y = PATTERN_Y + PANEL_CONTENT_Y;
+    int content_x = PATTERN_X + PANEL_PADDING;
+
+    // Draw the pattern texture scaled to fit
+    int tex_scale = 1;
+    int scaled_w = PATTERN_TEX_W * tex_scale;
+    int scaled_h = PATTERN_TEX_H * tex_scale;
+
+    SDL_Rect dst = {content_x, content_y, scaled_w, scaled_h};
+    SDL_RenderCopy(debugger_context->renderer, debugger_context->pattern_texture, NULL, &dst);
+
+    // Show palette indicator
+    char buf[32];
+    snprintf(buf, sizeof(buf), "Palette: %d", debugger_context->ppu_palette_select);
+    draw_text(debugger_context, content_x + scaled_w + 20, content_y, buf, COLOR_LABEL);
+
+    // Label the pattern tables
+    draw_text(debugger_context, content_x + 40, content_y + scaled_h + 4, "PT0", COLOR_LABEL);
+    draw_text(debugger_context, content_x + 168, content_y + scaled_h + 4, "PT1", COLOR_LABEL);
+}
+
+// Draw palettes panel (PPU view)
+static void draw_palettes(debugger_s *debugger_context) {
+    draw_panel(debugger_context, PALETTES_X, PALETTES_Y, PALETTES_W, PALETTES_H, "Palettes");
+
+    ppu_s *ppu = &debugger_context->bus->ppu;
+    int content_y = PALETTES_Y + PANEL_CONTENT_Y;
+    int content_x = PALETTES_X + PANEL_PADDING;
+
+    const int swatch_size = 16;
+    const int swatch_gap = 4;
+    const int palette_gap = 20;
+
+    // Draw 8 palettes (4 BG + 4 Sprite)
+    for (int pal = 0; pal < 8; pal++) {
+        int row = pal / 4;  // 0 = BG, 1 = Sprite
+        int col = pal % 4;
+
+        int base_x = content_x + col * (4 * swatch_size + 4 * swatch_gap + palette_gap);
+        int base_y = content_y + row * (swatch_size + 24);
+
+        // Label
+        char label[8];
+        snprintf(label, sizeof(label), "%s%d", row == 0 ? "BG" : "SP", col);
+        draw_text(debugger_context, base_x, base_y - 2, label, COLOR_LABEL);
+
+        // Draw 4 color swatches
+        for (int c = 0; c < 4; c++) {
+            int pal_index = pal * 4 + c;
+            // Background color (index 0, 4, 8, 12...) mirrors palette[0]
+            byte_t nes_color = (c == 0) ? ppu->palette[0] : ppu->palette[pal_index];
+            uint32_t argb = NES_PALETTE[nes_color & 0x3F];
+
+            int sx = base_x + c * (swatch_size + swatch_gap);
+            int sy = base_y + 16;
+
+            // Convert ARGB to SDL_Color (ARGB -> R, G, B)
+            SDL_Color swatch_color = {
+                (argb >> 16) & 0xFF,
+                (argb >> 8) & 0xFF,
+                argb & 0xFF,
+                0xFF
+            };
+            draw_rect(debugger_context, sx, sy, swatch_size, swatch_size, swatch_color);
+
+            // Highlight selected palette
+            if (pal == debugger_context->ppu_palette_select && c == 0) {
+                draw_rect_outline(debugger_context, sx - 2, sy - 2,
+                                  4 * (swatch_size + swatch_gap) - swatch_gap + 4,
+                                  swatch_size + 4, COLOR_HIGHLIGHT);
+            }
+        }
+    }
+}
+
+// Draw OAM sprites panel (PPU view)
+static void draw_oam(debugger_s *debugger_context) {
+    draw_panel(debugger_context, OAM_X, OAM_Y, OAM_W, OAM_H, "OAM Sprites");
+
+    ppu_s *ppu = &debugger_context->bus->ppu;
+    int content_y = OAM_Y + PANEL_CONTENT_Y;
+    int content_x = OAM_X + PANEL_PADDING;
+
+    const int line_height = 18;
+    const int visible_lines = (OAM_H - PANEL_CONTENT_Y - 10) / line_height;
+    char buf[64];
+
+    // Draw scroll indicator
+    snprintf(buf, sizeof(buf), "[%d-%d/64]",
+             debugger_context->oam_scroll_offset,
+             debugger_context->oam_scroll_offset + visible_lines - 1);
+    draw_text(debugger_context, OAM_X + OAM_W - 120, OAM_Y + 4, buf, COLOR_LABEL);
+
+    for (int i = 0; i < visible_lines && (i + debugger_context->oam_scroll_offset) < 64; i++) {
+        int sprite = i + debugger_context->oam_scroll_offset;
+        int y_pos = content_y + i * line_height;
+
+        byte_t sprite_y = ppu->oam[sprite * 4 + 0];
+        byte_t tile_idx = ppu->oam[sprite * 4 + 1];
+        byte_t attrs = ppu->oam[sprite * 4 + 2];
+        byte_t sprite_x = ppu->oam[sprite * 4 + 3];
+
+        // Format: #NN: Y=YY T=$TT A=AA X=XX
+        snprintf(buf, sizeof(buf), "#%02d: Y=%3d T=$%02X A=%02X X=%3d",
+                 sprite, sprite_y, tile_idx, attrs, sprite_x);
+
+        // Dim sprites that are off-screen (Y >= 240 or Y == 0)
+        SDL_Color text_color = (sprite_y == 0 || sprite_y >= 240) ? COLOR_LABEL : COLOR_TEXT;
+        draw_text(debugger_context, content_x, y_pos, buf, text_color);
+
+        // Show attribute details
+        char attr_str[32];
+        snprintf(attr_str, sizeof(attr_str), "P%d %s%s%s",
+                 attrs & 0x03,
+                 (attrs & 0x20) ? "B" : "F",  // Behind/Front of BG
+                 (attrs & 0x40) ? "H" : "-",  // Horizontal flip
+                 (attrs & 0x80) ? "V" : "-"); // Vertical flip
+        draw_text(debugger_context, content_x + 320, y_pos, attr_str, COLOR_LABEL);
+    }
+}
+
 // Draw NES screen
 static void draw_screen(debugger_s *debugger_context) {
     const int screen_border = 8;
@@ -630,10 +842,14 @@ static void draw_controls(debugger_s *debugger_context) {
     }
     draw_text(debugger_context, x, y, status, status_color);
 
-    // Controls help
+    // Controls help - different based on view mode
     const int status_width = 140;
     x += status_width;
-    draw_text(debugger_context, x, y, "[SPACE]=Step  [P]=Pause  [R]=Reset  [Z]=ZP  [T]=Stack  [Q/ESC]=Quit", COLOR_LABEL);
+    if (debugger_context->debug_view_mode == DEBUG_VIEW_CPU) {
+        draw_text(debugger_context, x, y, "[SPACE]=Step [P]=Pause [R]=Reset [V]=PPU View [Q]=Quit", COLOR_LABEL);
+    } else {
+        draw_text(debugger_context, x, y, "[V]=CPU View [1-8]=Palette [UP/DN]=Scroll OAM [P]=Pause [Q]=Quit", COLOR_LABEL);
+    }
 }
 
 // Reset CPU to initial state
@@ -706,20 +922,34 @@ static void handle_input(debugger_s *debugger_context, SDL_Event *event) {
                 break;
 
             case SDLK_UP:
-                // Scroll memory up
                 debugger_context->quit_requested = false;
-                if (debugger_context->mem_view_addr >= 16) {
-                    debugger_context->mem_view_addr -= 16;
-                    debugger_context->mem_view_mode = MEM_VIEW_MODE_CUSTOM;
+                if (debugger_context->debug_view_mode == DEBUG_VIEW_PPU) {
+                    // Scroll OAM up
+                    if (debugger_context->oam_scroll_offset > 0) {
+                        debugger_context->oam_scroll_offset--;
+                    }
+                } else {
+                    // Scroll memory up
+                    if (debugger_context->mem_view_addr >= 16) {
+                        debugger_context->mem_view_addr -= 16;
+                        debugger_context->mem_view_mode = MEM_VIEW_MODE_CUSTOM;
+                    }
                 }
                 break;
 
             case SDLK_DOWN:
-                // Scroll memory down
                 debugger_context->quit_requested = false;
-                if (debugger_context->mem_view_addr < 0xFFF0) {
-                    debugger_context->mem_view_addr += 16;
-                    debugger_context->mem_view_mode = MEM_VIEW_MODE_CUSTOM;
+                if (debugger_context->debug_view_mode == DEBUG_VIEW_PPU) {
+                    // Scroll OAM down
+                    if (debugger_context->oam_scroll_offset < 54) {  // 64 - ~10 visible
+                        debugger_context->oam_scroll_offset++;
+                    }
+                } else {
+                    // Scroll memory down
+                    if (debugger_context->mem_view_addr < 0xFFF0) {
+                        debugger_context->mem_view_addr += 16;
+                        debugger_context->mem_view_mode = MEM_VIEW_MODE_CUSTOM;
+                    }
                 }
                 break;
 
@@ -767,6 +997,50 @@ static void handle_input(debugger_s *debugger_context, SDL_Event *event) {
                 // Toggle debug/play mode
                 debugger_context->quit_requested = false;
                 debugger_context->play_mode = !debugger_context->play_mode;
+                break;
+
+            case SDLK_v:
+                // Toggle CPU/PPU view mode
+                debugger_context->quit_requested = false;
+                if (debugger_context->debug_view_mode == DEBUG_VIEW_CPU) {
+                    debugger_context->debug_view_mode = DEBUG_VIEW_PPU;
+                } else {
+                    debugger_context->debug_view_mode = DEBUG_VIEW_CPU;
+                }
+                break;
+
+            // Number keys 1-8 for palette selection (PPU view)
+            case SDLK_1:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 0;
+                break;
+            case SDLK_2:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 1;
+                break;
+            case SDLK_3:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 2;
+                break;
+            case SDLK_4:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 3;
+                break;
+            case SDLK_5:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 4;
+                break;
+            case SDLK_6:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 5;
+                break;
+            case SDLK_7:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 6;
+                break;
+            case SDLK_8:
+                debugger_context->quit_requested = false;
+                debugger_context->ppu_palette_select = 7;
                 break;
 
             default:
@@ -826,11 +1100,23 @@ static void render(debugger_s *debugger_context) {
         // Full-screen game mode (--play flag)
         draw_game_fullscreen(debugger_context);
     } else {
-        // Debug mode - draw all panels
+        // Debug mode - draw NES screen (always visible)
         draw_screen(debugger_context);
-        draw_registers(debugger_context);
-        draw_instruction(debugger_context);
-        draw_memory(debugger_context);
+
+        // Draw right-side panels based on view mode
+        if (debugger_context->debug_view_mode == DEBUG_VIEW_CPU) {
+            // CPU view - show registers, instruction, memory
+            draw_registers(debugger_context);
+            draw_instruction(debugger_context);
+            draw_memory(debugger_context);
+        } else {
+            // PPU view - show pattern tables, palettes, OAM
+            update_pattern_texture(debugger_context);
+            draw_pattern_tables(debugger_context);
+            draw_palettes(debugger_context);
+            draw_oam(debugger_context);
+        }
+
         draw_controls(debugger_context);
     }
 
@@ -855,6 +1141,9 @@ bool debugger_init(debugger_s *debugger_context, cpu_s *cpu, bus_s *bus) {
     debugger_context->illegal_opcode = false;
     debugger_context->mem_view_mode = MEM_VIEW_MODE_ZERO_PAGE;
     debugger_context->mem_view_addr = 0x0000;
+    debugger_context->debug_view_mode = DEBUG_VIEW_CPU;
+    debugger_context->ppu_palette_select = 0;
+    debugger_context->oam_scroll_offset = 0;
     debugger_context->run_speed = 100;  // 100 instructions per frame when running
 
     // Save initial CPU state for reset
@@ -918,6 +1207,24 @@ bool debugger_init(debugger_s *debugger_context, cpu_s *cpu, bus_s *bus) {
     );
     if (!debugger_context->screen_texture) {
         fprintf(stderr, "Failed to create screen texture: %s\n", SDL_GetError());
+        SDL_DestroyTexture(debugger_context->font_texture);
+        SDL_DestroyRenderer(debugger_context->renderer);
+        SDL_DestroyWindow(debugger_context->window);
+        SDL_Quit();
+        return false;
+    }
+
+    // Create pattern table texture (256x128, both tables side by side)
+    debugger_context->pattern_texture = SDL_CreateTexture(
+        debugger_context->renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        PATTERN_TEX_W,
+        PATTERN_TEX_H
+    );
+    if (!debugger_context->pattern_texture) {
+        fprintf(stderr, "Failed to create pattern texture: %s\n", SDL_GetError());
+        SDL_DestroyTexture(debugger_context->screen_texture);
         SDL_DestroyTexture(debugger_context->font_texture);
         SDL_DestroyRenderer(debugger_context->renderer);
         SDL_DestroyWindow(debugger_context->window);
@@ -1013,6 +1320,10 @@ void debugger_run(debugger_s *debugger_context) {
 }
 
 void debugger_cleanup(debugger_s *debugger_context) {
+    if (debugger_context->pattern_texture) {
+        SDL_DestroyTexture(debugger_context->pattern_texture);
+        debugger_context->pattern_texture = NULL;
+    }
     if (debugger_context->screen_texture) {
         SDL_DestroyTexture(debugger_context->screen_texture);
         debugger_context->screen_texture = NULL;
