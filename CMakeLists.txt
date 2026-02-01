@@ -11,6 +11,7 @@ add_library(emulator_lib
     src/cpu.c
     src/ines.c
     src/bus.c
+    src/ppu.c
 )
 
 target_include_directories(emulator_lib
@@ -46,4 +47,7 @@ if(BUILD_TESTS)
 
     add_executable(emulator_tests src/cpu_tests.c)
     target_link_libraries(emulator_tests PRIVATE emulator_lib unity)
+
+    add_executable(ppu_tests src/ppu_tests.c)
+    target_link_libraries(ppu_tests PRIVATE emulator_lib unity)
 endif()

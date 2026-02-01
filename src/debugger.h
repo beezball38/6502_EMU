@@ -40,6 +40,7 @@ typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *font_texture;   // Bitmap font texture
+    SDL_Texture *screen_texture; // NES screen (256x240)
 
     cpu_s *cpu;
     bus_s *bus;

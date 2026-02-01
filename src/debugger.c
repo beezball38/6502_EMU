@@ -572,26 +572,40 @@ static void draw_memory(debugger_s *debugger_context) {
     }
 }
 
-// Draw NES screen placeholder
-static void draw_screen_placeholder(debugger_s *debugger_context) {
+// Update screen texture from PPU framebuffer
+static void update_screen_texture(debugger_s *debugger_context) {
+    void *pixels;
+    int pitch;
+
+    if (SDL_LockTexture(debugger_context->screen_texture, NULL, &pixels, &pitch) == 0) {
+        uint32_t *framebuffer = ppu_get_framebuffer(&debugger_context->bus->ppu);
+
+        // Copy framebuffer to texture (row by row in case pitch differs)
+        for (int y = 0; y < PPU_SCREEN_HEIGHT; y++) {
+            memcpy(
+                (uint8_t *)pixels + y * pitch,
+                framebuffer + y * PPU_SCREEN_WIDTH,
+                PPU_SCREEN_WIDTH * sizeof(uint32_t)
+            );
+        }
+
+        SDL_UnlockTexture(debugger_context->screen_texture);
+    }
+}
+
+// Draw NES screen
+static void draw_screen(debugger_s *debugger_context) {
     const int screen_border = 8;
     const int screen_content_x = SCREEN_X + screen_border;
     const int screen_content_y = SCREEN_Y + PANEL_CONTENT_Y;
     const int screen_content_w = SCREEN_W - (screen_border * 2);
     const int screen_content_h = SCREEN_H - PANEL_CONTENT_Y - screen_border;
 
-    draw_panel(debugger_context, SCREEN_X, SCREEN_Y, SCREEN_W, SCREEN_H, "NES Screen (placeholder)");
+    draw_panel(debugger_context, SCREEN_X, SCREEN_Y, SCREEN_W, SCREEN_H, "NES Screen");
 
-    // Draw a dark area representing where the NES screen would go
-    draw_rect(debugger_context, screen_content_x, screen_content_y, screen_content_w, screen_content_h, (SDL_Color){0, 0, 0, 255});
-
-    // Draw centered placeholder text
-    const char *placeholder_text = "PPU not implemented";
-    int text_len = strlen(placeholder_text);
-    int text_width = text_len * FONT_WIDTH * FONT_SCALE;
-    int text_x = screen_content_x + (screen_content_w - text_width) / 2;
-    int text_y = screen_content_y + (screen_content_h / 2) - (FONT_HEIGHT * FONT_SCALE / 2);
-    draw_text(debugger_context, text_x, text_y, placeholder_text, COLOR_LABEL);
+    // Draw the NES screen texture scaled to fit the panel
+    SDL_Rect dst = {screen_content_x, screen_content_y, screen_content_w, screen_content_h};
+    SDL_RenderCopy(debugger_context->renderer, debugger_context->screen_texture, NULL, &dst);
 }
 
 // Draw control bar
@@ -764,16 +778,24 @@ static void handle_input(debugger_s *debugger_context, SDL_Event *event) {
 
 // Draw full-screen game view (play mode)
 static void draw_game_fullscreen(debugger_s *debugger_context) {
-    // Draw a full-window black area for the game
+    // Draw black letterbox background
     draw_rect(debugger_context, 0, 0, DEBUGGER_WINDOW_WIDTH, DEBUGGER_WINDOW_HEIGHT, (SDL_Color){0, 0, 0, 255});
 
-    // Centered placeholder text
-    const char *placeholder_text = "PPU not implemented - Press D for debug view";
-    int text_len = strlen(placeholder_text);
-    int text_width = text_len * FONT_WIDTH * FONT_SCALE;
-    int text_x = (DEBUGGER_WINDOW_WIDTH - text_width) / 2;
-    int text_y = (DEBUGGER_WINDOW_HEIGHT / 2) - (FONT_HEIGHT * FONT_SCALE / 2);
-    draw_text(debugger_context, text_x, text_y, placeholder_text, COLOR_LABEL);
+    // Calculate centered position maintaining 256:240 (16:15) aspect ratio
+    int scale = DEBUGGER_WINDOW_HEIGHT / PPU_SCREEN_HEIGHT;  // 720/240 = 3
+    int screen_w = PPU_SCREEN_WIDTH * scale;
+    int screen_h = PPU_SCREEN_HEIGHT * scale;
+    int screen_x = (DEBUGGER_WINDOW_WIDTH - screen_w) / 2;
+    int screen_y = (DEBUGGER_WINDOW_HEIGHT - screen_h) / 2;
+
+    // Draw the NES screen texture scaled
+    SDL_Rect dst = {screen_x, screen_y, screen_w, screen_h};
+    SDL_RenderCopy(debugger_context->renderer, debugger_context->screen_texture, NULL, &dst);
+
+    // Show control hint at bottom
+    const char *hint = "[D] Debug view  [P] Pause  [Q] Quit";
+    int text_x = (DEBUGGER_WINDOW_WIDTH - strlen(hint) * FONT_WIDTH * FONT_SCALE) / 2;
+    draw_text(debugger_context, text_x, DEBUGGER_WINDOW_HEIGHT - 30, hint, (SDL_Color){80, 80, 80, 255});
 }
 
 // Render all debugger UI
@@ -805,7 +827,7 @@ static void render(debugger_s *debugger_context) {
         draw_game_fullscreen(debugger_context);
     } else {
         // Debug mode - draw all panels
-        draw_screen_placeholder(debugger_context);
+        draw_screen(debugger_context);
         draw_registers(debugger_context);
         draw_instruction(debugger_context);
         draw_memory(debugger_context);
@@ -886,11 +908,46 @@ bool debugger_init(debugger_s *debugger_context, cpu_s *cpu, bus_s *bus) {
         return false;
     }
 
+    // Create screen texture (256x240, streaming for frequent updates)
+    debugger_context->screen_texture = SDL_CreateTexture(
+        debugger_context->renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        PPU_SCREEN_WIDTH,
+        PPU_SCREEN_HEIGHT
+    );
+    if (!debugger_context->screen_texture) {
+        fprintf(stderr, "Failed to create screen texture: %s\n", SDL_GetError());
+        SDL_DestroyTexture(debugger_context->font_texture);
+        SDL_DestroyRenderer(debugger_context->renderer);
+        SDL_DestroyWindow(debugger_context->window);
+        SDL_Quit();
+        return false;
+    }
+
     return true;
+}
+
+// Execute one CPU instruction and tick PPU accordingly (3 PPU cycles per CPU cycle)
+static void execute_with_ppu(debugger_s *debugger_context) {
+    // Get cycles before instruction
+    size_t cycles_before = debugger_context->cpu->cycles;
+
+    // Execute one CPU instruction
+    run_instruction(debugger_context->cpu);
+
+    // Calculate how many CPU cycles the instruction took
+    size_t cpu_cycles = debugger_context->cpu->cycles - cycles_before;
+
+    // Tick PPU 3 times per CPU cycle (NTSC timing)
+    for (size_t i = 0; i < cpu_cycles * 3; i++) {
+        ppu_tick(&debugger_context->bus->ppu);
+    }
 }
 
 void debugger_run(debugger_s *debugger_context) {
     SDL_Event event;
+    bool frame_updated = false;
 
     while (debugger_context->running) {
         // Handle events
@@ -902,13 +959,15 @@ void debugger_run(debugger_s *debugger_context) {
             }
         }
 
+        frame_updated = false;
+
         // Don't execute if we hit an illegal opcode
         if (!debugger_context->illegal_opcode) {
             // Execute CPU instructions
             if (!debugger_context->paused) {
-                // Run multiple instructions per frame
-                int count = debugger_context->run_speed > 0 ? debugger_context->run_speed : 10000;
-                for (int i = 0; i < count; i++) {
+                // Run until we complete a frame (or hit instruction limit for safety)
+                int max_instructions = 100000;  // Safety limit
+                for (int i = 0; i < max_instructions; i++) {
                     // Check for illegal opcode before executing
                     byte_t opcode = bus_read(debugger_context->bus, debugger_context->cpu->PC);
                     if (is_illegal_opcode(debugger_context->cpu, opcode)) {
@@ -916,7 +975,14 @@ void debugger_run(debugger_s *debugger_context) {
                         debugger_context->paused = true;
                         break;
                     }
-                    run_instruction(debugger_context->cpu);
+
+                    execute_with_ppu(debugger_context);
+
+                    // Check if PPU completed a frame
+                    if (ppu_frame_complete(&debugger_context->bus->ppu)) {
+                        frame_updated = true;
+                        break;  // One frame per render cycle
+                    }
                 }
             } else if (debugger_context->step_requested) {
                 // Check for illegal opcode before stepping
@@ -924,10 +990,16 @@ void debugger_run(debugger_s *debugger_context) {
                 if (is_illegal_opcode(debugger_context->cpu, opcode)) {
                     debugger_context->illegal_opcode = true;
                 } else {
-                    run_instruction(debugger_context->cpu);
+                    execute_with_ppu(debugger_context);
+                    frame_updated = true;  // Update screen after step
                 }
                 debugger_context->step_requested = false;
             }
+        }
+
+        // Update screen texture if frame was rendered
+        if (frame_updated || debugger_context->paused) {
+            update_screen_texture(debugger_context);
         }
 
         // Render
@@ -941,6 +1013,10 @@ void debugger_run(debugger_s *debugger_context) {
 }
 
 void debugger_cleanup(debugger_s *debugger_context) {
+    if (debugger_context->screen_texture) {
+        SDL_DestroyTexture(debugger_context->screen_texture);
+        debugger_context->screen_texture = NULL;
+    }
     if (debugger_context->font_texture) {
         SDL_DestroyTexture(debugger_context->font_texture);
         debugger_context->font_texture = NULL;
@@ -1025,6 +1101,19 @@ int main(int argc, char *argv[]) {
     bus_s bus;
     bus_init(&bus);
     bus_load_prg_rom(&bus, rom.prg_rom, rom.prg_rom_bytes);
+
+    // Load CHR ROM to PPU
+    if (rom.chr_rom != NULL && rom.chr_rom_bytes > 0) {
+        bus_load_chr_rom(&bus, rom.chr_rom, rom.chr_rom_bytes);
+        printf("CHR ROM: %zu bytes loaded\n", rom.chr_rom_bytes);
+    } else {
+        printf("CHR ROM: None (uses CHR RAM)\n");
+    }
+
+    // Set mirroring mode
+    mirroring_mode_e mirror_mode = rom.mirroring_vertical ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
+    bus_set_mirroring(&bus, mirror_mode);
+    printf("Mirroring: %s\n", rom.mirroring_vertical ? "Vertical" : "Horizontal");
 
     cpu_s cpu;
     cpu_init(&cpu, &bus);
