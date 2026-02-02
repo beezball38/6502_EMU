@@ -9,7 +9,41 @@
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
 
+
 #define MEM_SIZE (1024 * 1024 * 64)
+
+/*
+ * 6502 CPU Instruction Table (Opcode Map)
+ *
+ *  Opcodes are arranged in a 16x16 grid:
+ *
+ *    00 01 02 03 ... 0F
+ *    10 11 12 13 ... 1F
+ *    ...
+ *    F0 F1 F2 F3 ... FF
+ *
+ *  Each opcode maps to an instruction, addressing mode, and cycle count.
+ *  See: https://www.nesdev.org/obelisk-6502-guide/reference.html
+ *  and: https://www.nesdev.org/wiki/CPU_Opcode_matrix
+ *
+ *  Many opcodes are 'illegal' or 'undocumented' (see ILLEGAL handler).
+ */
+
+/*
+ * 6502 Status Register (P):
+ *  Bit 7 6 5 4 3 2 1 0
+ *      N V - B D I Z C
+ *  N = Negative, V = Overflow, - = Unused, B = Break, D = Decimal, I = IRQ Disable, Z = Zero, C = Carry
+ *  See: https://www.nesdev.org/wiki/Status_flags
+ */
+
+/*
+ * Stack operations:
+ *  - Stack is located at $0100-$01FF, SP is 8-bit, grows downward.
+ *  - Pushing:  memory[0x0100 + SP] = value; SP--;
+ *  - Pulling:  SP++; value = memory[0x0100 + SP];
+ *  See: https://www.nesdev.org/wiki/Stack
+ */
 
 /// @brief Stub for illegal/undocumented opcodes - logs warning and continues
 byte_t ILLEGAL(cpu_s *cpu)
@@ -37,7 +71,8 @@ static void init_instruction_table(cpu_s *cpu)
 {
     cpu_instruction_s *table = &cpu->table[0];
 
-    // reference https://www.masswerk.at/6502/6502_instruction_set.html
+    // See also: https://www.nesdev.org/wiki/CPU_Opcode_matrix
+    // and https://www.masswerk.at/6502/6502_instruction_set.html
     table[INSTRUCTION_BRK_IMP] = (cpu_instruction_s)
     {
         .name = "BRK",

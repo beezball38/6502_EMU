@@ -1,23 +1,73 @@
-// CPU trace tool - outputs execution logs for any ROM
-// Can optionally compare against a reference log (like nestest)
+
+// ===============================
+// CPU Trace Tool for NES Emulator
+// ===============================
+//
+// Outputs execution logs for any ROM, optionally compares against a reference log (e.g., nestest).
 //
 // Usage: cpu_trace <rom.nes> [options]
 //        cpu_trace --nestest   (auto-finds roms/nestest.nes and logs/nestest.log)
 //
-// Options:
-//   -c, --compare <log>   Compare against reference log
-//   -n, --max <count>     Max instructions to execute (default: 10000)
-//   --pc <addr>           Override start PC (hex, e.g. C000)
-//   --nestest             Use nestest automation mode (auto-finds nestest files)
-//   -o, --output <file>   Write trace to file instead of stdout
-//   -q, --quiet           Suppress trace output (useful with --compare)
-//   -s, --step            Step mode: press Enter to step, 'c' to continue
+// This tool is essential for debugging and validating CPU emulation accuracy.
 //
-// Examples:
-//   cpu_trace roms/game.nes
-//   cpu_trace roms/game.nes --pc 8000
-//   cpu_trace --nestest
-//   cpu_trace roms/game.nes -o logs/trace.log
+// For the official nestest log format and test ROM, see:
+//   https://www.nesdev.org/wiki/Emulator_tests
+//   https://www.nesdev.org/wiki/CPU_tests
+//
+// Example log line format (matches nestest):
+//   C000  4C F5 C5  JMP $C5F5                       A:00 X:00 Y:00 P:24 SP:FD CYC:7
+//
+// ===============
+// CPU State Trace
+// ===============
+//
+// The trace log records the following for each instruction:
+//   - Program Counter (PC)
+//   - Opcode bytes
+//   - Mnemonic
+//   - Registers: A, X, Y, P (status), SP (stack pointer)
+//   - Cycle count
+//
+// This format is required for compatibility with nestest.log and other reference logs.
+//
+// For details on the 6502 CPU state and instruction set, see:
+//   https://www.nesdev.org/wiki/CPU_registers
+//   https://www.nesdev.org/wiki/CPU_instructions
+//
+// =====================
+// Stack and Status Reg
+// =====================
+//
+// The stack is located at $0100-$01FF:
+//
+//   +--------+  $01FF (top)
+//   |  ...   |
+//   +--------+
+//   |  ...   |
+//   +--------+  $0100 (bottom)
+//
+// The stack pointer (SP) points to the next free byte (offset from $0100).
+//
+// Status register (P): NV-BDIZC
+//   N = Negative, V = Overflow, - = Unused, B = Break, D = Decimal, I = IRQ Disable, Z = Zero, C = Carry
+//
+// See:
+//   https://www.nesdev.org/wiki/Status_flags
+//   https://www.nesdev.org/wiki/Stack
+//
+// =====================
+// Log Comparison
+// =====================
+//
+// When --compare is used, the tool checks each instruction against a reference log (e.g., nestest.log).
+// Mismatches are reported with details for debugging.
+//
+// For more on test ROMs and log comparison:
+//   https://www.nesdev.org/wiki/Emulator_tests
+//
+// =====================
+//
+// (For further technical details, see nesdev.org)
 
 #include <stdio.h>
 #include <stdlib.h>

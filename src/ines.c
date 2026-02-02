@@ -1,4 +1,38 @@
-// iNES ROM loader implementation
+#include "ines.h"
+
+// ===============================
+// iNES ROM Loader Implementation
+// ===============================
+//
+// Loads and parses iNES format ROMs for NES emulation.
+//
+// iNES header format:
+//   Offset  Size  Description
+//   0       4     'N', 'E', 'S', 0x1A (magic)
+//   4       1     PRG ROM size (16KB units)
+//   5       1     CHR ROM size (8KB units)
+//   6       1     Flags 6 (mirroring, battery, trainer, mapper low)
+//   7       1     Flags 7 (mapper high, NES 2.0)
+//   ...
+//
+// See:
+//   https://www.nesdev.org/wiki/INES
+//
+// PRG ROM is loaded at $8000 (and mirrored at $C000 if only 16KB).
+// CHR ROM is loaded for PPU pattern tables.
+//
+// ===============================
+// NES Memory Map (Relevant to ROM Loading)
+// ===============================
+//
+//   $8000-$BFFF: PRG ROM (bank 0)
+//   $C000-$FFFF: PRG ROM (bank 1 or mirror of bank 0)
+//
+// For more, see:
+//   https://www.nesdev.org/wiki/CPU_memory_map
+//
+// ===============================
+// For further technical details, see nesdev.org
 #include "ines.h"
 #include <stdlib.h>
 #include <string.h>

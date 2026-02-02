@@ -1,5 +1,58 @@
-// SDL2 Visual Debugger for NES emulator
-// Uses a simple 8x8 bitmap font for text rendering
+
+// ===============================
+// SDL2 Visual Debugger for NES Emulator
+// ===============================
+//
+// Visualizes CPU, PPU, memory, and instruction state for debugging and educational purposes.
+//
+// For NES hardware details, see:
+//   https://www.nesdev.org/wiki/NES");
+//
+// ===============================
+// CPU Registers Panel
+// ===============================
+//
+// 6502 CPU Registers:
+//
+//   +-----+-----+-----+-----+-----+-----+-----+
+//   |  A  |  X  |  Y  |  SP |  PC |  P  | ... |
+//   +-----+-----+-----+-----+-----+-----+-----+
+//
+// Status register (P): NV-BDIZC
+//   N = Negative, V = Overflow, - = Unused, B = Break, D = Decimal, I = IRQ Disable, Z = Zero, C = Carry
+//
+// See:
+//   https://www.nesdev.org/wiki/CPU_registers
+//   https://www.nesdev.org/wiki/Status_flags
+//
+// ===============================
+// PPU Pattern Table/Palette/OAM Panels
+// ===============================
+//
+// Pattern tables: 2 x 4KB tables at $0000 and $1000 (see https://www.nesdev.org/wiki/PPU_pattern_tables)
+// Palettes: 32 bytes at $3F00-$3F1F (see https://www.nesdev.org/wiki/PPU_palettes)
+// OAM: 256 bytes for 64 sprites (see https://www.nesdev.org/wiki/PPU_OAM)
+//
+// ===============================
+// Memory View Panel
+// ===============================
+//
+// Shows memory in hex and ASCII, with selectable region (zero page, stack, custom).
+//
+// NES memory map:
+//
+//   $0000-$07FF: 2KB internal RAM
+//   $0800-$1FFF: Mirrors of $0000-$07FF
+//   $2000-$3FFF: PPU registers (mirrored)
+//   $4000-$401F: APU and I/O registers
+//   $4020-$FFFF: Cartridge space (PRG ROM, PRG RAM, mappers)
+//
+// See:
+//   https://www.nesdev.org/wiki/CPU_memory_map
+//
+// ===============================
+//
+// For further technical details, see nesdev.org
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -49,8 +49,8 @@ byte_t pop_byte(cpu_s *cpu);
 
 void cpu_init(cpu_s *cpu, bus_s *bus);
 
-cpu_instruction_s* get_instruction(cpu_s *cpu, byte_t opcode);
-cpu_instruction_s* get_current_instruction(cpu_s *cpu);
+cpu_instruction_s *get_instruction(cpu_s *cpu, byte_t opcode);
+cpu_instruction_s *get_current_instruction(cpu_s *cpu);
 
 byte_t read_from_addr(cpu_s *cpu, word_t address);
 void write_to_addr(cpu_s *cpu, word_t address, byte_t value);

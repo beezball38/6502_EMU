@@ -5,22 +5,31 @@
 #include <stdlib.h>
 #include <assert.h>
 
-// Memory map regions
+
+/*
+ * NES CPU Memory Map (see: https://www.nesdev.org/wiki/CPU_memory_map)
+ *
+ *  $0000-$07FF   2KB internal RAM
+ *  $0800-$1FFF   Mirrors of $0000-$07FF
+ *  $2000-$2007   PPU registers
+ *  $2008-$3FFF   Mirrors of $2000-2007 (every 8 bytes)
+ *  $4000-$4017   APU and I/O registers
+ *  $4018-$401F   APU and I/O functionality that is normally disabled
+ *  $4020-$FFFF   Cartridge space (PRG ROM, PRG RAM, mappers)
+ *
+ *  See also: https://www.nesdev.org/wiki/PPU_registers
+ */
 #define RAM_START       0x0000
 #define RAM_END         0x1FFF
-#define RAM_MASK        0x07FF  // 2KB mirrored 4x
-
+#define RAM_MASK        0x07FF
 #define PPU_REG_START   0x2000
 #define PPU_REG_END     0x3FFF
-#define PPU_REG_MASK    0x0007  // 8 registers mirrored
-
+#define PPU_REG_MASK    0x0007
 #define APU_IO_START    0x4000
 #define APU_IO_END      0x4017
 #define OAM_DMA_REG     0x4014
-
 #define APU_TEST_START  0x4018
 #define APU_TEST_END    0x401F
-
 #define CART_START      0x4020
 #define PRG_ROM_START   0x8000
 
@@ -33,8 +42,10 @@ void bus_init(bus_s *bus)
     }
     bus->prg_rom = NULL;
     bus->prg_rom_size = 0;
-    cpu_init(&bus->cpu, bus);
-    ppu_init(&bus->ppu);
+    bus->cpu = malloc(sizeof(cpu_s));
+    bus->ppu = malloc(sizeof(ppu_s));
+    cpu_init(bus->cpu);
+    ppu_init(bus->ppu);
 }
 
 byte_t bus_read(bus_s *bus, word_t addr)
@@ -132,16 +143,18 @@ void bus_oam_dma(bus_s *bus, byte_t page)
 {
     assert(bus != NULL);
 
-    // OAM DMA copies 256 bytes from $XX00-$XXFF to PPU OAM
+    /*
+     * OAM DMA (Object Attribute Memory Direct Memory Access)
+     * Copies 256 bytes from CPU memory $XX00-$XXFF to PPU OAM (sprite RAM).
+     * Triggered by writing to $4014. See: https://www.nesdev.org/wiki/OAM_DMA
+     *
+     * Timing: Takes 513 or 514 CPU cycles depending on alignment.
+     */
     word_t src_addr = (word_t)page << 8;
-
     for (int i = 0; i < 256; i++) {
         byte_t data = bus_read(bus, src_addr + i);
-        bus->ppu.oam[i] = data;
+        bus->ppu->oam[i] = data;
     }
-
-    // DMA takes 513 cycles (514 if started on odd CPU cycle)
-    // For now we just do it instantly and the caller can account for cycles
     bus->oam_dma_cycles = 513;
 }
 

@@ -1,13 +1,10 @@
-// PPU (Picture Processing Unit) implementation
+
 
 #include "ppu.h"
 #include <string.h>
 #include <assert.h>
 
-// =============================================================================
-// NES Master Palette (64 colors, ARGB format)
-// Based on the standard 2C02 palette
-// =============================================================================
+
 
 static const uint32_t NES_PALETTE[64] = {
     0xFF666666, 0xFF002A88, 0xFF1412A7, 0xFF3B00A4, 0xFF5C007E, 0xFF6E0040, 0xFF6C0600, 0xFF561D00,
@@ -20,9 +17,7 @@ static const uint32_t NES_PALETTE[64] = {
     0xFFE4E594, 0xFFCFEF96, 0xFFBDF4AB, 0xFFB3F3CC, 0xFFB5EBF2, 0xFFB8B8B8, 0xFF000000, 0xFF000000,
 };
 
-// =============================================================================
-// Flag access functions
-// =============================================================================
+
 
 bool ppu_get_ctrl_flag(ppu_s *ppu, ppu_ctrl_flag_e flag)
 {
@@ -69,9 +64,7 @@ void ppu_set_status_flag(ppu_s *ppu, ppu_status_flag_e flag, bool value)
         ppu->status_register &= ~flag;
 }
 
-// =============================================================================
-// PPU initialization
-// =============================================================================
+
 
 void ppu_init(ppu_s *ppu)
 {
@@ -80,9 +73,7 @@ void ppu_init(ppu_s *ppu)
     ppu->scanline = 261;  // Start at pre-render scanline
 }
 
-// =============================================================================
-// CHR ROM and mirroring configuration
-// =============================================================================
+
 
 void ppu_load_chr_rom(ppu_s *ppu, byte_t *chr_rom, size_t size)
 {
@@ -97,16 +88,14 @@ void ppu_set_mirroring(ppu_s *ppu, mirroring_mode_e mode)
     ppu->mirroring = mode;
 }
 
-// =============================================================================
 // Nametable address mirroring
 // Maps PPU address $2000-$2FFF to the 2KB internal VRAM
-// =============================================================================
 
 static word_t mirror_nametable_addr(ppu_s *ppu, word_t addr)
 {
     // addr is in range $2000-$2FFF (nametable space)
     // We need to map to 0-2047 (2KB VRAM)
-    addr &= 0x0FFF;  // Now 0x000-0xFFF (4KB logical space)
+    addr &= 0x0FFF;  // 4KB logical space
 
     switch (ppu->mirroring) {
         case MIRROR_HORIZONTAL:
@@ -143,24 +132,22 @@ static word_t mirror_nametable_addr(ppu_s *ppu, word_t addr)
     }
 }
 
-// =============================================================================
-// VRAM read/write (PPU internal bus)
-// =============================================================================
+
 
 byte_t ppu_vram_read(ppu_s *ppu, word_t addr)
 {
     assert(ppu != NULL);
-    addr &= 0x3FFF;  // PPU address space is 14-bit ($0000-$3FFF)
+    addr &= 0x3FFF;  // 14-bit PPU address space
 
     if (addr < 0x2000) {
-        // Pattern tables ($0000-$1FFF) - CHR ROM/RAM
+        // Pattern tables ($0000-$1FFF)
         if (ppu->chr_rom != NULL && ppu->chr_rom_size > 0) {
             return ppu->chr_rom[addr % ppu->chr_rom_size];
         }
         return 0;
     }
     else if (addr < 0x3F00) {
-        // Nametables ($2000-$2FFF, mirrored at $3000-$3EFF)
+        // Nametables ($2000-$2FFF, mirrored)
         word_t nt_addr = addr;
         if (addr >= 0x3000) {
             nt_addr = addr - 0x1000;  // Mirror $3000-$3EFF to $2000-$2EFF
@@ -168,7 +155,7 @@ byte_t ppu_vram_read(ppu_s *ppu, word_t addr)
         return ppu->vram[mirror_nametable_addr(ppu, nt_addr)];
     }
     else {
-        // Palette ($3F00-$3F1F, mirrored to $3FFF)
+        // Palette ($3F00-$3F1F, mirrored)
         word_t pal_addr = (addr - 0x3F00) & 0x1F;  // 32-byte palette
 
         // Addresses $3F10, $3F14, $3F18, $3F1C mirror $3F00, $3F04, $3F08, $3F0C
@@ -182,15 +169,14 @@ byte_t ppu_vram_read(ppu_s *ppu, word_t addr)
 void ppu_vram_write(ppu_s *ppu, word_t addr, byte_t value)
 {
     assert(ppu != NULL);
-    addr &= 0x3FFF;  // PPU address space is 14-bit ($0000-$3FFF)
+    addr &= 0x3FFF;  // 14-bit PPU address space
 
     if (addr < 0x2000) {
         // Pattern tables ($0000-$1FFF) - CHR ROM is read-only
-        // CHR RAM would be writable, but we don't support that yet
         return;
     }
     else if (addr < 0x3F00) {
-        // Nametables ($2000-$2FFF, mirrored at $3000-$3EFF)
+        // Nametables ($2000-$2FFF, mirrored)
         word_t nt_addr = addr;
         if (addr >= 0x3000) {
             nt_addr = addr - 0x1000;  // Mirror $3000-$3EFF to $2000-$2EFF
@@ -198,7 +184,7 @@ void ppu_vram_write(ppu_s *ppu, word_t addr, byte_t value)
         ppu->vram[mirror_nametable_addr(ppu, nt_addr)] = value;
     }
     else {
-        // Palette ($3F00-$3F1F, mirrored to $3FFF)
+        // Palette ($3F00-$3F1F, mirrored)
         word_t pal_addr = (addr - 0x3F00) & 0x1F;  // 32-byte palette
 
         // Addresses $3F10, $3F14, $3F18, $3F1C mirror $3F00, $3F04, $3F08, $3F0C
@@ -209,9 +195,7 @@ void ppu_vram_write(ppu_s *ppu, word_t addr, byte_t value)
     }
 }
 
-// =============================================================================
-// CPU interface - register reads
-// =============================================================================
+
 
 byte_t ppu_read(ppu_s *ppu, ppu_register_e reg)
 {
@@ -227,10 +211,10 @@ byte_t ppu_read(ppu_s *ppu, ppu_register_e reg)
             return 0;
 
         case PPU_REGISTER_STATUS: {
-            // Return status with vblank flag, then clear it
+            // Return status with vblank flag, then clear
             byte_t status = ppu->status_register;
             ppu_set_status_flag(ppu, PPUSTATUS_FLAG_VBLANK, false);
-            ppu->write_latch = false;  // Reset write latch
+            ppu->write_latch = false;
             return status;
         }
 
@@ -251,23 +235,21 @@ byte_t ppu_read(ppu_s *ppu, ppu_register_e reg)
             return 0;
 
         case PPU_REGISTER_DATA: {
-            // Reads are buffered (delayed by one read), except palette reads
+            // Reads are buffered except palette reads
             word_t addr = ppu->vram_addr & 0x3FFF;
             byte_t data;
 
             if (addr >= 0x3F00) {
-                // Palette reads are NOT buffered - return immediately
-                // But the buffer gets filled with nametable data "underneath" the palette
+                // Palette reads are NOT buffered
                 data = ppu_vram_read(ppu, addr);
                 ppu->data_buffer = ppu_vram_read(ppu, addr - 0x1000);
             } else {
-                // Normal reads are buffered (delayed by one read)
+                // Normal reads are buffered
                 data = ppu->data_buffer;
                 ppu->data_buffer = ppu_vram_read(ppu, addr);
             }
 
-            // Increment vram_addr by 1 or 32 based on PPUCTRL increment flag
-            // VRAM address is 14-bit, wraps at $4000
+            // Increment vram_addr by 1 or 32
             ppu->vram_addr += ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_INCREMENT) ? 32 : 1;
             ppu->vram_addr &= 0x3FFF;
             return data;
@@ -278,9 +260,7 @@ byte_t ppu_read(ppu_s *ppu, ppu_register_e reg)
     }
 }
 
-// =============================================================================
-// CPU interface - register writes
-// =============================================================================
+
 
 void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
 {
@@ -290,10 +270,10 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
         case PPU_REGISTER_CTRL: {
             byte_t prev_nmi = ppu->ctrl_register & PPUCTRL_FLAG_NMI_ENABLE;
             ppu->ctrl_register = value;
-            // Nametable select bits go into temp_addr bits 10-11
+            // Nametable select bits go into temp_addr
             ppu->temp_addr = (ppu->temp_addr & 0xF3FF) | ((value & 0x03) << 10);
 
-            // Edge case: If NMI is enabled while vblank flag is set, trigger NMI
+            // If NMI is enabled while vblank flag is set, trigger NMI
             if (!prev_nmi && (value & PPUCTRL_FLAG_NMI_ENABLE) &&
                 ppu_get_status_flag(ppu, PPUSTATUS_FLAG_VBLANK)) {
                 ppu->nmi_pending = true;
@@ -315,21 +295,19 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
 
         case PPU_REGISTER_OAMDATA:
             ppu->oam[ppu->oam_addr_register] = value;
-            ppu->oam_addr_register++;  // Wraps at 256
+            ppu->oam_addr_register++;
             break;
 
         case PPU_REGISTER_SCROLL:
             if (!ppu->write_latch) {
                 // First write: X scroll
-                ppu->fine_x = value & 0x07;  // Fine X = low 3 bits
-                ppu->temp_addr = (ppu->temp_addr & 0xFFE0) | (value >> 3);  // Coarse X = high 5 bits
+                ppu->fine_x = value & 0x07;
+                ppu->temp_addr = (ppu->temp_addr & 0xFFE0) | (value >> 3);
             } else {
                 // Second write: Y scroll
-                // Fine Y goes to bits 12-14 of temp_addr
-                // Coarse Y goes to bits 5-9 of temp_addr
                 ppu->temp_addr = (ppu->temp_addr & 0x8C1F) |
-                                 ((value & 0x07) << 12) |  // Fine Y
-                                 ((value >> 3) << 5);       // Coarse Y
+                                 ((value & 0x07) << 12) |
+                                 ((value >> 3) << 5);
             }
             ppu->write_latch = !ppu->write_latch;
             break;
@@ -347,10 +325,9 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
             break;
 
         case PPU_REGISTER_DATA:
-            // Write value to VRAM at vram_addr
+            // Write value to VRAM
             ppu_vram_write(ppu, ppu->vram_addr, value);
-            // Increment vram_addr by 1 or 32 based on PPUCTRL increment flag
-            // VRAM address is 14-bit, wraps at $4000
+            // Increment vram_addr by 1 or 32
             ppu->vram_addr += ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_INCREMENT) ? 32 : 1;
             ppu->vram_addr &= 0x3FFF;
             break;
@@ -360,30 +337,26 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
     }
 }
 
-// =============================================================================
-// PPU timing constants
-// =============================================================================
+
 
 #define PPU_CYCLES_PER_SCANLINE  341
 #define PPU_SCANLINES_PER_FRAME  262
 #define PPU_VBLANK_SCANLINE      241
 #define PPU_PRERENDER_SCANLINE   261
 
-// =============================================================================
-// Background rendering helpers
-// =============================================================================
+
 
 // Render a single background pixel at the current position
 static void render_pixel(ppu_s *ppu)
 {
-    int x = ppu->cycle - 1;  // Cycles 1-256 produce pixels 0-255
+    int x = ppu->cycle - 1;
     int y = ppu->scanline;
 
     if (x < 0 || x >= PPU_SCREEN_WIDTH || y < 0 || y >= PPU_SCREEN_HEIGHT) {
         return;
     }
 
-    uint32_t pixel_color = NES_PALETTE[ppu->palette[0] & 0x3F];  // Default: background color
+    uint32_t pixel_color = NES_PALETTE[ppu->palette[0] & 0x3F];
 
     // Check if background rendering is enabled
     bool bg_enabled = ppu_get_mask_flag(ppu, PPUMASK_FLAG_BG_ENABLE);
@@ -398,7 +371,7 @@ static void render_pixel(ppu_s *ppu)
         int nametable = (v >> 10) & 0x03;
         int fine_x_scroll = ppu->fine_x;
 
-        // Calculate which pixel within the current tile we're rendering
+        // Calculate which pixel within the current tile
         int tile_x = (x + fine_x_scroll) % 8;
 
         // Nametable address: $2000 + nametable offset + coarse position
@@ -409,17 +382,17 @@ static void render_pixel(ppu_s *ppu)
         word_t pattern_base = ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_BG_TABLE) ? 0x1000 : 0x0000;
         word_t pattern_addr = pattern_base + (tile_index * 16) + fine_y;
 
-        // Fetch pattern table bytes (low and high planes)
+        // Fetch pattern table bytes
         byte_t pattern_lo = ppu_vram_read(ppu, pattern_addr);
         byte_t pattern_hi = ppu_vram_read(ppu, pattern_addr + 8);
 
-        // Get the 2-bit pixel value (bit 7 is leftmost pixel)
+        // Get the 2-bit pixel value
         int bit = 7 - tile_x;
         byte_t pixel_lo = (pattern_lo >> bit) & 1;
         byte_t pixel_hi = (pattern_hi >> bit) & 1;
         byte_t pixel_value = (pixel_hi << 1) | pixel_lo;
 
-        // If pixel is not transparent (0), get color from palette
+        // If pixel is not transparent, get color from palette
         if (pixel_value != 0) {
             // Attribute table address
             word_t attr_addr = 0x23C0 | (nametable << 10) | ((coarse_y / 4) << 3) | (coarse_x / 4);
@@ -446,7 +419,7 @@ static void increment_scroll_x(ppu_s *ppu)
 {
     if (!ppu_get_mask_flag(ppu, PPUMASK_FLAG_BG_ENABLE) &&
         !ppu_get_mask_flag(ppu, PPUMASK_FLAG_SPRITE_ENABLE)) {
-        return;  // Rendering disabled
+        return;
     }
 
     if ((ppu->vram_addr & 0x001F) == 31) {
@@ -454,7 +427,7 @@ static void increment_scroll_x(ppu_s *ppu)
         ppu->vram_addr &= ~0x001F;  // Clear coarse X
         ppu->vram_addr ^= 0x0400;   // Toggle nametable X bit
     } else {
-        ppu->vram_addr++;  // Increment coarse X
+        ppu->vram_addr++;
     }
 }
 
@@ -463,7 +436,7 @@ static void increment_scroll_y(ppu_s *ppu)
 {
     if (!ppu_get_mask_flag(ppu, PPUMASK_FLAG_BG_ENABLE) &&
         !ppu_get_mask_flag(ppu, PPUMASK_FLAG_SPRITE_ENABLE)) {
-        return;  // Rendering disabled
+        return;
     }
 
     if ((ppu->vram_addr & 0x7000) != 0x7000) {
@@ -510,15 +483,13 @@ static void copy_vertical_bits(ppu_s *ppu)
     ppu->vram_addr = (ppu->vram_addr & ~0x7BE0) | (ppu->temp_addr & 0x7BE0);
 }
 
-// =============================================================================
-// PPU tick - advance one PPU cycle
-// =============================================================================
+
 
 void ppu_tick(ppu_s *ppu)
 {
     assert(ppu != NULL);
 
-    // Advance cycle first (so cycle 1 is the first "active" cycle)
+    // Advance cycle first
     ppu->cycle++;
     if (ppu->cycle >= PPU_CYCLES_PER_SCANLINE) {
         ppu->cycle = 0;
@@ -534,7 +505,7 @@ void ppu_tick(ppu_s *ppu)
         if (ppu->cycle >= 1 && ppu->cycle <= 256) {
             render_pixel(ppu);
 
-            // Increment horizontal scroll every 8 cycles (end of each tile)
+            // Increment horizontal scroll every 8 cycles
             if (ppu->cycle % 8 == 0) {
                 increment_scroll_x(ppu);
             }
@@ -574,16 +545,14 @@ void ppu_tick(ppu_s *ppu)
     // VBlank start: scanline 241, cycle 1
     if (ppu->scanline == PPU_VBLANK_SCANLINE && ppu->cycle == 1) {
         ppu_set_status_flag(ppu, PPUSTATUS_FLAG_VBLANK, true);
-        ppu->frame_complete = true;  // Signal frame is ready
+        ppu->frame_complete = true;
         if (ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_NMI_ENABLE)) {
             ppu->nmi_pending = true;
         }
     }
 }
 
-// =============================================================================
-// Framebuffer access
-// =============================================================================
+
 
 uint32_t *ppu_get_framebuffer(ppu_s *ppu)
 {

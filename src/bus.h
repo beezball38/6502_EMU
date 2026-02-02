@@ -16,8 +16,8 @@ typedef struct bus {
     byte_t ram[BUS_RAM_SIZE];   // 2KB internal RAM ($0000-$07FF, mirrored to $1FFF)
     byte_t *prg_rom;            // Cartridge PRG ROM
     size_t prg_rom_size;        // PRG ROM size (for mirroring calculation)
-    cpu_s cpu;                  // CPU (6502 processor)
-    ppu_s ppu;                  // PPU (registers at $2000-$3FFF)
+    cpu_s *cpu;                  // CPU (6502 processor)
+    ppu_s *ppu;                  // PPU (registers at $2000-$3FFF)
     // apu_s apu;               // APU (future: $4000-$4017)
 
     // OAM DMA state
