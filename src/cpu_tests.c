@@ -9,8 +9,9 @@
 #define BRANCH_INSTR_LEN 0x02
 
 // Singletons for tests, will only be accessed via get_test_cpu
-static cpu_s cpu;
-static bus_s bus;
+static cpu_s test_cpu;
+static bus_s test_bus;
+static gamecart_s test_cart;
 
 // Helper to access bus RAM directly for test setup/verification
 // Note: For addresses >= 0x8000, we need to use PRG ROM area
@@ -21,13 +22,13 @@ static byte_t test_prg_rom[32 * 1024];  // 32KB PRG ROM for tests
 static inline byte_t* test_mem_ptr(word_t addr) {
     if (addr < 0x2000) {
         // Internal RAM (mirrored)
-        return &bus.ram[addr & 0x07FF];
+        return &bus->ram[addr & 0x07FF];
     } else if (addr >= 0x8000) {
         // PRG ROM area - use our test buffer
         return &test_prg_rom[addr - 0x8000];
     }
     // For other addresses, just use RAM (tests shouldn't need PPU/APU regions)
-    return &bus.ram[addr & 0x07FF];
+    return &bus->ram[addr & 0x07FF];
 }
 
 cpu_s *get_test_cpu(void);
@@ -37,18 +38,27 @@ void load_interrupt_vector(cpu_s *cpu, byte_t irq_vector_low, byte_t irq_vector_
 
 void setUp(void) {
     // Called before each test
+    // (No-op, handled in get_test_cpu)
 }
 
 void tearDown(void) {
     // Called after each test
+    // Stack-allocated test fixtures - nothing to free
 }
 
 cpu_s *get_test_cpu(void) {
-    bus_init(&bus);
-    memset(test_prg_rom, 0, sizeof(test_prg_rom));
-    bus_load_prg_rom(&bus, test_prg_rom, sizeof(test_prg_rom));
-    cpu_init(&cpu, &bus);
-    return &cpu;
+    // Initialize stack-allocated test fixtures
+    memset(&test_prg_rom, 0, sizeof(test_prg_rom));
+    memset(&test_cart, 0, sizeof(test_cart));
+    bus_init(&test_bus);
+    test_cart.rom.prg_rom = test_prg_rom;
+    test_cart.rom.prg_rom_bytes = sizeof(test_prg_rom);
+    test_cart.rom.chr_rom = NULL;
+    test_cart.rom.chr_rom_bytes = 0;
+    test_cart.mirroring = MIRROR_HORIZONTAL;
+    bus_attach_cart(&test_bus, &test_cart);
+    cpu_init(&test_cpu, &test_bus);
+    return &test_cpu;
 }
 
 void load_instruction(cpu_s *cpu, const byte_t *instruction, size_t len) {

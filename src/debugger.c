@@ -1449,49 +1449,54 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Load ROM
-    ines_rom_t rom;
-    if (!ines_load(rom_path, &rom)) {
+    // Load cartridge
+    gamecart_s cart;
+    if (!gamecart_load(rom_path, &cart)) {
         fprintf(stderr, "Failed to load ROM: %s\n", rom_path);
         return 1;
     }
 
     printf("Loaded: %s\n", rom_path);
     if (show_rom_info) {
-        ines_print_info(&rom);
+        ines_print_info(&cart.rom);
     }
 
-    // Initialize bus and CPU
+    // Initialize bus
     bus_s bus;
     bus_init(&bus);
-    bus_load_prg_rom(&bus, rom.prg_rom, rom.prg_rom_bytes);
 
-    // Load CHR ROM to PPU
-    if (rom.chr_rom != NULL && rom.chr_rom_bytes > 0) {
-        bus_load_chr_rom(&bus, rom.chr_rom, rom.chr_rom_bytes);
-        printf("CHR ROM: %zu bytes loaded\n", rom.chr_rom_bytes);
+    // Create PPU on the stack and attach to bus
+    ppu_s ppu;
+    ppu_init(&ppu);
+    bus.ppu = &ppu;
+
+    // Attach cartridge and load CHR ROM into PPU
+    bus_attach_cart(&bus, &cart);
+    if (cart.rom.chr_rom != NULL && cart.rom.chr_rom_bytes > 0) {
+        printf("CHR ROM: %zu bytes loaded\n", cart.rom.chr_rom_bytes);
     } else {
         printf("CHR ROM: None (uses CHR RAM)\n");
     }
 
     // Set mirroring mode
-    mirroring_mode_e mirror_mode = rom.mirroring_vertical ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
+    mirroring_mode_e mirror_mode = cart.mirroring_vertical ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
     bus_set_mirroring(&bus, mirror_mode);
-    printf("Mirroring: %s\n", rom.mirroring_vertical ? "Vertical" : "Horizontal");
+    printf("Mirroring: %s\n", cart.mirroring_vertical ? "Vertical" : "Horizontal");
 
     cpu_s cpu;
     cpu_init(&cpu, &bus);
+    bus.cpu = &cpu;
 
     // Set CPU state based on mode
     if (test_rom_mode) {
-        cpu.PC = NESTEST_START_PC;
-        cpu.SP = NESTEST_INITIAL_SP;
-        cpu.STATUS = NESTEST_INITIAL_STATUS;
-        printf("Test ROM mode: PC=$%04X, SP=$%02X, P=$%02X\n", cpu.PC, cpu.SP, cpu.STATUS);
+        cpu->PC = NESTEST_START_PC;
+        cpu->SP = NESTEST_INITIAL_SP;
+        cpu->STATUS = NESTEST_INITIAL_STATUS;
+        printf("Test ROM mode: PC=$%04X, SP=$%02X, P=$%02X\n", cpu->PC, cpu->SP, cpu->STATUS);
     } else {
         word_t reset_vector = bus_read_word(&bus, 0xFFFC);
-        cpu.PC = reset_vector;
-        printf("Starting at PC=$%04X (reset vector)\n", cpu.PC);
+        cpu->PC = reset_vector;
+        printf("Starting at PC=$%04X (reset vector)\n", cpu->PC);
     }
 
     // Initialize and run debugger
@@ -1514,6 +1519,5 @@ int main(int argc, char *argv[]) {
     // Cleanup
     debugger_cleanup(&debugger_context);
     ines_free(&rom);
-
     return 0;
 }

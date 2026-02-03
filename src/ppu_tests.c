@@ -7,11 +7,18 @@
 
 // System under test
 static ppu_s ppu;
-static ppu_s *sut;
+static ppu_s *sut = NULL;
+static bus_s test_bus;
+static ppu_s test_ppu;
 
 void setUp(void) {
     ppu_init(&ppu);
     sut = &ppu;
+
+    // Initialize test bus and attach a PPU instance for OAM DMA tests
+    bus_init(&test_bus);
+    ppu_init(&test_ppu);
+    test_bus.ppu = &test_ppu;
 }
 
 void tearDown(void) {
@@ -47,89 +54,89 @@ void test_ppu_init_clears_all_registers(void) {
 // =============================================================================
 
 void test_ctrl_flag_nametable_x(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NAMETABLE_X);
+    sut->ctrl_register |= PPUCTRL_NAMETABLE_X;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_NAMETABLE_X);
+    sut->ctrl_register &= ~PPUCTRL_NAMETABLE_X;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NAMETABLE_X);
 }
 
 void test_ctrl_flag_nametable_y(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NAMETABLE_Y);
+    sut->ctrl_register |= PPUCTRL_NAMETABLE_Y;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_NAMETABLE_Y);
+    sut->ctrl_register &= ~PPUCTRL_NAMETABLE_Y;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NAMETABLE_Y);
 }
 
 void test_ctrl_flag_increment(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_INCREMENT);
+    sut->ctrl_register |= PPUCTRL_INCREMENT;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_INCREMENT);
+    sut->ctrl_register &= ~PPUCTRL_INCREMENT;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_INCREMENT);
 }
 
 void test_ctrl_flag_sprite_table(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_SPRITE_TABLE);
+    sut->ctrl_register |= PPUCTRL_SPRITE_TABLE;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_SPRITE_TABLE);
+    sut->ctrl_register &= ~PPUCTRL_SPRITE_TABLE;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_SPRITE_TABLE);
 }
 
 void test_ctrl_flag_bg_table(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_BG_TABLE);
+    sut->ctrl_register |= PPUCTRL_BG_TABLE;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_BG_TABLE);
+    sut->ctrl_register &= ~PPUCTRL_BG_TABLE;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_BG_TABLE);
 }
 
 void test_ctrl_flag_sprite_size(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_SPRITE_SIZE);
+    sut->ctrl_register |= PPUCTRL_SPRITE_SIZE;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_SPRITE_SIZE);
+    sut->ctrl_register &= ~PPUCTRL_SPRITE_SIZE;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_SPRITE_SIZE);
 }
 
 void test_ctrl_flag_master_slave(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_MASTER_SLAVE);
+    sut->ctrl_register |= PPUCTRL_MASTER_SLAVE;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_MASTER_SLAVE);
+    sut->ctrl_register &= ~PPUCTRL_MASTER_SLAVE;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_MASTER_SLAVE);
 }
 
 void test_ctrl_flag_nmi_enable(void) {
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE, true);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE));
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE, false);
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE));
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NMI_ENABLE);
+    sut->ctrl_register |= PPUCTRL_NMI_ENABLE;
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_NMI_ENABLE);
+    sut->ctrl_register &= ~PPUCTRL_NMI_ENABLE;
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_NMI_ENABLE);
 }
 
 void test_ctrl_flags_are_independent(void) {
     // Set all flags
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_BG_TABLE, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_SIZE, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_MASTER_SLAVE, true);
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_NMI_ENABLE, true);
+    sut->ctrl_register |= PPUCTRL_NAMETABLE_X;
+    sut->ctrl_register |= PPUCTRL_NAMETABLE_Y;
+    sut->ctrl_register |= PPUCTRL_INCREMENT;
+    sut->ctrl_register |= PPUCTRL_SPRITE_TABLE;
+    sut->ctrl_register |= PPUCTRL_BG_TABLE;
+    sut->ctrl_register |= PPUCTRL_SPRITE_SIZE;
+    sut->ctrl_register |= PPUCTRL_MASTER_SLAVE;
+    sut->ctrl_register |= PPUCTRL_NMI_ENABLE;
 
     TEST_ASSERT_EQUAL_HEX8(0xFF, sut->ctrl_register);
 
     // Clear one flag, others should remain set
-    ppu_set_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT, false);
+    sut->ctrl_register &= ~PPUCTRL_INCREMENT;
     TEST_ASSERT_EQUAL_HEX8(0xFB, sut->ctrl_register);
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_X));
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_NAMETABLE_Y));
-    TEST_ASSERT_FALSE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_INCREMENT));
-    TEST_ASSERT_TRUE(ppu_get_ctrl_flag(sut, PPUCTRL_FLAG_SPRITE_TABLE));
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_NAMETABLE_X);
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_NAMETABLE_Y);
+    TEST_ASSERT_FALSE(sut->ctrl_register & PPUCTRL_INCREMENT);
+    TEST_ASSERT_TRUE(sut->ctrl_register & PPUCTRL_SPRITE_TABLE);
 }
 
 // =============================================================================
@@ -137,90 +144,90 @@ void test_ctrl_flags_are_independent(void) {
 // =============================================================================
 
 void test_mask_flag_grayscale(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_GRAYSCALE));
+    ppu_set_mask_flag(sut, PPUMASK_GRAYSCALE, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_GRAYSCALE));
+    ppu_set_mask_flag(sut, PPUMASK_GRAYSCALE, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_GRAYSCALE));
 }
 
 void test_mask_flag_bg_left(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_LEFT));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_LEFT, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_LEFT));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_LEFT, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_LEFT));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_BG_LEFT));
+    ppu_set_mask_flag(sut, PPUMASK_BG_LEFT, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_BG_LEFT));
+    ppu_set_mask_flag(sut, PPUMASK_BG_LEFT, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_BG_LEFT));
 }
 
 void test_mask_flag_sprite_left(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_LEFT));
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_LEFT, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_LEFT));
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_LEFT, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_LEFT));
 }
 
 void test_mask_flag_bg_enable(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_BG_ENABLE));
+    ppu_set_mask_flag(sut, PPUMASK_BG_ENABLE, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_BG_ENABLE));
+    ppu_set_mask_flag(sut, PPUMASK_BG_ENABLE, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_BG_ENABLE));
 }
 
 void test_mask_flag_sprite_enable(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_ENABLE));
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_ENABLE, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_ENABLE));
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_ENABLE, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_ENABLE));
 }
 
 void test_mask_flag_emphasize_r(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_R));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_R, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_R));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_R, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_R));
 }
 
 void test_mask_flag_emphasize_g(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_G));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_G, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_G));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_G, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_G));
 }
 
 void test_mask_flag_emphasize_b(void) {
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B, true);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B));
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B, false);
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_B));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_B, true);
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_B));
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_B, false);
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_EMPHASIZE_B));
 }
 
 void test_mask_flags_are_independent(void) {
     // Set all flags
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_LEFT, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_R, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_G, true);
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_EMPHASIZE_B, true);
+    ppu_set_mask_flag(sut, PPUMASK_GRAYSCALE, true);
+    ppu_set_mask_flag(sut, PPUMASK_BG_LEFT, true);
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_LEFT, true);
+    ppu_set_mask_flag(sut, PPUMASK_BG_ENABLE, true);
+    ppu_set_mask_flag(sut, PPUMASK_SPRITE_ENABLE, true);
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_R, true);
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_G, true);
+    ppu_set_mask_flag(sut, PPUMASK_EMPHASIZE_B, true);
 
     TEST_ASSERT_EQUAL_HEX8(0xFF, sut->mask_register);
 
     // Clear one flag, others should remain set
-    ppu_set_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE, false);
+    ppu_set_mask_flag(sut, PPUMASK_BG_ENABLE, false);
     TEST_ASSERT_EQUAL_HEX8(0xF7, sut->mask_register);
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_GRAYSCALE));
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_LEFT));
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_LEFT));
-    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_FLAG_BG_ENABLE));
-    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_FLAG_SPRITE_ENABLE));
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_GRAYSCALE));
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_BG_LEFT));
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_LEFT));
+    TEST_ASSERT_FALSE(ppu_get_mask_flag(sut, PPUMASK_BG_ENABLE));
+    TEST_ASSERT_TRUE(ppu_get_mask_flag(sut, PPUMASK_SPRITE_ENABLE));
 }
 
 // =============================================================================
@@ -228,43 +235,43 @@ void test_mask_flags_are_independent(void) {
 // =============================================================================
 
 void test_status_flag_overflow(void) {
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW, true);
-    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW, false);
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW));
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_OVERFLOW));
+    ppu_set_status_flag(sut, PPUSTATUS_OVERFLOW, true);
+    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_OVERFLOW));
+    ppu_set_status_flag(sut, PPUSTATUS_OVERFLOW, false);
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_OVERFLOW));
 }
 
 void test_status_flag_sprite0_hit(void) {
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT, true);
-    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT, false);
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT));
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_SPRITE0_HIT));
+    ppu_set_status_flag(sut, PPUSTATUS_SPRITE0_HIT, true);
+    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_SPRITE0_HIT));
+    ppu_set_status_flag(sut, PPUSTATUS_SPRITE0_HIT, false);
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_SPRITE0_HIT));
 }
 
 void test_status_flag_vblank(void) {
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_VBLANK));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_VBLANK, true);
-    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_VBLANK));
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_VBLANK, false);
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_VBLANK));
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_VBLANK));
+    ppu_set_status_flag(sut, PPUSTATUS_VBLANK, true);
+    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_VBLANK));
+    ppu_set_status_flag(sut, PPUSTATUS_VBLANK, false);
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_VBLANK));
 }
 
 void test_status_flags_are_independent(void) {
     // Set all status flags
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW, true);
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT, true);
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_VBLANK, true);
+    ppu_set_status_flag(sut, PPUSTATUS_OVERFLOW, true);
+    ppu_set_status_flag(sut, PPUSTATUS_SPRITE0_HIT, true);
+    ppu_set_status_flag(sut, PPUSTATUS_VBLANK, true);
 
     TEST_ASSERT_EQUAL_HEX8(0xE0, sut->status_register);
 
     // Clear one flag, others should remain set
-    ppu_set_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT, false);
+    ppu_set_status_flag(sut, PPUSTATUS_SPRITE0_HIT, false);
     TEST_ASSERT_EQUAL_HEX8(0xA0, sut->status_register);
-    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_OVERFLOW));
-    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_SPRITE0_HIT));
-    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_FLAG_VBLANK));
+    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_OVERFLOW));
+    TEST_ASSERT_FALSE(ppu_get_status_flag(sut, PPUSTATUS_SPRITE0_HIT));
+    TEST_ASSERT_TRUE(ppu_get_status_flag(sut, PPUSTATUS_VBLANK));
 }
 
 // =============================================================================
@@ -841,7 +848,7 @@ void test_oam_dma_copies_256_bytes(void) {
 
     // Verify all 256 bytes were copied to OAM
     for (int i = 0; i < 256; i++) {
-        TEST_ASSERT_EQUAL_HEX8((byte_t)i, test_bus.ppu.oam[i]);
+        TEST_ASSERT_EQUAL_HEX8((byte_t)i, test_bus.ppu->oam[i]);
     }
 }
 
@@ -859,9 +866,9 @@ void test_oam_dma_reads_from_correct_page(void) {
     bus_oam_dma(&test_bus, 0x01);
 
     // Should have $BB pattern
-    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu.oam[0]);
-    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu.oam[127]);
-    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu.oam[255]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu->oam[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu->oam[127]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, test_bus.ppu->oam[255]);
 }
 
 void test_oam_dma_via_bus_write(void) {
@@ -876,9 +883,9 @@ void test_oam_dma_via_bus_write(void) {
     bus_write(&test_bus, 0x4014, 0x03);
 
     // Verify OAM was filled
-    TEST_ASSERT_EQUAL_HEX8(0xFF, test_bus.ppu.oam[0]);
-    TEST_ASSERT_EQUAL_HEX8(0xFE, test_bus.ppu.oam[1]);
-    TEST_ASSERT_EQUAL_HEX8(0x00, test_bus.ppu.oam[255]);
+    TEST_ASSERT_EQUAL_HEX8(0xFF, test_bus.ppu->oam[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xFE, test_bus.ppu->oam[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, test_bus.ppu->oam[255]);
 }
 
 void test_oam_dma_sets_cycle_count(void) {
@@ -964,7 +971,6 @@ void test_palette_mirroring_beyond_3f1f(void) {
 }
 
 void test_ppu_init_starts_at_prerender_scanline(void) {
-    ppu_s test_ppu;
     ppu_init(&test_ppu);
 
     TEST_ASSERT_EQUAL_INT(261, test_ppu.scanline);

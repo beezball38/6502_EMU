@@ -14,10 +14,9 @@
 // Bus structure - routes memory access to correct component
 typedef struct bus {
     byte_t ram[BUS_RAM_SIZE];   // 2KB internal RAM ($0000-$07FF, mirrored to $1FFF)
-    byte_t *prg_rom;            // Cartridge PRG ROM
-    size_t prg_rom_size;        // PRG ROM size (for mirroring calculation)
-    cpu_s *cpu;                  // CPU (6502 processor)
-    ppu_s *ppu;                  // PPU (registers at $2000-$3FFF)
+    struct gamecart_s *cart;    // Pointer to loaded cartridge
+    cpu_s *cpu;                 // CPU (6502 processor)
+    ppu_s *ppu;                 // PPU (registers at $2000-$3FFF)
     // apu_s apu;               // APU (future: $4000-$4017)
 
     // OAM DMA state
@@ -40,11 +39,8 @@ void bus_write(bus_s *bus, word_t addr, byte_t value);
 // Read a 16-bit word from the bus (little-endian: low byte at addr, high byte at addr+1)
 word_t bus_read_word(bus_s *bus, word_t addr);
 
-// Connect PRG ROM to the bus (for cartridge loading)
-void bus_load_prg_rom(bus_s *bus, byte_t *prg_rom, size_t size);
-
-// Connect CHR ROM to the PPU (for cartridge loading)
-void bus_load_chr_rom(bus_s *bus, byte_t *chr_rom, size_t size);
+// Attach a cartridge to the bus
+void bus_attach_cart(bus_s *bus, struct gamecart_s *cart);
 
 // Set nametable mirroring mode
 void bus_set_mirroring(bus_s *bus, mirroring_mode_e mode);

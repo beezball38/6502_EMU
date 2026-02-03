@@ -1,6 +1,7 @@
 // System bus implementation for NES emulator
 
 #include "bus.h"
+#include "gamecart.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -40,12 +41,11 @@ void bus_init(bus_s *bus)
     for (size_t i = 0; i < BUS_RAM_SIZE; i++) {
         bus->ram[i] = rand() & 0xFF;
     }
-    bus->prg_rom = NULL;
-    bus->prg_rom_size = 0;
-    bus->cpu = malloc(sizeof(cpu_s));
-    bus->ppu = malloc(sizeof(ppu_s));
-    cpu_init(bus->cpu);
-    ppu_init(bus->ppu);
+    bus->cart = NULL;
+    bus->cpu = NULL;
+    bus->ppu = NULL;
+    // CPU and PPU are created and attached by the caller (no implicit allocation)
+    // This avoids hidden mallocs and gives the caller control over allocation lifetime.
 }
 
 byte_t bus_read(bus_s *bus, word_t addr)
@@ -58,7 +58,8 @@ byte_t bus_read(bus_s *bus, word_t addr)
     }
     else if (addr <= PPU_REG_END) {
         // PPU registers (8 bytes mirrored)
-        return ppu_read(&bus->ppu, (ppu_register_e)(addr & PPU_REG_MASK));
+        if (bus->ppu) return ppu_read(bus->ppu, (ppu_register_e)(addr & PPU_REG_MASK));
+        return 0;
     }
     else if (addr <= APU_IO_END) {
         // APU and I/O registers
@@ -71,12 +72,13 @@ byte_t bus_read(bus_s *bus, word_t addr)
     }
     else {
         // Cartridge space
-        if (addr >= PRG_ROM_START && bus->prg_rom != NULL) {
+        if (addr >= PRG_ROM_START && bus->cart && bus->cart->rom.prg_rom != NULL) {
+            size_t prg_rom_size = bus->cart->rom.prg_rom_bytes;
             size_t offset = addr - PRG_ROM_START;
-            if (bus->prg_rom_size > 0) {
-                offset = offset % bus->prg_rom_size;
+            if (prg_rom_size > 0) {
+                offset = offset % prg_rom_size;
             }
-            return bus->prg_rom[offset];
+            return bus->cart->rom.prg_rom[offset];
         }
         // Open bus for unmapped addresses
         return 0;
@@ -93,7 +95,7 @@ void bus_write(bus_s *bus, word_t addr, byte_t value)
     }
     else if (addr <= PPU_REG_END) {
         // PPU registers (8 bytes mirrored)
-        ppu_write(&bus->ppu, (ppu_register_e)(addr & PPU_REG_MASK), value);
+        if (bus->ppu) ppu_write(bus->ppu, (ppu_register_e)(addr & PPU_REG_MASK), value);
     }
     else if (addr <= APU_IO_END) {
         // APU and I/O registers
@@ -112,23 +114,25 @@ void bus_write(bus_s *bus, word_t addr, byte_t value)
     (void)value; // Suppress unused parameter warning for stub cases
 }
 
-void bus_load_prg_rom(bus_s *bus, byte_t *prg_rom, size_t size)
-{
-    assert(bus != NULL);
-    bus->prg_rom = prg_rom;
-    bus->prg_rom_size = size;
-}
 
-void bus_load_chr_rom(bus_s *bus, byte_t *chr_rom, size_t size)
+void bus_attach_cart(bus_s *bus, struct gamecart_s *cart)
 {
     assert(bus != NULL);
-    ppu_load_chr_rom(&bus->ppu, chr_rom, size);
+    bus->cart = cart;
+    if (cart) {
+        // Attach CHR ROM to PPU (if PPU is attached)
+        if (bus->ppu) {
+            ppu_load_chr_rom(bus->ppu, cart->rom.chr_rom, cart->rom.chr_rom_bytes);
+            // Set mirroring
+            ppu_set_mirroring(bus->ppu, cart->mirroring);
+        }
+    }
 }
 
 void bus_set_mirroring(bus_s *bus, mirroring_mode_e mode)
 {
     assert(bus != NULL);
-    ppu_set_mirroring(&bus->ppu, mode);
+    if (bus->ppu) ppu_set_mirroring(bus->ppu, mode);
 }
 
 word_t bus_read_word(bus_s *bus, word_t addr)
@@ -153,7 +157,7 @@ void bus_oam_dma(bus_s *bus, byte_t page)
     word_t src_addr = (word_t)page << 8;
     for (int i = 0; i < 256; i++) {
         byte_t data = bus_read(bus, src_addr + i);
-        bus->ppu->oam[i] = data;
+        if (bus->ppu) bus->ppu->oam[i] = data;
     }
     bus->oam_dma_cycles = 513;
 }
@@ -161,5 +165,5 @@ void bus_oam_dma(bus_s *bus, byte_t page)
 void bus_ppu_tick(bus_s *bus)
 {
     assert(bus != NULL);
-    ppu_tick(&bus->ppu);
+    if (bus->ppu) ppu_tick(bus->ppu);
 }

@@ -19,20 +19,7 @@ static const uint32_t NES_PALETTE[64] = {
 
 
 
-bool ppu_get_ctrl_flag(ppu_s *ppu, ppu_ctrl_flag_e flag)
-{
-    assert(ppu != NULL);
-    return (ppu->ctrl_register & flag) != 0;
-}
 
-void ppu_set_ctrl_flag(ppu_s *ppu, ppu_ctrl_flag_e flag, bool value)
-{
-    assert(ppu != NULL);
-    if (value)
-        ppu->ctrl_register |= flag;
-    else
-        ppu->ctrl_register &= ~flag;
-}
 
 bool ppu_get_mask_flag(ppu_s *ppu, ppu_mask_flag_e flag)
 {
@@ -250,7 +237,7 @@ byte_t ppu_read(ppu_s *ppu, ppu_register_e reg)
             }
 
             // Increment vram_addr by 1 or 32
-            ppu->vram_addr += ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_INCREMENT) ? 32 : 1;
+            ppu->vram_addr += (ppu->ctrl_register & PPUCTRL_INCREMENT) ? 32 : 1;
             ppu->vram_addr &= 0x3FFF;
             return data;
         }
@@ -268,13 +255,13 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
 
     switch (reg) {
         case PPU_REGISTER_CTRL: {
-            byte_t prev_nmi = ppu->ctrl_register & PPUCTRL_FLAG_NMI_ENABLE;
+            byte_t prev_nmi = ppu->ctrl_register & PPUCTRL_NMI_ENABLE;
             ppu->ctrl_register = value;
             // Nametable select bits go into temp_addr
             ppu->temp_addr = (ppu->temp_addr & 0xF3FF) | ((value & 0x03) << 10);
 
             // If NMI is enabled while vblank flag is set, trigger NMI
-            if (!prev_nmi && (value & PPUCTRL_FLAG_NMI_ENABLE) &&
+            if (!prev_nmi && (value & PPUCTRL_NMI_ENABLE) &&
                 ppu_get_status_flag(ppu, PPUSTATUS_FLAG_VBLANK)) {
                 ppu->nmi_pending = true;
             }
@@ -328,7 +315,7 @@ void ppu_write(ppu_s *ppu, ppu_register_e reg, byte_t value)
             // Write value to VRAM
             ppu_vram_write(ppu, ppu->vram_addr, value);
             // Increment vram_addr by 1 or 32
-            ppu->vram_addr += ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_INCREMENT) ? 32 : 1;
+            ppu->vram_addr += (ppu->ctrl_register & PPUCTRL_INCREMENT) ? 32 : 1;
             ppu->vram_addr &= 0x3FFF;
             break;
 
@@ -379,7 +366,7 @@ static void render_pixel(ppu_s *ppu)
         byte_t tile_index = ppu_vram_read(ppu, nt_addr);
 
         // Pattern table address
-        word_t pattern_base = ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_BG_TABLE) ? 0x1000 : 0x0000;
+        word_t pattern_base = (ppu->ctrl_register & PPUCTRL_BG_TABLE) ? 0x1000 : 0x0000;
         word_t pattern_addr = pattern_base + (tile_index * 16) + fine_y;
 
         // Fetch pattern table bytes
@@ -546,7 +533,7 @@ void ppu_tick(ppu_s *ppu)
     if (ppu->scanline == PPU_VBLANK_SCANLINE && ppu->cycle == 1) {
         ppu_set_status_flag(ppu, PPUSTATUS_FLAG_VBLANK, true);
         ppu->frame_complete = true;
-        if (ppu_get_ctrl_flag(ppu, PPUCTRL_FLAG_NMI_ENABLE)) {
+        if (ppu->ctrl_register & PPUCTRL_NMI_ENABLE) {
             ppu->nmi_pending = true;
         }
     }

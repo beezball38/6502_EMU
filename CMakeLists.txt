@@ -12,6 +12,7 @@ add_library(emulator_lib
     src/ines.c
     src/bus.c
     src/ppu.c
+    src/gamecart.c
 )
 
 target_include_directories(emulator_lib

@@ -40,16 +40,15 @@ typedef enum {
  *   |   +-------------------------- Master/slave (unused on NES)
  *   +------------------------------ Generate NMI on vblank
  */
-typedef enum {
-    PPUCTRL_FLAG_NAMETABLE_X  = (1 << 0),
-    PPUCTRL_FLAG_NAMETABLE_Y  = (1 << 1),
-    PPUCTRL_FLAG_INCREMENT    = (1 << 2),
-    PPUCTRL_FLAG_SPRITE_TABLE = (1 << 3),
-    PPUCTRL_FLAG_BG_TABLE     = (1 << 4),
-    PPUCTRL_FLAG_SPRITE_SIZE  = (1 << 5),
-    PPUCTRL_FLAG_MASTER_SLAVE = (1 << 6),
-    PPUCTRL_FLAG_NMI_ENABLE   = (1 << 7),
-} ppu_ctrl_flag_e;
+
+#define PPUCTRL_NAMETABLE_X      (1 << 0)
+#define PPUCTRL_NAMETABLE_Y      (1 << 1)
+#define PPUCTRL_INCREMENT        (1 << 2)
+#define PPUCTRL_SPRITE_TABLE     (1 << 3)
+#define PPUCTRL_BG_TABLE         (1 << 4)
+#define PPUCTRL_SPRITE_SIZE      (1 << 5)
+#define PPUCTRL_MASTER_SLAVE     (1 << 6)
+#define PPUCTRL_NMI_ENABLE       (1 << 7)
 
 /*
  * PPUMASK ($2001) - Write only
@@ -177,8 +176,7 @@ typedef struct {
 // Flag access functions
 // =============================================================================
 
-bool ppu_get_ctrl_flag(ppu_s *ppu, ppu_ctrl_flag_e flag);
-void ppu_set_ctrl_flag(ppu_s *ppu, ppu_ctrl_flag_e flag, bool value);
+
 
 bool ppu_get_mask_flag(ppu_s *ppu, ppu_mask_flag_e flag);
 void ppu_set_mask_flag(ppu_s *ppu, ppu_mask_flag_e flag, bool value);

@@ -79,6 +79,7 @@
 #include "cpu.h"
 #include "bus.h"
 #include "ines.h"
+#include "gamecart.h"
 
 #define MEMORY_SIZE (64 * 1024)
 #define DEFAULT_MAX_INSTRUCTIONS 10000
@@ -97,7 +98,7 @@
 #define NESTEST_ERROR_LOG LOGS_DIR "nestest_errors.log"
 
 // Command line options
-typedef struct {
+typedef struct options_t {
     const char *rom_path;
     const char *compare_path;
     const char *output_path;
@@ -404,24 +405,32 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Load ROM
-    ines_rom_t rom;
-    if (!ines_load(opts.rom_path, &rom)) {
+    // Load cartridge (stack-allocated)
+    gamecart_s cart;
+    if (!gamecart_load(opts.rom_path, &cart)) {
         fprintf(stderr, "Failed to load ROM: %s\n", opts.rom_path);
         return 1;
     }
 
     if (!opts.quiet) {
-        ines_print_info(&rom);
+        ines_print_info(&cart.rom);
     }
 
-    // Initialize bus and CPU
+    // Initialize bus (stack-allocated) and attach components
     bus_s bus;
     bus_init(&bus);
-    bus_load_prg_rom(&bus, rom.prg_rom, rom.prg_rom_bytes);
+
+    // Create PPU and CPU on the stack and attach to bus
+    ppu_s ppu;
+    ppu_init(&ppu);
+    bus.ppu = &ppu;
 
     cpu_s cpu;
     cpu_init(&cpu, &bus);
+    bus.cpu = &cpu;
+
+    // Attach cartridge to bus (after PPU is attached so CHR ROM can be loaded)
+    bus_attach_cart(&bus, &cart);
 
     // Set initial CPU state
     if (opts.nestest_mode) {
@@ -464,7 +473,7 @@ int main(int argc, char *argv[]) {
         output_file = fopen(opts.output_path, "w");
         if (!output_file) {
             fprintf(stderr, "Failed to open output file: %s\n", opts.output_path);
-            ines_free(&rom);
+            gamecart_free(&cart);
             return 1;
         }
     }
@@ -491,7 +500,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to allocate trace buffer\n");
             if (compare_file) fclose(compare_file);
             if (output_file != stdout) fclose(output_file);
-            ines_free(&rom);
+            gamecart_free(&cart);
             return 1;
         }
     }
@@ -548,7 +557,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     // Stop if testing official only and we hit a mismatch in official section
-                    if (opts.official_only && first_mismatch_line <= NESTEST_OFFICIAL_OPCODES_END) {
+        if (opts.official_only && first_mismatch_line <= NESTEST_OFFICIAL_OPCODES_END) {
                         break;
                     }
 
@@ -690,7 +699,6 @@ int main(int argc, char *argv[]) {
     if (output_file != stdout) {
         fclose(output_file);
     }
-    ines_free(&rom);
-
+    gamecart_free(&cart);
     return exit_code;
 }
