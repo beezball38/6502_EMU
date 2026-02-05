@@ -1,5 +1,7 @@
 # NES Emulator
 
+WORK IN PROGRESS!!!
+
 An NES emulator written in C, featuring a cycle-accurate 6502 CPU implementation.
 
 ## Status
