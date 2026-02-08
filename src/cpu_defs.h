@@ -1,23 +1,13 @@
-// NES CPU definitions - X-Macros, opcodes, and generated enums
 #ifndef CPU_DEFS_H
 #define CPU_DEFS_H
 
 #include <stdint.h>
 
-// =============================================================================
-// Type definitions
-// =============================================================================
-
 typedef uint8_t byte_t;
-typedef uint16_t word_t;   // used for addresses
-typedef int8_t offset_t;   // used for signed branch offsets
-typedef struct cpu_s cpu_s; // Forward declaration
+typedef uint16_t word_t;
+typedef int8_t offset_t;
+typedef struct cpu_s cpu_s;
 typedef byte_t (*instruction_func_t)(cpu_s *cpu);
-
-// =============================================================================
-// X-Macro: OPCODE_MNEMONICS
-// Lists all CPU instruction mnemonics (operation names).
-// =============================================================================
 
 #define OPCODE_MNEMONICS \
 X(BRK)                   \
@@ -77,11 +67,6 @@ X(BEQ)                   \
 X(SED)                   \
 X(NOP)
 
-// =============================================================================
-// X-Macro: ADDRESSING_MODE_LIST
-// Lists all CPU addressing modes.
-// =============================================================================
-
 #define ADDRESSING_MODE_LIST  \
 X(IMP)                  \
 X(ACC)                  \
@@ -96,11 +81,6 @@ X(ABY)                  \
 X(IND)                  \
 X(IZX)                  \
 X(IZY)
-
-// =============================================================================
-// X-Macro: INSTRUCTION_OPCODE_TABLE
-// Maps each valid CPU instruction to its mnemonic, addressing mode, and opcode.
-// =============================================================================
 
 #define INSTRUCTION_OPCODE_TABLE    \
 X(BRK, IMP, 0x00)       \
@@ -255,11 +235,6 @@ X(SBC, ABY, 0xF9)       \
 X(SBC, ABX, 0xFD)       \
 X(INC, ABX, 0xFE)
 
-// =============================================================================
-// X-Macro: UNDEFINED_OPCODES
-// Lists all undefined/illegal CPU opcodes.
-// =============================================================================
-
 #define UNDEFINED_OPCODES \
 X(0x02) X(0x03) X(0x04) X(0x07) X(0x0B) X(0x0C) X(0x0F) \
 X(0x12) X(0x13) X(0x14) X(0x17) X(0x1A) X(0x1B) X(0x1C) X(0x1F) \
@@ -278,11 +253,6 @@ X(0xD2) X(0xD3) X(0xD4) X(0xD7) X(0xDA) X(0xDB) X(0xDC) X(0xDF) \
 X(0xE2) X(0xE3) X(0xE7) X(0xEB) X(0xEF) \
 X(0xF2) X(0xF3) X(0xF4) X(0xF7) X(0xFA) X(0xFB) X(0xFC) X(0xFF)
 
-// =============================================================================
-// Generated enums
-// =============================================================================
-
-// Addressing mode enum
 typedef enum
 {
     #define X(mode) ADDR_MODE_##mode,
@@ -290,7 +260,6 @@ typedef enum
     #undef X
 } cpu_addr_mode_e;
 
-// Instruction opcode enum (each value equals its opcode for direct table indexing)
 typedef enum
 {
     #define X(name, mode, opcode) INSTRUCTION_##name##_##mode = opcode,
@@ -298,7 +267,6 @@ typedef enum
     #undef X
 } cpu_ins_e;
 
-// Undefined opcode enum
 typedef enum
 {
     #define X(opcode) OPCODE_UNDEFINED_##opcode = opcode,
@@ -306,37 +274,26 @@ typedef enum
     #undef X
 } cpu_undefined_opcode_e;
 
-// =============================================================================
-// Generated function declarations
-// =============================================================================
-
-// Addressing mode handlers
 #define X(name) byte_t name(cpu_s *cpu);
 ADDRESSING_MODE_LIST
 #undef X
 
-// Instruction handlers
 #define X(name) byte_t name(cpu_s *cpu);
 OPCODE_MNEMONICS
 #undef X
 
-// =============================================================================
-// Status register flags
-// =============================================================================
-
 typedef enum
 {
-    STATUS_FLAG_C = (1 << 0),  // Carry
-    STATUS_FLAG_Z = (1 << 1),  // Zero
-    STATUS_FLAG_I = (1 << 2),  // Interrupt disable
-    STATUS_FLAG_D = (1 << 3),  // Decimal mode
-    STATUS_FLAG_B = (1 << 4),  // Break command
-    STATUS_FLAG_U = (1 << 5),  // Unused (always 1)
-    STATUS_FLAG_V = (1 << 6),  // Overflow
-    STATUS_FLAG_N = (1 << 7),  // Negative
+    STATUS_FLAG_C = (1 << 0),
+    STATUS_FLAG_Z = (1 << 1),
+    STATUS_FLAG_I = (1 << 2),
+    STATUS_FLAG_D = (1 << 3),
+    STATUS_FLAG_B = (1 << 4),
+    STATUS_FLAG_U = (1 << 5),
+    STATUS_FLAG_V = (1 << 6),
+    STATUS_FLAG_N = (1 << 7),
 } cpu_status_flag_e;
 
-// CPU register identifiers
 typedef enum
 {
     REG_A,

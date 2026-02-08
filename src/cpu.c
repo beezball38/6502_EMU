@@ -5,6 +5,13 @@
 #include <string.h>
 #include <assert.h>
 
+static cpu_s s_cpu;
+
+cpu_s* cpu_get_instance(void)
+{
+    return &s_cpu;
+}
+
 #define UNIMPLEMENTED()                                                                   \
     fprintf(stderr, "%s:%d: %s: Unimplemented function\n", __FILE__, __LINE__, __func__); \
     abort();
@@ -12,40 +19,9 @@
 
 #define MEM_SIZE (1024 * 1024 * 64)
 
-/*
- * 6502 CPU Instruction Table (Opcode Map)
- *
- *  Opcodes are arranged in a 16x16 grid:
- *
- *    00 01 02 03 ... 0F
- *    10 11 12 13 ... 1F
- *    ...
- *    F0 F1 F2 F3 ... FF
- *
- *  Each opcode maps to an instruction, addressing mode, and cycle count.
- *  See: https://www.nesdev.org/obelisk-6502-guide/reference.html
- *  and: https://www.nesdev.org/wiki/CPU_Opcode_matrix
- *
- *  Many opcodes are 'illegal' or 'undocumented' (see ILLEGAL handler).
- */
 
-/*
- * 6502 Status Register (P):
- *  Bit 7 6 5 4 3 2 1 0
- *      N V - B D I Z C
- *  N = Negative, V = Overflow, - = Unused, B = Break, D = Decimal, I = IRQ Disable, Z = Zero, C = Carry
- *  See: https://www.nesdev.org/wiki/Status_flags
- */
 
-/*
- * Stack operations:
- *  - Stack is located at $0100-$01FF, SP is 8-bit, grows downward.
- *  - Pushing:  memory[0x0100 + SP] = value; SP--;
- *  - Pulling:  SP++; value = memory[0x0100 + SP];
- *  See: https://www.nesdev.org/wiki/Stack
- */
 
-/// @brief Stub for illegal/undocumented opcodes - logs warning and continues
 byte_t ILLEGAL(cpu_s *cpu)
 {
     fprintf(stderr, "WARNING: Illegal opcode 0x%02X at PC=0x%04X\n",
@@ -59,26 +35,23 @@ bool is_illegal_opcode(cpu_s *cpu, byte_t opcode)
     return instr->execute == ILLEGAL;
 }
 
-word_t address;                    // used by absolute, zero page, and indirect addressing modes
-offset_t address_rel;              // used only by branch instructions (signed for negative offsets)
-byte_t value;                      // holds fetched value, could be immediate value or value from memory
-byte_t current_instruction_length; // used by instructions to determine how many bytes to consume
-bool acc_mode;                     // true when using accumulator addressing mode
+word_t address;
+offset_t address_rel;
+byte_t value;
+byte_t current_instruction_length;
+bool acc_mode;
 
-/// @brief Function where all CPU instructions are defined
-/// @param cpu
 static void init_instruction_table(cpu_s *cpu)
 {
     cpu_instruction_s *table = &cpu->table[0];
 
-    // See also: https://www.nesdev.org/wiki/CPU_Opcode_matrix
-    // and https://www.masswerk.at/6502/6502_instruction_set.html
+    // https://www.nesdev.org/wiki/CPU_Opcode_matrix
     table[INSTRUCTION_BRK_IMP] = (cpu_instruction_s)
     {
         .name = "BRK",
         .opcode = 0x00,
         .cycles = 7,
-        .length = 2, // this is actually 1, but we need to account for the dummy byte
+        .length = 2,
         .data_fetch = IMP,
         .execute = BRK,
     };
@@ -2303,10 +2276,6 @@ void push_address(cpu_s *cpu, word_t addr)
 }
 
 
-/*
-    Zero-out the global variables that are
-    used to store the operands of the current instruction
-*/
 void reset_globals()
 {
     address = 0x0000;
@@ -2355,10 +2324,10 @@ void write_to_addr(cpu_s *cpu, word_t address, byte_t value)
 
 void push_byte_to_stack(cpu_s *cpu, byte_t byte)
 {
-    assert(cpu != NULL && cpu->bus != NULL);
+    assert(cpu != NULL && bus_get_instance() != NULL);
     if (cpu->SP == 0x00)
     {
-        cpu->SP = 0xFF; // stack is full, wrap around page 1
+        cpu->SP = 0xFF;
     }
     word_t stack_addr = 0x0100 + cpu->SP;
     write_to_addr(cpu, stack_addr, byte);
@@ -2368,24 +2337,17 @@ void push_byte_to_stack(cpu_s *cpu, byte_t byte)
 
 byte_t pop_byte(cpu_s *cpu)
 {
-    assert(cpu != NULL && cpu->bus != NULL);
+    assert(cpu != NULL && bus_get_instance() != NULL);
     cpu->SP++;
     if (cpu->SP == 0xFF)
     {
-        cpu->SP = 0x00; // stack is empty, wrap around page 1
+        cpu->SP = 0x00;
     }
     word_t stack_addr = 0x0100 + cpu->SP;
     byte_t byte = read_from_addr(cpu, stack_addr);
     return byte;
 }
 
-/*
-    Internal function
-    "Runs" the instruction by first fetching it's operands
-    and putting them into global variables
-    Then, executes the instruction using those operands
-    If the instruction needs an additional cycle, returns true
-*/
 bool fetch_and_execute(cpu_s *cpu)
 {
     assert(cpu != NULL && cpu->instruction_pending);
@@ -2395,21 +2357,18 @@ bool fetch_and_execute(cpu_s *cpu)
     return result;
 }
 
-//Just for constructing the CPU, not an actual interrupt
-void cpu_init(cpu_s *cpu, bus_s *bus)
+void cpu_init(cpu_s *cpu)
 {
-    assert(cpu != NULL && bus != NULL);
+    assert(cpu != NULL);
     cpu->A = 0x00;
     cpu->X = 0x00;
     cpu->Y = 0x00;
     cpu->SP = 0xFD;
     cpu->STATUS = 0x00 | STATUS_FLAG_U;
     cpu->PC = 0x0000;
-    cpu->cycles = 7; // Reset sequence takes 7 cycles
+    cpu->cycles = 7;
     cpu->current_opcode = 0x00;
     cpu->instruction_pending = false;
-
-    cpu->bus = bus; //attaching bus to CPU
     init_instruction_table(cpu);
 
     reset_globals();
@@ -2418,7 +2377,7 @@ void cpu_init(cpu_s *cpu, bus_s *bus)
 
 void reset(cpu_s *cpu)
 {
-    cpu_init(cpu, cpu->bus);
+    cpu_init(cpu);
     reset_globals();
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFD), read_from_addr(cpu, 0xFFFC));
     cpu->STATUS = (rand() % 256) | STATUS_FLAG_U;
@@ -2427,7 +2386,7 @@ void reset(cpu_s *cpu)
 
 void irq(cpu_s *cpu)
 {
-    if (get_flag(cpu, STATUS_FLAG_I)) //interupt is overridden by I flag
+    if (get_flag(cpu, STATUS_FLAG_I))
     {
         return;
     }
@@ -2435,7 +2394,7 @@ void irq(cpu_s *cpu)
     push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = (read_from_addr(cpu, 0xFFFF) << 8) | read_from_addr(cpu, 0xFFFE);
-    cpu->cycles += 7; // IRQ takes 7 cycles
+    cpu->cycles += 7;
     return;
 }
 
@@ -2445,7 +2404,7 @@ void nmi(cpu_s *cpu)
     push_byte_to_stack(cpu, cpu->STATUS);
     set_flag(cpu, STATUS_FLAG_I, 1);
     cpu->PC = (read_from_addr(cpu, 0xFFFB) << 8) | read_from_addr(cpu, 0xFFFA);
-    cpu->cycles += 7; // NMI takes 7 cycles
+    cpu->cycles += 7;
     return;
 }
 
@@ -2466,11 +2425,6 @@ cpu_instruction_s *get_current_instruction(cpu_s *cpu)
 }
 
 
-/*
- * Implied addressing mode
- * No operand needed
- * Returns 0
- */
 byte_t IMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2478,12 +2432,6 @@ byte_t IMP(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Accumulator addressing mode
- * Operand is the accumulator
- * Sets value to accumulator and acc_mode flag for write-back
- * Returns 0
- */
 byte_t ACC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2492,11 +2440,6 @@ byte_t ACC(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Immediate addressing mode
- * Fetches the next byte in memory and stores it in the value variable
- * Increments the program counter
- */
 byte_t IMM(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2505,11 +2448,6 @@ byte_t IMM(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Zero page addressing mode
- * Fetches the next byte in memory and stores it in the zero'th page of memory
- * Increments the program counter
- */
 
 byte_t ZP0(cpu_s *cpu)
 {
@@ -2521,49 +2459,28 @@ byte_t ZP0(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Zero page X addressing mode
- * Fetches the next byte in memory and stores it in the zero'th page of memory
- * Increments the program counter
- * Adds the X register to the address
- * Stores the result in the address variable
- * Fetches the value at the address and stores it in the value variable
- */
 byte_t ZPX(cpu_s *cpu)
 {
     assert(cpu != NULL);
     acc_mode = false;
     address = read_from_addr(cpu, cpu->PC + 1) & 0x00FF;
     address += cpu->X;
-    address = address & 0x00FF; //wrap around zero page
+    address = address & 0x00FF;
     value = read_from_addr(cpu, address);
     return 0;
 }
 
-/*
- * Zero page Y addressing mode
- * Fetches the next byte in memory and stores it in the zero'th page of memory
- * Increments the program counter
- * Adds the Y register to the address
- * Stores the result in the address variable
- * Fetches the value at the address and stores it in the value variable
- */
 byte_t ZPY(cpu_s *cpu)
 {
     assert(cpu != NULL);
     acc_mode = false;
     address = read_from_addr(cpu, cpu->PC + 1) & 0x00FF;
     address += cpu->Y;
-    address = address & 0x00FF; //wrap around zero page
+    address = address & 0x00FF;
     value = read_from_addr(cpu, address);
     return 0;
 }
 
-/*
- * Relative addressing mode
- * Fetches the next byte in memory and stores it in the address_rel variable
- * Increments the program counter
- */
 byte_t REL(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2572,12 +2489,6 @@ byte_t REL(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Absolute addressing mode
- * Fetches the next two bytes in memory and stores it in the address variable
- * Increments the program counter by two
- * Fetches the value at the address and stores it in the value variable
- */
 byte_t ABS(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2589,14 +2500,6 @@ byte_t ABS(cpu_s *cpu)
     return 0;
 }
 
-/*
- * Absolute X addressing mode
- * Fetches the next two bytes in memory and stores it in the address variable
- * Increments the program counter by two
- * Adds the X register to the address
- * Stores the result in the address variable
- * Fetches the value at the address and stores it in the value variable
- */
 
 byte_t ABX(cpu_s *cpu)
 {
@@ -2606,19 +2509,10 @@ byte_t ABX(cpu_s *cpu)
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     address = assemble_word(high_byte, low_byte);
     address += cpu->X;
-    //indicate that we need an additional cycle if the address crosses a page boundary
     value = read_from_addr(cpu, address);
     return crosses_page(address - cpu->X, address) ? 1 : 0;
 }
 
-/*
- * Absolute Y addressing mode
- * Fetches the next two bytes in memory and stores it in the address variable
- * Increments the program counter
- * Adds the Y register to the address
- * Stores the result in the address variable
- * Fetches the value at the address and stores it in the value variable
- */
 
 byte_t ABY(cpu_s *cpu)
 {
@@ -2632,13 +2526,6 @@ byte_t ABY(cpu_s *cpu)
     return crosses_page(address - cpu->Y, address) ? 1 : 0;
 }
 
-/*
- * Indirect addressing mode
- * Fetches the next two bytes in memory and stores it in the ptr variable
- * Checks if the low byte of the ptr is 0xFF
- * Simulate the page boundary hardware bug: if the low byte is 0xFF, the high byte is fetched from the same page
- * Otherwise, the high byte is fetched from ptr + 1
- */
 
 byte_t IND(cpu_s *cpu)
 {
@@ -2648,7 +2535,6 @@ byte_t IND(cpu_s *cpu)
     byte_t high_byte = read_from_addr(cpu, cpu->PC + 2);
     word_t ptr = assemble_word(high_byte, low_byte);
 
-    // simulate page boundary hardware bug
     low_byte = read_from_addr(cpu, ptr);
     high_byte = (ptr & 0x00FF) == 0x00FF ? read_from_addr(cpu, ptr & 0xFF00) : read_from_addr(cpu, ptr + 1);
 
@@ -2657,12 +2543,6 @@ byte_t IND(cpu_s *cpu)
     return 0;
 }
 
-/*
-    * Indirect X addressing mode
-    * Fetches the next byte in memory interprets it as a zero page address
-    * Assembles the address by adding the X register to the zero page address
-    * Fetches the value at the address and stores it in the value variable
-*/
 
 byte_t IZX(cpu_s *cpu)
 {
@@ -2673,17 +2553,9 @@ byte_t IZX(cpu_s *cpu)
     byte_t high = read_from_addr(cpu, (zp_addr + cpu->X + 1) & 0x00FF);
     address = assemble_word(high, low);
     value = read_from_addr(cpu, address);
-    return 0; //this will never cross a page boundary
+    return 0;
 }
 
-/*
- * Indirect Y addressing mode
- * Fetches the next byte in memory and stores it in the address variable
- * Increments the program counter
- * Fetches the value at the address and stores it in the value variable
- * Adds the Y register to the address
- * Stores the result in the address variable
- */
 byte_t IZY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2693,53 +2565,32 @@ byte_t IZY(cpu_s *cpu)
     address = assemble_word(read_from_addr(cpu, (ptr + 1) & 0x00FF), read_from_addr(cpu, ptr));
     address += cpu->Y;
     value = read_from_addr(cpu, address);
-    return crosses_page(address - cpu->Y, address) ? 1 : 0; //indicate if we need an additional cycle
+    return crosses_page(address - cpu->Y, address) ? 1 : 0;
 }
 
-/*
-    BRK - Force Interrupt
-    Pushes the program counter onto the stack
-    Pushes the status register onto the stack
-    Sets the interrupt flag
-    Sets the program counter to the interrupt vector
-*/
 
 byte_t BRK(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    cpu->PC++; // BRK has a padding byte
+    cpu->PC++;
     push_address(cpu, cpu->PC);
-    set_flag(cpu, STATUS_FLAG_B, true); // sets the break flag because this is a software interrupt
+    set_flag(cpu, STATUS_FLAG_B, true);
     push_byte_to_stack(cpu, cpu->STATUS);
-    set_flag(cpu, STATUS_FLAG_B, false); // clears the break flag
+    set_flag(cpu, STATUS_FLAG_B, false);
     set_flag(cpu, STATUS_FLAG_I, true);
     cpu->PC = assemble_word(read_from_addr(cpu, 0xFFFF), read_from_addr(cpu, 0xFFFE));
     cpu->pc_changed = true;
     return 0;
 }
 
-/*
-    ORA - OR Memory with Accumulator
-    ORs the value with the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t ORA(cpu_s *cpu)
 {
     cpu->A |= value;
     set_zn(cpu, cpu->A);
-    return 1; // this instruction can take an extra cycle
+    return 1;
 }
 
 
-/*
-    ASL Arithmetic Shift Left
-    Shifts the value left by 1 bit
-    Sets the carry flag to the 7th bit of the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in accumulator or memory based on addressing mode
-*/
 byte_t ASL(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2756,31 +2607,21 @@ byte_t ASL(cpu_s *cpu)
     }
     return 0;
 }
-/*
-    Push Processor Status on Stack
-    Pushes the status register onto the stack
-*/
 byte_t PHP(cpu_s *cpu)
 {
-    push_byte_to_stack(cpu, cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U); // pushes the status register with the break and unused bits set
+    push_byte_to_stack(cpu, cpu->STATUS | STATUS_FLAG_B | STATUS_FLAG_U);
     return 0;
 }
 
-// branch helper function that takes a flag as a parameter
-// if flag value is 1, we check if the flag is set
-// otherwise we check if the flag is not set
-// Adds extra cycles directly to cpu->cycles: +1 if taken, +2 if taken and page cross
 byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
 {
     assert(cpu != NULL);
-    // checks if the flag is set to the flag value
     if (get_flag(cpu, flag) == flag_value)
     {
-        cpu->PC += 2; // Move past the 2-byte branch instruction
+        cpu->PC += 2;
         word_t old_PC = cpu->PC;
         cpu->PC += address_rel;
         cpu->pc_changed = true;
-        // +1 for branch taken, +1 more if page boundary crossed
         if (crosses_page(old_PC, cpu->PC))
         {
             cpu->cycles += 2;
@@ -2793,11 +2634,6 @@ byte_t branch_on_flag(cpu_s *cpu, cpu_status_flag_e flag, byte_t flag_value)
     return 0;
 }
 
-/*
-    Branch on Result Plus (N = 0)
-    If the negative flag is not set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BPL(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2805,10 +2641,6 @@ byte_t BPL(cpu_s *cpu)
     return cycles;
 }
 
-/*
- * Clear Carry Flag
- * Clears the carry flag
- */
 byte_t CLC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2816,28 +2648,16 @@ byte_t CLC(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Jump to Subroutine
-    Pushes the program counter onto the stack
-    Sets the program counter to the address
-*/
 byte_t JSR(cpu_s *cpu)
 {
     assert(cpu != NULL);
-    word_t val = cpu->PC + 2; // push address of last byte of JSR instruction
+    word_t val = cpu->PC + 2;
     push_address(cpu, val);
     cpu->PC = address;
     cpu->pc_changed = true;
     return 0;
 }
 
-/*
-    AND Memory with Accumulator
-    ANDs the value with the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    This instruction can potentially take an extra cycle
-*/
 byte_t AND(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2846,33 +2666,16 @@ byte_t AND(cpu_s *cpu)
     return 1;
 }
 
-/*
-    BIT Test Bits in Memory with Accumulator
-    ANDs the value with the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Sets the overflow flag to the sixth bit of the value
-*/
 byte_t BIT(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t result = cpu->A & value;
-    // this flag is set based on the result of the AND
     set_flag(cpu, STATUS_FLAG_Z, result == 0x00);
-    // these 2 flags are set to the 6th and 7th bits of the value
     set_flag(cpu, STATUS_FLAG_N, value & 0x80);
     set_flag(cpu, STATUS_FLAG_V, value & 0x40);
     return 0;
 }
 
-/*
-    ROL Rotate Left
-    Rotates the value left by 1 bit through carry
-    Old carry goes into bit 0, old bit 7 goes into carry
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in accumulator or memory based on addressing mode
-*/
 byte_t ROL(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2892,11 +2695,6 @@ byte_t ROL(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Pull Processor Status from Stack
-    The status register will be pulled with the break
-    flag and bit 5 ignored.
-*/
 byte_t PLP(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2906,11 +2704,6 @@ byte_t PLP(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Branch on Result Minus (N = 1)
-    If the negative flag is set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BMI(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2918,10 +2711,6 @@ byte_t BMI(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    SEC Set Carry Flag
-    Sets the carry flag to 1
-*/
 byte_t SEC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2929,12 +2718,6 @@ byte_t SEC(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Return from Interrupt
-    Pulls the program counter from the stack
-    Pulls the status register from the stack
-    Bit 5 and the break flag are ignoreds
-*/
 byte_t RTI(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2942,35 +2725,21 @@ byte_t RTI(cpu_s *cpu)
     byte_t low = pop_byte(cpu);
     byte_t high = pop_byte(cpu);
     cpu->PC = assemble_word(high, low);
-    set_flag(cpu, STATUS_FLAG_U, true); // this is always logical 1
-    set_flag(cpu, STATUS_FLAG_B, false); // B flag is only 1 when BRK is executed
+    set_flag(cpu, STATUS_FLAG_U, true);
+    set_flag(cpu, STATUS_FLAG_B, false);
     cpu->pc_changed = true;
     return 0;
 }
 
-/*
-    EOR Exclusive-OR Memory with Accumulator
-    XORs the value with the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 
 byte_t EOR(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->A ^= value;
     set_zn(cpu, cpu->A);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    LSR Logical Shift Right
-    Shifts the value right by 1 bit
-    Sets the carry flag to the 0th bit of the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag to 0 (bit 7 is always 0 after shift)
-    Stores the result in accumulator or memory based on addressing mode
-*/
 byte_t LSR(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2988,10 +2757,6 @@ byte_t LSR(cpu_s *cpu)
     return 0;
 }
 
-/*
-    PHA Push Accumulator on Stack
-    Pushes the accumulator onto the stack
-*/
 byte_t PHA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -2999,12 +2764,6 @@ byte_t PHA(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Jump to New Location
-    Sets the program counter to the address
-    (PC+1) -> PCL
-    (PC+2) -> PCH
-*/
 byte_t JMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3013,11 +2772,6 @@ byte_t JMP(cpu_s *cpu)
     return 0;
 }
 
-/*
-    BVC Branch on Overflow Clear
-    If the overflow flag is not set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BVC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3025,10 +2779,6 @@ byte_t BVC(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    CLI Clear Interrupt Disable Bit
-    Sets the interrupt disable flag to 0
-*/
 byte_t CLI(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3036,30 +2786,16 @@ byte_t CLI(cpu_s *cpu)
     return 0;
 }
 
-/*
-    RTS Return from Subroutine
-    Pulls the program counter from the stack
-    Increments the program counter
-*/
 byte_t RTS(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->PC = pop_byte(cpu);
     cpu->PC |= (pop_byte(cpu) << 8);
-    cpu->PC++; // increment to instruction after JSR
+    cpu->PC++;
     cpu->pc_changed = true;
     return 0;
 }
 
-/*
-    ADC Add Memory to Accumulator with Carry
-    Adds the value to the accumulator
-    Adds the carry flag to the result
-    Sets the carry flag if the result is greater than 255
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Sets the overflow flag if the result is greater than 127 or less than -128
-*/
 
 byte_t ADC(cpu_s *cpu)
 {
@@ -3068,24 +2804,15 @@ byte_t ADC(cpu_s *cpu)
     set_flag(cpu, STATUS_FLAG_C, result > 0xFF);
     set_flag(cpu, STATUS_FLAG_Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, STATUS_FLAG_N, result & 0x0080);
-    // overflow flag is set if the sign of the result is different from the sign of the accumulator
     byte_t accumulator_msb = cpu->A & 0x80;
     byte_t value_msb = value & 0x80;
     byte_t result_msb = result & 0x80;
     byte_t overflow = ((accumulator_msb ^ value_msb) == 0) && ((accumulator_msb ^ result_msb) != 0);
     set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    ROR Rotate Right
-    Rotates the value right by 1 bit through carry
-    Old carry goes into bit 7, old bit 0 goes into carry
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in accumulator or memory based on addressing mode
-*/
 byte_t ROR(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3105,12 +2832,6 @@ byte_t ROR(cpu_s *cpu)
     return 0;
 }
 
-/*
-    PLA Pull Accumulator from Stack
-    Pulls the accumulator from the stack
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t PLA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3119,11 +2840,6 @@ byte_t PLA(cpu_s *cpu)
     return 0;
 }
 
-/*
-    Branch on Overflow Set
-    If the overflow flag is set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BVS(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3131,10 +2847,6 @@ byte_t BVS(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    SEI Set Interrupt Disable Status
-    Sets the interrupt disable flag to 1
-*/
 byte_t SEI(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3142,10 +2854,6 @@ byte_t SEI(cpu_s *cpu)
     return 0;
 }
 
-/*
-    STA Store Accumulator in Memory
-    Stores the accumulator in memory
-*/
 byte_t STA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3153,10 +2861,6 @@ byte_t STA(cpu_s *cpu)
     return 0;
 }
 
-/*
-    STY Store Index Y in Memory
-    Stores the Y register in memory
-*/
 byte_t STY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3164,10 +2868,6 @@ byte_t STY(cpu_s *cpu)
     return 0;
 }
 
-/*
-    STX Store Index X in Memory
-    Stores the X register in memory
-*/
 byte_t STX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3175,12 +2875,6 @@ byte_t STX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    DEY Decrement Index Y by One
-    Decrements the Y register by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t DEY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3189,12 +2883,6 @@ byte_t DEY(cpu_s *cpu)
     return 0;
 }
 
-/*
-    TXA Transfer Index X to Accumulator
-    Transfers the X register to the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t TXA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3203,11 +2891,6 @@ byte_t TXA(cpu_s *cpu)
     return 0;
 }
 
-/*
-    BCC Branch on Carry Clear
-    If the carry flag is not set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 
 byte_t BCC(cpu_s *cpu)
 {
@@ -3216,12 +2899,6 @@ byte_t BCC(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    TYA Transfer Index Y to Accumulator
-    Transfers the Y register to the accumulator
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t TYA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3230,10 +2907,6 @@ byte_t TYA(cpu_s *cpu)
     return 0;
 }
 
-/*
-    TXS Transfer Index X to Stack Register
-    Transfers the X register to the stack pointer
-*/
 byte_t TXS(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3241,26 +2914,14 @@ byte_t TXS(cpu_s *cpu)
     return 0;
 }
 
-/*
-    LDY Load Index Y
-    Loads the Y register with the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t LDY(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->Y = value;
     set_zn(cpu, cpu->Y);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    LDA Load Accumulator
-    Loads the accumulator with the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t LDA(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3269,26 +2930,14 @@ byte_t LDA(cpu_s *cpu)
     return 1;
 }
 
-/*
-    LDX Load Index X
-    Loads the X register with the value
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t LDX(cpu_s *cpu)
 {
     assert(cpu != NULL);
     cpu->X = value;
     set_zn(cpu, cpu->X);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    TAY Transfer Accumulator to Index Y
-    Transfers the accumulator to the Y register
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t TAY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3297,12 +2946,6 @@ byte_t TAY(cpu_s *cpu)
     return 0;
 }
 
-/*
-    TAX Transfer Accumulator to Index X
-    Transfers the accumulator to the X register
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t TAX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3311,11 +2954,6 @@ byte_t TAX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    BCS Branch on Carry Set
-    If the carry flag is set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BCS(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3323,10 +2961,6 @@ byte_t BCS(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    CLV Clear Overflow Flag
-    Sets the overflow flag to 0
-*/
 byte_t CLV(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3334,12 +2968,6 @@ byte_t CLV(cpu_s *cpu)
     return 0;
 }
 
-/*
-    TSX Transfer Stack Pointer to Index X
-    Transfers the stack pointer to the X register
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t TSX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3348,13 +2976,6 @@ byte_t TSX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    CPY Compare value and Index Y
-    Compares the value with the Y register
-    Sets the carry flag if the Y register is greater than or equal to the value
-    Sets the zero flag if the Y register is equal to the value
-    Sets the negative flag if the Y register is less than the value
-*/
 byte_t CPY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3364,29 +2985,15 @@ byte_t CPY(cpu_s *cpu)
     return 0;
 }
 
-/*
-    CMP Compare value and Accumulator
-    Compares the value with the accumulator
-    Sets the carry flag if the accumulator is greater than or equal to the value
-    Sets the zero flag if the accumulator is equal to the value
-    Sets the negative flag if the accumulator is less than the value
-*/
 byte_t CMP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     byte_t result = cpu->A - value;
     set_flag(cpu, STATUS_FLAG_C, cpu->A >= value);
     set_zn(cpu, result);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    DEC Decrement Memory by One
-    Decrements the value by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in memory
-*/
 byte_t DEC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3396,12 +3003,6 @@ byte_t DEC(cpu_s *cpu)
     return 0;
 }
 
-/*
-    DEX Decrement Index X by One
-    Decrements the X register by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t DEX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3410,11 +3011,6 @@ byte_t DEX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    BNE Branch on Result not Zero
-    If the zero flag is not set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BNE(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3422,10 +3018,6 @@ byte_t BNE(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    CLD Clear Decimal Mode
-    Sets the decimal flag to 0
-*/
 byte_t CLD(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3433,13 +3025,6 @@ byte_t CLD(cpu_s *cpu)
     return 0;
 }
 
-/*
-    CPX Compare value and Index X
-    Compares the value with the X register
-    Sets the carry flag if the X register is greater than or equal to the value
-    Sets the zero flag if the X register is equal to the value
-    Sets the negative flag if the X register is less than the value
-*/
 byte_t CPX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3449,15 +3034,6 @@ byte_t CPX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    SBC Subtract Memory from Accumulator with Borrow
-    Subtracts the value from the accumulator
-    Subtracts the carry flag from the result
-    Sets the carry flag if the result is less than 0
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Sets the overflow flag if the result is greater than 127 or less than -128
-*/
 byte_t SBC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3465,23 +3041,15 @@ byte_t SBC(cpu_s *cpu)
     set_flag(cpu, STATUS_FLAG_C, result < 0x100);
     set_flag(cpu, STATUS_FLAG_Z, (result & 0x00FF) == 0x0000);
     set_flag(cpu, STATUS_FLAG_N, result & 0x0080);
-    // overflow flag is set if the sign of the result is different from the sign of the accumulator
     byte_t accumulator_msb = cpu->A & 0x80;
     byte_t value_msb = value & 0x80;
     byte_t result_msb = result & 0x80;
     byte_t overflow = ((accumulator_msb ^ value_msb) != 0) && ((accumulator_msb ^ result_msb) != 0);
     set_flag(cpu, STATUS_FLAG_V, overflow);
     cpu->A = (byte_t)(result & 0x00FF);
-    return 1; // Can take extra cycle on page cross
+    return 1;
 }
 
-/*
-    INC Increment Memory by One
-    Increments the value by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-    Stores the result in memory
-*/
 byte_t INC(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3491,12 +3059,6 @@ byte_t INC(cpu_s *cpu)
     return 0;
 }
 
-/*
-    INX Increment Index X by One
-    Increments the X register by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t INX(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3505,12 +3067,6 @@ byte_t INX(cpu_s *cpu)
     return 0;
 }
 
-/*
-    INY Increment Index Y by One
-    Increments the Y register by 1
-    Sets the zero flag if the result is zero
-    Sets the negative flag if the result is negative
-*/
 byte_t INY(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3520,11 +3076,6 @@ byte_t INY(cpu_s *cpu)
     return 0;
 }
 
-/*
-    BEQ Branch on Result Zero
-    If the zero flag is set, add the relative address to the program counter
-    If the program counter crosses a page boundary, return 1 to indicate an extra cycle is required
-*/
 byte_t BEQ(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3532,10 +3083,6 @@ byte_t BEQ(cpu_s *cpu)
     return cycles;
 }
 
-/*
-    SED Set Decimal Flag
-    Sets the decimal flag to 1
-*/
 byte_t SED(cpu_s *cpu)
 {
     assert(cpu != NULL);
@@ -3543,58 +3090,38 @@ byte_t SED(cpu_s *cpu)
     return 0;
 }
 
-/*
-    NOP No Operation
-    Does nothing
-*/
 byte_t NOP(cpu_s *cpu)
 {
     assert(cpu != NULL);
     return 0;
 }
 
-/*
-    Run a single instruction (fetch, decode, execute, update PC)
-    Tracks cycle count for timing accuracy.
-
-    Cycle counting:
-    - Base cycles come from instruction->cycles
-    - Extra cycle for page boundary crossing (indexed addressing modes)
-      only if instruction allows it (execute returns 1)
-    - Branch instructions add their own extra cycles directly
-*/
 void run_instruction(cpu_s *cpu)
 {
     assert(cpu != NULL);
 
-    cpu->current_opcode = bus_read(cpu->bus, cpu->PC);
+    cpu->current_opcode = bus_read(bus_get_instance(), cpu->PC);
     cpu->instruction_pending = true;
     cpu->pc_changed = false;
 
     cpu_instruction_s *instr = get_current_instruction(cpu);
 
-    // Fetch operand - returns 1 if page boundary crossed (for indexed modes)
     byte_t page_crossed = 0;
     if (instr->data_fetch) {
         page_crossed = instr->data_fetch(cpu);
     }
 
-    // Execute - returns 1 if instruction can take page-crossing penalty
-    // (branches handle their own extra cycles internally)
     byte_t can_take_penalty = 0;
     if (instr->execute) {
         can_take_penalty = instr->execute(cpu);
     }
 
-    // Add base cycles
     cpu->cycles += instr->cycles;
 
-    // Add page-crossing penalty if applicable
     if (page_crossed && can_take_penalty) {
         cpu->cycles += 1;
     }
 
-    // Advance PC if instruction didn't modify it
     if (!cpu->pc_changed) {
         cpu->PC += instr->length;
     }
